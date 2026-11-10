@@ -35,6 +35,8 @@ def ler_env():
 ler_env()
 CHAVE_GEMINI = os.environ.get("GEMINI_API_KEY", "")
 MODELO = os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest")
+# Hospedado para várias pessoas: o progresso fica só no navegador de cada uma.
+PUBLICO = os.environ.get("JOKENPY_PUBLICO") == "1"
 
 
 class Execucao(BaseModel):
@@ -76,6 +78,8 @@ ARQUIVO_PROGRESSO = Path(os.environ.get("JOKENPY_PROGRESSO", PASTA / "progresso.
 
 @app.get("/progresso")
 def ler_progresso():
+    if PUBLICO:
+        return {}
     if ARQUIVO_PROGRESSO.exists():
         try:
             return json.loads(ARQUIVO_PROGRESSO.read_text(encoding="utf-8"))
@@ -90,6 +94,8 @@ def gravar_progresso(dados: dict = Body(...), x_jokenpy: str | None = Header(def
     texto = json.dumps(dados, ensure_ascii=False)
     if len(texto) > 500_000:
         raise HTTPException(413, "Progresso grande demais")
+    if PUBLICO:
+        return {"ok": True}
     temporario = ARQUIVO_PROGRESSO.with_suffix(".tmp")
     temporario.write_text(texto, encoding="utf-8")
     temporario.replace(ARQUIVO_PROGRESSO)  # troca de uma vez: nunca fica um arquivo pela metade
@@ -262,7 +268,7 @@ def limpar_sugestao(texto: str, codigo: str, cursor: int) -> str:
 
 @app.get("/ia/status")
 def ia_status():
-    return {"ativa": bool(CHAVE_GEMINI), "modelo": MODELO}
+    return {"ativa": bool(CHAVE_GEMINI), "modelo": MODELO, "publico": PUBLICO}
 
 
 @app.post("/ia")
@@ -280,6 +286,8 @@ def ia(p: PedidoIA, x_jokenpy: str | None = Header(default=None)):
 @app.post("/salvar")
 def salvar(dados: Salvar, x_jokenpy: str | None = Header(default=None)):
     checar_origem(x_jokenpy)
+    if PUBLICO:
+        return {"arquivo": None}
     destino = PASTA / "meu_jokenpo.py"
     destino.write_text(dados.codigo, encoding="utf-8")
     return {"arquivo": str(destino)}

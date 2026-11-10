@@ -90,6 +90,7 @@ code,pre,textarea{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace}
 .errado .fb-ico,.errado h3{color:var(--vermelho-esc)}
 .fb h3{margin:0 0 4px;font-size:20px;font-weight:900}
 .fb p{margin:0;font-weight:700;line-height:1.45;font-size:15px}
+.fb p small{opacity:.8}
 .certo .fb p{color:#1F6B42}.errado .fb p{color:#8E2A2A}
 .fb code{background:rgba(255,255,255,.7)}
 .fb-acoes{display:flex;gap:10px;align-items:center;margin-left:auto}
@@ -196,7 +197,7 @@ pre.saida-ex{background:#F6F7F9;color:var(--texto);border:2px dashed var(--cinza
 .confete{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:10}
 .confete span{position:absolute;top:-50px;font-size:24px;animation:cair 2.8s ease-in forwards}
 @keyframes cair{to{transform:translateY(115vh) rotate(540deg)}}
-.toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:var(--texto);color:#fff;padding:10px 16px;border-radius:12px;font-weight:800;z-index:20;max-width:calc(100% - 32px)}
+.toast{position:fixed;top:76px;left:50%;transform:translateX(-50%);background:var(--texto);color:#fff;padding:10px 16px;border-radius:12px;font-weight:800;z-index:20;max-width:calc(100% - 32px)}
 
 /* acessibilidade: foco visível no teclado */
 :focus-visible{outline:3px solid #93B8F8;outline-offset:2px}
@@ -277,7 +278,29 @@ pre.saida-ex{background:#F6F7F9;color:var(--texto);border:2px dashed var(--cinza
 .aviso{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:25;background:#FFF4E5;color:#8A4B00;border:2px solid #FFD8A8;border-radius:14px;padding:10px 14px;font-weight:800;font-size:14px;width:max-content;max-width:calc(100% - 32px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
 .aviso code{background:#fff;padding:1px 6px;border-radius:6px;word-break:break-all}
 
+/* erro do Python explicado */
+.entender{border-top:2px solid var(--cinza);background:#FFFBEB;padding:10px 14px;font-weight:700;font-size:14px;line-height:1.55;color:#6B4E00}
+.entender:empty{display:none}
+.entender b{display:block;color:#8A6100;font-size:13px;margin-bottom:2px}
+.entender code{background:#fff;padding:1px 6px;border-radius:6px;font-size:.9em}
+
+/* teclas de código no celular (o teclado do celular não tem Tab nem símbolos à mão) */
+.teclas{display:flex;gap:6px;overflow-x:auto;margin:-6px 0 14px;padding:2px 0 4px;-webkit-overflow-scrolling:touch}
+.teclas button{flex:none;min-width:40px;height:40px;border:2px solid var(--cinza);border-bottom-width:4px;border-radius:10px;background:#fff;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:16px;color:var(--texto);padding:0 10px}
+.teclas button:active{transform:translateY(2px)}
+
+/* painel de revisão na trilha */
+.revisao{display:flex;align-items:center;justify-content:space-between;gap:12px;border-color:#C7DAFB;background:var(--azul-claro)}
+.revisao b{display:block;font-size:17px;font-weight:900;margin-bottom:2px;color:var(--azul-esc)}
+.revisao span{font-weight:700;color:#4A505A;font-size:14px}
+
 @media (max-width:520px){
+  .rodape-in > #principal{flex:1 1 100%}
+  .fb-acoes{width:100%;flex-wrap:wrap}
+  .fb-acoes .btn{flex:1}
+  .revisao{flex-wrap:wrap}
+  .revisao .btn{width:100%}
+  .editor textarea{min-height:180px;font-size:13px}
   .topo-btn span{display:none}
   .rodape .btn{padding:12px 16px;font-size:15px}
   .rodape-esq{width:100%}

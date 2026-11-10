@@ -14,6 +14,9 @@ const semLacunas = c => (c || '').replace(/\[\[\d+\]\]/g, '____')
 const padrao = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ')
 const HEADERS = { 'Content-Type': 'application/json', 'X-Jokenpy': '1' }
 const META_DIARIA = 20
+// rodando no seu computador (localhost) ou hospedado na internet para qualquer pessoa
+const LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname)
+const TOQUE = matchMedia('(pointer: coarse)').matches   // celular/tablet: sem tecla Tab
 
 let L = null              // estado da lição aberta (null = tela inicial)
 let IA_ATIVA = false
@@ -34,6 +37,36 @@ function realcar(txt) {
   }
   return out + esc(txt.slice(ultimo))
 }
+
+// ---------- erros do Python explicados em português ----------
+// A mensagem original continua aparecendo: aprender a ler erro em inglês faz parte de programar.
+const ERROS = [
+  [/NameError: name '(\w+)' is not defined/, m => `O Python não conhece o nome <code>${m[1]}</code>. Se era um texto, faltaram as aspas: <code>"${m[1]}"</code>. Se é uma variável, confira se ela foi criada antes desta linha e se o nome está escrito igual (maiúscula conta).`],
+  [/expected ':'/, () => 'Faltaram os dois-pontos <code>:</code> no fim da linha. Toda linha de <code>if</code>, <code>elif</code>, <code>else</code>, <code>while</code> e <code>def</code> termina com <code>:</code>.'],
+  [/expected an indented block/, () => 'Depois de uma linha que termina com <code>:</code>, o bloco de baixo precisa estar indentado (4 espaços para dentro). Se ainda não sabe o que pôr, use <code>pass</code>.'],
+  [/unexpected indent/, () => 'Esta linha tem espaços a mais no começo. Só indente o que está dentro de um bloco (<code>if</code>, <code>while</code>, <code>def</code>...).'],
+  [/unindent does not match|inconsistent use of tabs/, () => 'A indentação desta linha não bate com as de cima. Use sempre múltiplos de 4 espaços.'],
+  [/unterminated (triple-quoted )?string|EOL while scanning/, () => 'Uma string abriu aspas e não fechou. Confira se cada <code>"</code> tem o seu par na mesma linha.'],
+  [/'(.)' was never closed/, m => `Um <code>${m[1]}</code> abriu e não fechou. Conte: cada abertura precisa do seu fechamento.`],
+  [/unmatched '(.)'/, m => `Tem um <code>${m[1]}</code> sobrando, sem a abertura correspondente.`],
+  [/Maybe you meant '==' or ':=' instead of '='|cannot assign to/, () => 'Para <b>comparar</b> use <code>==</code>. Um <code>=</code> sozinho <b>guarda</b> um valor e não pode ficar dentro do <code>if</code>.'],
+  [/Did you mean '(.+?)'\?/, m => `O Python sugere: <code>${m[1]}</code>. Confira se o nome está escrito certo.`],
+  [/can only concatenate str|unsupported operand type/, () => 'Você misturou texto e número numa conta. <code>int(texto)</code> vira número, <code>str(numero)</code> vira texto. Para mostrar os dois juntos, use f-string.'],
+  [/KeyError: (.+)/, m => `A chave <code>${esc(m[1])}</code> não existe no dicionário. Confira se escreveu igual às chaves (sem espaços extras e em minúsculas).`],
+  [/IndexError/, () => 'Você pediu uma posição que não existe na lista. A primeira é <code>0</code> e a última é <code>len(lista) - 1</code>.'],
+  [/invalid literal for int/, () => '<code>int()</code> só converte textos que são números, como <code>"20"</code>.'],
+  [/ZeroDivisionError/, () => 'Não existe divisão por zero. Confira o valor que está embaixo da divisão.'],
+  [/'NoneType'/, () => 'Algo virou <code>None</code> (nada). Uma função sem <code>return</code> devolve <code>None</code>: confira se ela tem <code>return</code> em todos os caminhos.'],
+  [/AttributeError: '(\w+)' object has no attribute '(\w+)'/, m => `Um valor do tipo <code>${m[1]}</code> não tem <code>.${m[2]}</code>. Confira o nome (ex.: <code>lower</code>, <code>strip</code>) e se a variável tem o tipo que você imagina.`],
+  [/TypeError: (\w+)\(\) (takes|missing)/, m => `A função <code>${m[1]}</code> foi chamada com a quantidade errada de valores. Compare os parâmetros do <code>def</code> com a chamada.`],
+  [/Tempo esgotado/, () => 'O programa não terminou. Num <code>while</code>, confira se existe um <code>break</code> ou se a variável da condição muda a cada volta.'],
+  [/Teste: não encontrei '(\w+)'/, m => `O teste procura algo chamado <code>${m[1]}</code>. Use exatamente esse nome no seu código.`],
+]
+function entenderErro(erro) {
+  for (const [re, f] of ERROS) { const m = (erro || '').match(re); if (m) return f(m) }
+  return ''
+}
+const htmlEntender = erro => { const e = entenderErro(erro); return e ? `<div class="entender"><b>🔎 O que isso quer dizer</b>${e}</div>` : '' }
 
 // ---------- progresso ----------
 // Fica salvo no navegador (localStorage) e no servidor (jokenpo/progresso.json).
@@ -101,7 +134,9 @@ function marcarServidor(ok) {
   if (aviso) return
   aviso = document.createElement('div')
   aviso.id = 'aviso'; aviso.className = 'aviso'; aviso.setAttribute('role', 'status')
-  aviso.innerHTML = '⚠️ Servidor desligado: o código não roda e o progresso fica só neste navegador. Na pasta <code>jokenpo</code>, rode <code>python -m uvicorn server:app --port 8080</code>'
+  aviso.innerHTML = LOCAL
+    ? '⚠️ Servidor desligado: o código não roda e o progresso fica só neste navegador. Na pasta <code>jokenpo</code>, rode <code>python -m uvicorn server:app --port 8080</code>'
+    : '⚠️ Sem conexão com o servidor: o código não roda agora. Confira a internet e tente de novo em instantes.'
   document.body.append(aviso)
 }
 
@@ -164,6 +199,7 @@ function renderHome() {
       <div class="unidade-ico">✊</div>
     </section>
     ${andamento ? htmlRetomar(andamento) : ''}
+
     <section class="painel meta">
       <div class="meta-topo"><b>🎯 Meta do dia</b><span>${Math.min(hoje, META_DIARIA)}/${META_DIARIA} XP</span></div>
       <div class="barra fina ouro"><div style="width:${Math.min(100, 100 * hoje / META_DIARIA)}%"></div></div>
@@ -180,12 +216,16 @@ function renderHome() {
         </div>`
       }).join('')}
     </div>
-    ${feitas === LICOES.length ? '<button class="btn largo" id="ver-fim" style="margin-top:36px">🏆 Ver meu jogo</button>' : ''}
+    ${feitas ? `<section class="painel revisao" style="margin-top:40px"><div><b>🧠 Revisão rápida</b>
+      <span>${TAM_REVISAO} perguntas das lições que você já fez, começando pelas que você mais errou · +5 XP</span></div>
+      <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
+    ${prog.feitas.final ? '<button class="btn largo" id="ver-fim" style="margin-top:36px">🏆 Ver meu jogo</button>' : ''}
     <button class="link" id="zerar">Recomeçar do zero</button>
   </main>`
   ligarSom()
   $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
   const r = $('#retomar'); if (r) r.onclick = retomar
+  const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
   $('#zerar').onclick = () => {
     if (!confirm('Apagar todo o progresso (XP, lições e rascunhos)?')) return
     const som = prog.som; prog = novoProgresso(); prog.som = som; salvarProgresso(); renderHome()
@@ -235,9 +275,8 @@ document.addEventListener('click', e => { if (!e.target.closest('.cartao-licao, 
 
 // ---------- lição ----------
 // A lição tem duas fases: "ensino" (cartões de explicação, pode pular) e "exercicios".
-function iniciar(i, salvo = null, pularEnsino = false) {
+function iniciar(i, salvo = null, pularEnsino = false, licao = LICOES[i]) {
   fecharCartao()
-  const licao = LICOES[i]
   const fila = salvo
     ? salvo.fila.filter(k => typeof k === 'number' && k >= 0).map(k => licao.exercicios[k]).filter(Boolean)
     : [...licao.exercicios]
@@ -266,12 +305,22 @@ function iniciar(i, salvo = null, pularEnsino = false) {
   proximo()
 }
 
+const TAM_REVISAO = 6
+const licaoDe = it => LICOES.find(l => l.exercicios.includes(it))
+function iniciarRevisao() {
+  const fracos = prog.fracos || {}
+  const banco = LICOES.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios.filter(it => it.tipo !== 'codigo'))
+  const escolhidos = banco.map(it => ({ it, peso: (fracos[it.id] || 0) + Math.random() }))
+    .sort((a, b) => b.peso - a.peso).slice(0, TAM_REVISAO).map(x => x.it)
+  iniciar(-1, null, true, { id: 'revisao', titulo: 'Revisão', icone: '🧠', aprende: 'revisar o que já viu', revisao: true, ensino: [], exercicios: embaralhar(escolhidos) })
+}
+
 function retomar() { const s = prog.emAndamento; if (s && LICOES[s.i]) iniciar(s.i, s) }
-function sairDaLicao() { salvarAndamento(); toast('Progresso salvo. Continue quando quiser.'); renderHome() }
+function sairDaLicao() { salvarAndamento(); toast(L.licao.revisao ? 'Revisão encerrada.' : 'Progresso salvo. Continue quando quiser.'); renderHome() }
 
 // guarda onde você está na lição (chamado a cada passo)
 function salvarAndamento() {
-  if (!L) return
+  if (!L || L.licao.revisao) return
   if (L.vidas <= 0) { prog.emAndamento = null; return salvarProgresso() }
   let fila = L.fila
   if (L.estado === 'feedback' && L.ultimoCerto === true) fila = fila.slice(1)
@@ -343,7 +392,7 @@ function htmlExemplo(c) {
     <textarea id="ex-editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código do exemplo" rows="${c.codigo.split('\n').length + 1}">${esc(c.codigo)}</textarea>
   </div>
   <button class="btn azul mini" id="ex-rodar">▶ Rodar exemplo</button>
-  <div class="saida" id="ex-saida" hidden><div class="saida-topo">Saída</div><pre id="ex-saida-texto"></pre></div>`
+  <div class="saida" id="ex-saida" hidden><div class="saida-topo">Saída</div><pre id="ex-saida-texto"></pre><div id="ex-entender"></div></div>`
 }
 
 function ligarExemplo(c) {
@@ -358,6 +407,7 @@ function ligarExemplo(c) {
     let html = esc(r.saida || '')
     if (r.erro) html += `<span class="err">${r.saida && !r.saida.endsWith('\n') ? '\n' : ''}${esc(r.erro)}</span>`
     $('#ex-saida-texto').innerHTML = html || '<span class="vazio">(nada foi mostrado na tela)</span>'
+    $('#ex-entender').innerHTML = htmlEntender(r.erro)
     b.disabled = false; b.textContent = '▶ Rodar de novo'
   }
 }
@@ -439,7 +489,7 @@ function htmlCodigo(it) {
   <div class="sugestao" id="sugestao" hidden></div>
   <div class="ia" id="ia" hidden></div>
   <div class="previa" id="previa" hidden></div>
-  <div class="saida" id="saida" hidden><div class="saida-topo" id="saida-topo">Saída</div><pre id="saida-texto"></pre></div>`
+  <div class="saida" id="saida" hidden><div class="saida-topo" id="saida-topo">Saída</div><pre id="saida-texto"></pre><div id="entender"></div></div>`
 }
 
 function ligarItem(it) {
@@ -485,7 +535,25 @@ function ligarEditor(ta, it = null) {
     if (L.sugestao && !L.aceitando) descartarSugestao()
     prog.rascunhos[it.id] = ta.value; salvarProgresso()
   })
+  if (TOQUE) ta.closest('.editor').insertAdjacentHTML('afterend', `<div class="teclas" aria-label="Teclas de código">
+    ${['⇥', '⇤', ':', '(', ')', '"', '=', '[', ']', '{', '}', '_', '.', ','].map(t => `<button type="button" data-t="${esc(t)}">${t === '⇥' ? '⇥ Tab' : t === '⇤' ? '⇤' : esc(t)}</button>`).join('')}</div>`)
+  const teclas = ta.closest('.editor').nextElementSibling
+  if (TOQUE) {
+    teclas.onpointerdown = e => e.preventDefault()   // o teclado do celular continua aberto
+    teclas.onclick = e => {
+      const t = e.target.closest('[data-t]')?.dataset.t
+      if (!t || ta.readOnly) return
+      ta.focus()
+      if (t === '⇤') {
+        const ini = ta.value.lastIndexOf('\n', ta.selectionStart - 1) + 1
+        const n = ta.value.slice(ini).match(/^ {1,4}/)?.[0].length || 0
+        if (n) { const c = ta.selectionStart; ta.setSelectionRange(ini, ini + n); document.execCommand('delete'); ta.setSelectionRange(Math.max(ini, c - n), Math.max(ini, c - n)) }
+      } else inserir(t === '⇥' ? '    ' : t)
+      ta.dispatchEvent(new Event('input'))
+    }
+  }
   ta.addEventListener('keydown', e => {
+    if (ta.readOnly) return
     if (it && e.key === ' ' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); pedirCompletar(it); return }
     if (L.sugestao && e.key === 'Tab') { e.preventDefault(); aceitarSugestao(); return }
     if (L.sugestao && e.key === 'Escape') { e.preventDefault(); descartarSugestao(); return }
@@ -513,7 +581,7 @@ function abrirTeoria() {
   const volta = document.activeElement
   const m = document.createElement('div'); m.className = 'modal-fundo'
   m.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Teoria da lição">
-    <button class="modal-fechar" aria-label="Fechar">✕</button>${htmlTeoria(L.licao)}
+    <button class="modal-fechar" aria-label="Fechar">✕</button>${htmlTeoria(L.licao.revisao ? licaoDe(L.fila[0]) : L.licao)}
     <button class="btn largo" id="modal-ok">Entendi</button></div>`
   document.body.append(m)
   const fechar = () => { m.remove(); document.removeEventListener('keydown', teclas); volta?.focus?.() }
@@ -601,6 +669,9 @@ function verificar() {
   }
 
   L.estado = 'feedback'; L.ultimoCerto = certo
+  prog.fracos = prog.fracos || {}
+  prog.fracos[it.id] = Math.max(0, (prog.fracos[it.id] || 0) + (certo ? -1 : 2))
+  if (!prog.fracos[it.id]) delete prog.fracos[it.id]
   if (certo) {
     somCerto(); L.feitos++; atualizarBarra()
     rodapeFeedback(true, elogio(), it.explica || '')
@@ -628,7 +699,9 @@ async function rodar(dados) {
     return await res.json()
   } catch {
     marcarServidor(false)
-    return { ok: false, saida: '', erro: 'Não consegui falar com o servidor. Ele está rodando? (python -m uvicorn server:app --port 8080)' }
+    return { ok: false, saida: '', erro: LOCAL
+      ? 'Não consegui falar com o servidor. Ele está rodando? (python -m uvicorn server:app --port 8080)'
+      : 'Não consegui falar com o servidor. Confira a internet e tente de novo.' }
   }
 }
 
@@ -638,6 +711,7 @@ function mostrarSaida(r, rotulo) {
   let html = esc(r.saida || '')
   if (r.erro) html += `<span class="err">${r.saida && !r.saida.endsWith('\n') ? '\n' : ''}${esc(r.erro)}</span>`
   $('#saida-texto').innerHTML = html || '<span class="vazio">(nada foi mostrado na tela)</span>'
+  $('#entender').innerHTML = htmlEntender(r.erro)
 }
 
 async function executarLivre(it) {
@@ -662,7 +736,7 @@ async function verificarCodigo(it) {
     const quando = casos.length > 1 ? ` quando digitam ${c.entrada.replace(/\n$/, '').split('\n').map(v => `"${v}"`).join(' e ')}` : ''
     const saida = padrao(r.saida)
     if (!r.ok) falha = r.erro
-    else if (c.espera && !saida.includes(padrao(c.espera))) falha = `A saída deveria mostrar "${c.espera}"${quando}.`
+    else if (c.espera && !saida.includes(padrao(c.espera))) falha = `A saída deveria mostrar "${c.espera}"${quando}. Compare com a sua saída acima: o texto precisa ser igual (maiúsculas e acentos não importam).`
     else { const p = (c.proibido || []).find(p => saida.includes(padrao(p))); if (p) falha = `Não deveria aparecer "${p}"${quando}.` }
     if (falha) break
   }
@@ -671,7 +745,7 @@ async function verificarCodigo(it) {
   if (!falha) {
     somCerto(); L.feitos++; atualizarBarra()
     $('#editor').readOnly = true
-    if (it.final) L.codigoFinal = codigo
+    if (it.final) { L.codigoFinal = codigo; prog.meuJogo = codigo }
     descartarSugestao()
     rodapeFeedback(true, L.viuResposta ? 'Passou!' : elogio(),
       L.viuResposta ? 'Agora leia a solução linha por linha e tente refazer sozinho depois.' : 'Seu código passou em todos os testes.',
@@ -681,7 +755,9 @@ async function verificarCodigo(it) {
   } else {
     somErro(); L.falhas++
     const ajuda = L.falhas === 1 ? '<br>Corrija e tente de novo. Aqui você não perde vida.' : '<br>Travou? Peça uma 💡 dica ou use 👀 Ver resposta.'
-    rodapeFeedback(false, 'Ainda não', esc(falha) + ajuda, '<button class="btn branco" id="dica-falha">💡 Dica</button>', 'Tentar de novo')
+    const explicado = entenderErro(falha)
+    rodapeFeedback(false, 'Ainda não', (explicado ? `${explicado}<br><small>O erro original está na Saída, acima.</small>` : esc(falha)) + ajuda, '<button class="btn branco" id="dica-falha">💡 Dica</button>', 'Tentar de novo')
+    $('#saida').scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     $('#principal').onclick = () => { rodapeResponder(it); $('#editor').focus() }
     $('#dica-falha').onclick = () => IA_ATIVA ? pedirDica(it) : abrirTeoria()
   }
@@ -803,8 +879,9 @@ function alternarPrevia(it) {
 
 // ---------- fim da lição ----------
 function renderSemVidas() {
-  const i = L.i
-  prog.emAndamento = null; limparRascunhos(L.licao); salvarProgresso()
+  const i = L.i, revisao = L.licao.revisao
+  if (!revisao) { prog.emAndamento = null; limparRascunhos(L.licao) }
+  salvarProgresso()
   app.innerHTML = `<main class="resultado">
     <div class="trofeu">💔</div>
     <h1 style="color:var(--vermelho-esc)">Acabaram as vidas</h1>
@@ -813,7 +890,7 @@ function renderSemVidas() {
     <button class="btn largo" id="denovo">Tentar de novo</button>
     <button class="link" id="voltar">Voltar para a trilha</button>
   </main>`
-  $('#denovo').onclick = () => iniciar(i)
+  $('#denovo').onclick = () => revisao ? iniciarRevisao() : iniciar(i)
   $('#voltar').onclick = renderHome
   $('#denovo').focus()
 }
@@ -821,9 +898,10 @@ function renderSemVidas() {
 async function concluir() {
   const l = L.licao
   const jaFeita = !!prog.feitas[l.id]
-  const xp = jaFeita ? 5 : (l.final ? 30 : 10) + (L.erros === 0 ? 5 : 0)
-  ganharXP(xp); prog.feitas[l.id] = true; marcarDia()
-  prog.emAndamento = null; limparRascunhos(l); salvarProgresso()
+  const xp = l.revisao || jaFeita ? 5 : (l.final ? 30 : 10) + (L.erros === 0 ? 5 : 0)
+  ganharXP(xp); marcarDia()
+  if (!l.revisao) { prog.feitas[l.id] = true; prog.emAndamento = null; limparRascunhos(l) }
+  salvarProgresso()
   let arquivo = null
   if (L.codigoFinal) {
     try {
@@ -839,8 +917,9 @@ async function concluir() {
   app.innerHTML = `${confete()}
   <main class="resultado">
     <div class="trofeu">${l.final ? '🏆' : '🎉'}</div>
-    <h1>${l.final ? 'Você construiu um Jokenpô!' : 'Lição concluída!'}</h1>
-    <p>${L.erros === 0 ? 'Lição perfeita, sem perder nenhuma vida! +5 XP de bônus.' : `Você aprendeu: ${esc(l.aprende)}.`}</p>
+    <h1>${l.final ? 'Você construiu um Jokenpô!' : l.revisao ? 'Revisão concluída!' : 'Lição concluída!'}</h1>
+    <p>${l.revisao ? (L.erros ? 'O que você errou volta com mais frequência nas próximas revisões.' : 'Tudo certo! Revisar é o que faz o conteúdo ficar na memória.')
+      : L.erros === 0 ? (jaFeita ? 'Lição perfeita de novo!' : 'Lição perfeita, sem perder nenhuma vida! +5 XP de bônus.') : `Você aprendeu: ${esc(l.aprende)}.`}</p>
     <div class="cartoes">
       <div class="cartao" style="--c:var(--ouro)"><small>XP ganho</small><b>⚡ ${xp}</b></div>
       <div class="cartao" style="--c:var(--verde)"><small>Precisão</small><b>🎯 ${precisao}%</b></div>
@@ -851,13 +930,31 @@ async function concluir() {
     <button class="btn largo" id="cont">Continuar</button>
     <button class="btn branco largo" id="denovo">↻ Fazer de novo</button>
   </main>`
-  const i = L.i
+  const i = L.i, revisao = l.revisao
   $('#cont').onclick = renderHome
-  $('#denovo').onclick = () => iniciar(i)
+  $('#denovo').onclick = () => revisao ? iniciarRevisao() : iniciar(i)
+  const bx = $('#baixar'); if (bx) bx.onclick = baixarJogo
   $('#cont').focus()
 }
 
+function baixarJogo() {
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([prog.meuJogo || ''], { type: 'text/x-python' }))
+  a.download = 'meu_jokenpo.py'; a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
 function htmlJogar(arquivo) {
+  if (!LOCAL) return `<div class="caixa-fim">
+    <h3>🎮 Jogue o seu jogo no computador</h3>
+    ${prog.meuJogo ? '<button class="btn azul largo" id="baixar">⬇ Baixar meu_jokenpo.py</button>' : '<p>Passe no projeto final para baixar o seu código.</p>'}
+    <ol>
+      <li>Instale o Python em <code>python.org/downloads</code> (no Windows, marque <b>Add Python to PATH</b>).</li>
+      <li>Abra o terminal na pasta onde o arquivo foi baixado.</li>
+      <li>Rode o comando abaixo e jogue!</li>
+    </ol>
+    <pre class="cod">python meu_jokenpo.py</pre>
+    <p>No celular, cole o código num app como o <b>Pydroid 3</b> (Android) ou no site <code>online-python.com</code>.</p>
+  </div>`
   return `<div class="caixa-fim">
     <h3>🎮 Jogue o seu jogo no terminal</h3>
     <p>${arquivo ? `Seu código foi salvo em <code>${esc(arquivo)}</code>.` : 'Quando você passa no projeto final, seu código é salvo em <code>jokenpo/meu_jokenpo.py</code>.'} Abra um terminal e rode:</p>
@@ -876,17 +973,18 @@ function renderFim() {
     <div class="aprendeu">${LICOES.map(l => `<span>${l.icone} ${esc(l.aprende)}</span>`).join('')}</div>
     ${htmlJogar(null)}
     <div class="caixa-fim">
-      <h3>🚀 Próximos desafios</h3>
+      <h3>🚀 Próximos passos</h3>
       <ol>
-        <li>Melhor de 3: o jogo acaba quando alguém fizer 2 pontos.</li>
-        <li>Mostre emojis: ✊ pedra, ✋ papel, ✌️ tesoura (dica: outro dicionário).</li>
-        <li>Adicione lagarto e Spock. Dica: em <code>vence</code>, o valor vira uma lista e você usa <code>in</code>.</li>
+        <li>Faça a lição <b>🚀 Desafios bônus</b>: emojis, lagarto e Spock e melhor de 3.</li>
+        <li>Use a <b>🧠 Revisão</b> na trilha de vez em quando: ela repete o que você mais errou.</li>
+        <li>Invente uma regra sua (ex.: mostrar o histórico das jogadas numa lista) e teste no seu computador.</li>
       </ol>
     </div>
     <button class="btn largo" id="voltar">Voltar para a trilha</button>
   </main>`
   ligarSom()
   $('#voltar').onclick = renderHome
+  const bx = $('#baixar'); if (bx) bx.onclick = baixarJogo
 }
 
 function confete() {

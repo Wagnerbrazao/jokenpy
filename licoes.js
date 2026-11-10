@@ -90,10 +90,11 @@ print(jogada.strip().lower())`, entrada: '  PEDRA \n' },
       { tipo: 'montar', pergunta: 'Leia a jogada e já deixe em minúsculas',
         certa: ['jogada', '=', 'input("Jogada: ")', '.lower()'], extras: ['print("Jogada: ")', '.upper()'] },
       { tipo: 'codigo', titulo: 'Sua vez',
-        enunciado: 'Leia a jogada com <code>input()</code>, limpe com <code>strip()</code> e <code>lower()</code> e mostre <b>Você jogou</b> seguido da jogada.',
+        enunciado: 'Leia a jogada com <code>input()</code> na variável <code>jogada</code>, limpe com <code>strip()</code> e <code>lower()</code> e mostre <b>Você jogou</b> seguido da jogada.',
         inicial: '',
         entrada: '  PEDRA \n',
         espera: 'Você jogou pedra',
+        teste: `assert jogada == "pedra", f'jogada ficou {jogada!r}: faltou limpar com strip() e lower()'`,
         resposta: `jogada = input("Sua jogada: ")
 jogada = jogada.strip().lower()
 print(f"Você jogou {jogada}")` },
@@ -436,8 +437,10 @@ placar [[0]] 1`, respostas: [['+=']] },
 jogadas = 0
 
 `,
-        entrada: 'pedra\nbanana\npapel\nsair\n',
-        espera: 'Você jogou 2 vezes',
+        casos: [
+          { entrada: 'pedra\nbanana\npapel\nsair\n', espera: 'Você jogou 2 vezes' },
+          { entrada: 'tesoura\nsair\n', espera: 'Você jogou 1 vezes' },
+        ],
         resposta: `opcoes = ["pedra", "papel", "tesoura"]
 jogadas = 0
 
@@ -525,8 +528,10 @@ print(f"Placar: Você {pontos_jogador} x {pontos_computador} Computador")
 `,
         antes: `import random as _r
 _r.choice = lambda seq: "tesoura"`,
-        entrada: 'pedra\npapel\nbanana\npedra\nsair\n',
-        espera: 'Você 2 x 1 Computador',
+        casos: [
+          { entrada: 'pedra\npapel\nbanana\npedra\nsair\n', espera: 'Você 2 x 1 Computador' },
+          { entrada: 'tesoura\nsair\n', espera: 'Você 0 x 0 Computador' },
+        ],
         teste: `assert resultado("pedra", "tesoura") == "vitoria", 'resultado("pedra", "tesoura") deveria devolver "vitoria"'
 assert resultado("papel", "tesoura") == "derrota", 'resultado("papel", "tesoura") deveria devolver "derrota"'
 assert resultado("papel", "papel") == "empate", 'resultado("papel", "papel") deveria devolver "empate"'`,
@@ -569,6 +574,188 @@ while True:
         print("Empate!")
 
 print(f"Placar: Você {pontos_jogador} x {pontos_computador} Computador")
+` },
+    ],
+  },
+  {
+    id: 'desafios', titulo: 'Desafios bônus', icone: '🚀', bonus: true, aprende: 'listas dentro de dicionários e laços com condição',
+    ensino: [
+      { titulo: 'Seu jogo, do seu jeito',
+        texto: `<p>Programador de verdade não para no "funciona": ele <b>muda</b> o programa para fazer coisas novas.</p>
+<p>Aqui você vai ganhar três versões novas do Jokenpô: com emojis, com lagarto e Spock, e uma partida de melhor de 3.</p>` },
+      { titulo: 'Dicionário de emojis',
+        texto: `<p>Dicionário serve para qualquer tradução de um valor para outro. Aqui, de jogada para emoji.</p>
+<p>Junte o emoji e o nome com uma f-string.</p>`,
+        codigo: `emoji = {"pedra": "✊", "papel": "✋", "tesoura": "✌️"}
+jogada = "papel"
+print(f"{emoji[jogada]} {jogada}")` },
+      { titulo: 'O valor pode ser uma lista',
+        texto: `<p>No Jokenpô com lagarto e Spock, cada jogada vence <b>duas</b> outras. Então o valor do dicionário vira uma <b>lista</b>.</p>
+<p>Para saber se venceu, troque <code>==</code> por <code>in</code>: "o computador está na lista de quem eu venço?"</p>`,
+        codigo: `vence = {"pedra": ["tesoura", "lagarto"]}
+print(vence["pedra"])
+print("lagarto" in vence["pedra"])
+print("papel" in vence["pedra"])` },
+      { titulo: 'Laço com condição de parada',
+        texto: `<p>Na melhor de 3, o jogo acaba quando alguém faz 2 pontos. Em vez de <code>while True</code> com <code>break</code>, coloque a regra direto no <code>while</code>.</p>
+<p>Leia assim: "enquanto ninguém chegou a 2 pontos, continue".</p>`,
+        codigo: `pontos_jogador = 0
+pontos_computador = 0
+rodada = 1
+while pontos_jogador < 2 and pontos_computador < 2:
+    print(f"Rodada {rodada}")
+    pontos_jogador += 1
+    rodada += 1
+print(f"Fim: {pontos_jogador} x {pontos_computador}")` },
+    ],
+    exercicios: [
+      { tipo: 'escolha', pergunta: 'Qual é a saída?', codigo: `vence = {"pedra": ["tesoura", "lagarto"]}
+print("lagarto" in vence["pedra"])`,
+        opcoes: ['True', 'False', 'lagarto', 'Dá erro'], certa: 0,
+        explica: '<code>vence["pedra"]</code> é a lista <code>["tesoura", "lagarto"]</code>, e "lagarto" está nela.' },
+      { tipo: 'completar', pergunta: 'Com listas no dicionário, como saber se o jogador venceu?',
+        codigo: `if computador [[0]] vence[jogador]:
+    print("Você venceu!")`, respostas: [['in']],
+        explica: 'Com uma lista, a pergunta não é "é igual?", e sim "está dentro?".' },
+      { tipo: 'escolha', pergunta: 'Quantas vezes "Rodada" aparece?', codigo: `a = 0
+b = 0
+while a < 2 and b < 2:
+    print("Rodada")
+    a += 1`,
+        opcoes: ['2', '1', '3', 'Infinitas'], certa: 0,
+        explica: 'Depois de duas voltas, <code>a</code> vale 2 e <code>a < 2</code> fica False. Com <code>and</code>, basta um lado ser False para parar.' },
+      { tipo: 'codigo', titulo: 'Desafio 1: emojis',
+        enunciado: 'Troque o <code>pass</code> para a função <code>com_emoji</code> devolver o emoji, um espaço e a jogada. Exemplo: <code>com_emoji("papel")</code> devolve <code>"✋ papel"</code>.',
+        inicial: `emoji = {"pedra": "✊", "papel": "✋", "tesoura": "✌️"}
+
+
+def com_emoji(jogada):
+    pass
+
+
+print(com_emoji("pedra"))
+`,
+        espera: '✊ pedra',
+        teste: `assert com_emoji("papel") == "✋ papel", f'com_emoji("papel") devolveu {com_emoji("papel")!r}, e deveria ser "✋ papel"'
+assert com_emoji("tesoura") == "✌️ tesoura", 'com_emoji("tesoura") deveria devolver "✌️ tesoura"'`,
+        resposta: `emoji = {"pedra": "✊", "papel": "✋", "tesoura": "✌️"}
+
+
+def com_emoji(jogada):
+    return f"{emoji[jogada]} {jogada}"
+
+
+print(com_emoji("pedra"))
+` },
+      { titulo: 'Desafio 2: lagarto e Spock', tipo: 'codigo',
+        enunciado: 'Agora cada jogada vence duas outras. Complete <code>resultado</code> para devolver <code>"empate"</code>, <code>"vitoria"</code> ou <code>"derrota"</code> usando <code>in</code>.',
+        inicial: `vence = {
+    "pedra": ["tesoura", "lagarto"],
+    "papel": ["pedra", "spock"],
+    "tesoura": ["papel", "lagarto"],
+    "lagarto": ["spock", "papel"],
+    "spock": ["tesoura", "pedra"],
+}
+
+
+def resultado(jogador, computador):
+    pass
+`,
+        teste: `assert resultado("spock", "spock") == "empate", 'resultado("spock", "spock") deveria devolver "empate"'
+assert resultado("pedra", "lagarto") == "vitoria", 'resultado("pedra", "lagarto") deveria devolver "vitoria"'
+assert resultado("spock", "tesoura") == "vitoria", 'resultado("spock", "tesoura") deveria devolver "vitoria"'
+assert resultado("lagarto", "pedra") == "derrota", 'resultado("lagarto", "pedra") deveria devolver "derrota"'
+assert resultado("papel", "tesoura") == "derrota", 'resultado("papel", "tesoura") deveria devolver "derrota"'`,
+        resposta: `vence = {
+    "pedra": ["tesoura", "lagarto"],
+    "papel": ["pedra", "spock"],
+    "tesoura": ["papel", "lagarto"],
+    "lagarto": ["spock", "papel"],
+    "spock": ["tesoura", "pedra"],
+}
+
+
+def resultado(jogador, computador):
+    if jogador == computador:
+        return "empate"
+    if computador in vence[jogador]:
+        return "vitoria"
+    return "derrota"
+` },
+      { tipo: 'codigo', titulo: 'Desafio 3: melhor de 3',
+        enunciado: 'Troque o <code>while True</code> por um laço que para quando alguém fizer 2 pontos. No fim, mostre <b>Você venceu a partida!</b> ou <b>Computador venceu a partida!</b>. No teste, o computador sempre joga tesoura.',
+        inicial: `import random
+
+opcoes = ["pedra", "papel", "tesoura"]
+${VENCE}
+
+
+def resultado(jogador, computador):
+    if jogador == computador:
+        return "empate"
+    if vence[jogador] == computador:
+        return "vitoria"
+    return "derrota"
+
+
+pontos_jogador = 0
+pontos_computador = 0
+
+while True:  # troque esta condição
+    jogada = input("Sua jogada: ").strip().lower()
+    if jogada not in opcoes:
+        print("Jogada inválida!")
+        continue
+    computador = random.choice(opcoes)
+    r = resultado(jogada, computador)
+    if r == "vitoria":
+        pontos_jogador += 1
+    elif r == "derrota":
+        pontos_computador += 1
+    print(f"Placar: {pontos_jogador} x {pontos_computador}")
+
+# mostre quem venceu a partida
+`,
+        antes: `import random as _r
+_r.choice = lambda seq: "tesoura"`,
+        casos: [
+          { entrada: 'pedra\npedra\n', espera: 'Você venceu a partida!', proibido: ['Computador venceu a partida!'] },
+          { entrada: 'papel\ntesoura\npapel\n', espera: 'Computador venceu a partida!', proibido: ['Você venceu a partida!'] },
+        ],
+        resposta: `import random
+
+opcoes = ["pedra", "papel", "tesoura"]
+${VENCE}
+
+
+def resultado(jogador, computador):
+    if jogador == computador:
+        return "empate"
+    if vence[jogador] == computador:
+        return "vitoria"
+    return "derrota"
+
+
+pontos_jogador = 0
+pontos_computador = 0
+
+while pontos_jogador < 2 and pontos_computador < 2:
+    jogada = input("Sua jogada: ").strip().lower()
+    if jogada not in opcoes:
+        print("Jogada inválida!")
+        continue
+    computador = random.choice(opcoes)
+    r = resultado(jogada, computador)
+    if r == "vitoria":
+        pontos_jogador += 1
+    elif r == "derrota":
+        pontos_computador += 1
+    print(f"Placar: {pontos_jogador} x {pontos_computador}")
+
+if pontos_jogador == 2:
+    print("Você venceu a partida!")
+else:
+    print("Computador venceu a partida!")
 ` },
     ],
   },
