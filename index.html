@@ -22,7 +22,8 @@
 html,body{margin:0}
 body{font-family:'Nunito',system-ui,sans-serif;color:var(--texto);background:var(--fundo);-webkit-font-smoothing:antialiased}
 button{font:inherit;cursor:pointer}
-code,pre,textarea{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace}
+/* sem ligaduras: quem está aprendendo precisa ver == e != como dois caracteres */
+code,pre,textarea,.peca,.teclas button,.lacuna{font-family:'JetBrains Mono',ui-monospace,Consolas,monospace;font-variant-ligatures:none;font-feature-settings:'liga' 0,'calt' 0}
 
 /* botões "gordinhos" com sombra embaixo */
 .btn{--cor:var(--verde);--sombra:var(--verde-esc);border:0;border-radius:14px;padding:13px 24px;font-weight:900;font-size:16px;color:#fff;background:var(--cor);box-shadow:0 4px 0 var(--sombra);transition:filter .1s}

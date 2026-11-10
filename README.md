@@ -5,6 +5,23 @@ a construir um jogo de pedra, papel e tesoura. No fim, você escreve o jogo inte
 
 Feito com **FastAPI** no back-end e **HTML + JavaScript puro** no front-end, sem build.
 
+<p align="center">
+  <img src="docs/trilha.png" width="250" alt="Trilha de lições com XP, sequência de dias e meta diária">
+  <img src="docs/ensino.png" width="250" alt="Cartão de ensino com exemplo de código editável e executável">
+  <img src="docs/erro.png" width="250" alt="Exercício de código com o erro do Python explicado em português">
+</p>
+
+## Destaques técnicos
+
+- **Código do aluno roda de verdade:** cada exercício executa Python num processo separado, com entradas simuladas
+  para o `input()` e testes automáticos (`assert` e vários casos por exercício).
+- **Hospedagem isolada:** em produção, o servidor roda num container Docker sem acesso à internet, somente leitura,
+  sem privilégios e com limites de CPU, memória e processos.
+- **Feito para aprender:** erros do Python explicados em português, revisão que prioriza o que você mais errou,
+  progresso salvo a cada passo e barra de teclas de código no celular.
+- **Sem build no front-end:** HTML, CSS e JavaScript puros, com realce de sintaxe e editor próprios.
+- **Testado de ponta a ponta:** testes com Playwright percorrem o curso inteiro no desktop e no celular.
+
 ## Como funciona cada lição
 
 1. **Ensino:** cartões curtos explicam o conceito com um exemplo que você pode editar e rodar. Dá para voltar, avançar ou **pular a explicação**.
