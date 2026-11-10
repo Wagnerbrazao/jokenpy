@@ -1,0 +1,13 @@
+# segredos: a chave da IA nunca vai para o repositório
+.env
+
+# dados pessoais de quem usa o curso
+progresso.json
+progresso.tmp
+meu_jokenpo.py
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
