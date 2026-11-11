@@ -7,7 +7,7 @@ e uma parte nova do `jokenpo.py` aparece na tela inicial. No fim, o jogo inteiro
 Feito com **FastAPI** no back-end e **HTML + JavaScript puro** no front-end, sem build.
 
 <p align="center">
-  <img src="docs/inicio.png" width="250" alt="Tela inicial com os personagens Pedra, Papel e Tesoura e as lições">
+  <img src="docs/inicio.png" width="250" alt="Tela inicial com as lições e o jokenpo.py sendo escrito">
   <img src="docs/ensino.png" width="250" alt="Explicação com exemplo de código editável e executável">
   <img src="docs/erro.png" width="250" alt="Exercício de código com o erro do Python explicado em português">
 </p>

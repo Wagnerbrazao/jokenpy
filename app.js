@@ -174,38 +174,44 @@ function toast(msg) {
 }
 
 // ---------- personagens: Pedra, Papel e Tesoura ----------
-// Desenhados em SVG, cada um com sua cor. Dão a cor de cada lição e reagem às respostas.
+// Rabiscos de tinta, como os desenhos na margem de um caderno: contorno grosso, cor chapada e
+// sombra dura. Cada um dá a cor de uma parte do curso e reage às respostas.
 const TIPOS_P = ['pedra', 'papel', 'tesoura']
 const NOMES_P = { pedra: 'Pedra', papel: 'Papel', tesoura: 'Tesoura' }
 // a lição usa a cor do personagem da parte do curso em que ela está
 const tipoDaLicao = i => ATOS.find(a => a.ids.includes(LICOES[i]?.id))?.tipo || TIPOS_P[((i % 3) + 3) % 3]
-function rosto(cx, cy, humor, d = 11) {
-  const olho = (x, y) => humor === 'feliz'
-    ? `<path d="M${x - 4.5} ${y + 1.5} Q${x} ${y - 4.5} ${x + 4.5} ${y + 1.5}" stroke="#2B2440" stroke-width="3.2" fill="none" stroke-linecap="round"/>`
-    : `<circle cx="${x}" cy="${y}" r="4.6" fill="#2B2440"/><circle cx="${x + 1.5}" cy="${y - 1.6}" r="1.5" fill="#fff"/>`
-  const boca = humor === 'feliz' ? `<path d="M${cx - 8} ${cy + 9} Q${cx} ${cy + 18} ${cx + 8} ${cy + 9}" fill="#2B2440"/>`
-    : humor === 'pensando' ? `<path d="M${cx - 6} ${cy + 13} Q${cx} ${cy + 10} ${cx + 6} ${cy + 13}" stroke="#2B2440" stroke-width="3" fill="none" stroke-linecap="round"/>`
-    : `<path d="M${cx - 7} ${cy + 10} Q${cx} ${cy + 16} ${cx + 7} ${cy + 10}" stroke="#2B2440" stroke-width="3" fill="none" stroke-linecap="round"/>`
-  const sobrancelha = humor === 'pensando' ? `<path d="M${cx - d - 5} ${cy - 9} L${cx - d + 4} ${cy - 11}" stroke="#2B2440" stroke-width="2.6" stroke-linecap="round"/><path d="M${cx + d - 4} ${cy - 12} L${cx + d + 5} ${cy - 9}" stroke="#2B2440" stroke-width="2.6" stroke-linecap="round"/>` : ''
-  return `${olho(cx - d, cy)}${olho(cx + d, cy)}${sobrancelha}
-    <ellipse cx="${cx - d - 6}" cy="${cy + 8}" rx="5" ry="3" fill="#FF8FA3" opacity=".55"/>
-    <ellipse cx="${cx + d + 6}" cy="${cy + 8}" rx="5" ry="3" fill="#FF8FA3" opacity=".55"/>${boca}`
+const TINTA = '#17171F'
+function rosto(cx, cy, humor, d = 10) {
+  const olho = x => humor === 'feliz'
+    ? `<path d="M${x - 4} ${cy + 1} Q${x} ${cy - 5} ${x + 4} ${cy + 1}" stroke="${TINTA}" stroke-width="3.4" fill="none" stroke-linecap="round"/>`
+    : `<rect x="${x - 2.6}" y="${cy - 4.5}" width="5.2" height="9" rx="2.6" fill="${TINTA}"/>`
+  const boca = humor === 'feliz' ? `<path d="M${cx - 8} ${cy + 9} Q${cx} ${cy + 17} ${cx + 8} ${cy + 9}" stroke="${TINTA}" stroke-width="3.4" fill="none" stroke-linecap="round"/>`
+    : humor === 'pensando' ? `<path d="M${cx - 8} ${cy + 13} q4 -4 8 0 t8 0" stroke="${TINTA}" stroke-width="3.2" fill="none" stroke-linecap="round"/>`
+    : `<path d="M${cx - 6} ${cy + 12} H${cx + 6}" stroke="${TINTA}" stroke-width="3.4" stroke-linecap="round"/>`
+  const sobr = humor === 'pensando' ? `<path d="M${cx - d - 5} ${cy - 10} L${cx - d + 4} ${cy - 7}" stroke="${TINTA}" stroke-width="3" stroke-linecap="round"/><path d="M${cx + d - 4} ${cy - 7} L${cx + d + 5} ${cy - 10}" stroke="${TINTA}" stroke-width="3" stroke-linecap="round"/>` : ''
+  return `${olho(cx - d)}${olho(cx + d)}${sobr}${boca}`
 }
 function personagem(tipo, humor = 'normal', tam = 64, classe = '') {
-  const corpo = {
-    pedra: `<path d="M50 13C73 11 89 27 88 51C87 75 71 89 49 88C26 87 11 73 12 50C13 28 28 14 50 13Z" fill="#FF8A65"/>
-      <path d="M30 28C36 22 44 20 52 21" stroke="#FFC2AD" stroke-width="5" stroke-linecap="round" fill="none"/>
-      <path d="M70 70C66 75 60 78 54 79" stroke="#E86A45" stroke-width="4" stroke-linecap="round" fill="none"/>`,
-    papel: `<path d="M24 10H64L82 28V82C82 87 78 91 73 91H27C22 91 18 87 18 82V16C18 13 21 10 24 10Z" fill="#6C9BFF"/>
-      <path d="M64 10V24C64 26 66 28 68 28H82Z" fill="#B9CFFF"/>
-      <path d="M30 74H58M30 81H48" stroke="#A9C3FF" stroke-width="3.5" stroke-linecap="round"/>`,
-    tesoura: `<circle cx="33" cy="24" r="13" fill="none" stroke="#2FC79E" stroke-width="8"/>
-      <circle cx="67" cy="24" r="13" fill="none" stroke="#2FC79E" stroke-width="8"/>
-      <path d="M26 42C26 38 29 36 33 36H67C71 36 74 38 74 42L62 86C60 91 56 93 50 93C44 93 40 91 38 86Z" fill="#2FC79E"/>
-      <path d="M50 38V50" stroke="#9BEBD3" stroke-width="3" stroke-linecap="round"/>`,
+  const formas = {
+    pedra: `<path d="M48 14C70 10 88 26 87 50C86 74 70 88 47 86C25 85 11 70 13 48C15 27 29 17 48 14Z"/>`,
+    papel: `<path d="M22 11H63L81 29V84C81 87 79 89 76 89H22C19 89 17 87 17 84V16C17 13 19 11 22 11Z"/>`,
+    tesoura: `<path d="M27 44H73L61 86C59 90 55 92 50 92C45 92 41 90 39 86Z"/>`,
+  }
+  const cor = { pedra: '#F07A55', papel: '#7FA6F2', tesoura: '#F2B53E' }[tipo]
+  const sombra = `<g transform="translate(4 4)" fill="${TINTA}">${formas[tipo]}</g>`
+  const extras = {
+    pedra: `<path d="M30 30C35 25 41 23 47 23" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7"/>`,
+    papel: `<path d="M63 11V25C63 27 65 29 67 29H81" fill="#C9DAFB" stroke="${TINTA}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M29 72H58M29 79H47" stroke="${TINTA}" stroke-width="3" stroke-linecap="round" opacity=".35"/>`,
+    tesoura: '',
   }[tipo]
-  const face = { pedra: [50, 50], papel: [50, 46, 10], tesoura: [50, 60, 9] }[tipo]
-  return `<svg class="pers pers-${tipo} ${classe}" viewBox="0 0 100 100" width="${tam}" height="${tam}" role="img" aria-label="${NOMES_P[tipo]}">${corpo}${rosto(face[0], face[1], humor, face[2])}</svg>`
+  const alcas = tipo === 'tesoura'
+    ? `<g fill="none" stroke-linecap="round"><circle cx="34" cy="26" r="13" stroke="${TINTA}" stroke-width="12" transform="translate(4 4)"/><circle cx="66" cy="26" r="13" stroke="${TINTA}" stroke-width="12" transform="translate(4 4)"/>
+        <circle cx="34" cy="26" r="13" stroke="${TINTA}" stroke-width="12"/><circle cx="66" cy="26" r="13" stroke="${TINTA}" stroke-width="12"/>
+        <circle cx="34" cy="26" r="13" stroke="${cor}" stroke-width="5.5"/><circle cx="66" cy="26" r="13" stroke="${cor}" stroke-width="5.5"/></g>` : ''
+  const face = { pedra: [50, 50], papel: [49, 47], tesoura: [50, 61, 9] }[tipo]
+  return `<svg class="pers pers-${tipo} ${classe}" viewBox="0 0 100 100" width="${tam}" height="${tam}" role="img" aria-label="${NOMES_P[tipo]}">
+    ${alcas}${sombra}<g fill="${cor}" stroke="${TINTA}" stroke-width="3.5" stroke-linejoin="round">${formas[tipo]}</g>${extras}${rosto(face[0], face[1], humor, face[2])}</svg>`
 }
 const trio = (humor = 'feliz', tam = 56) => TIPOS_P.map(t => personagem(t, humor, tam)).join('')
 
@@ -213,10 +219,10 @@ const trio = (humor = 'feliz', tam = 56) => TIPOS_P.map(t => personagem(t, humor
 function topo() {
   const feitas = LICOES.filter(l => prog.feitas[l.id]).length
   return `<header class="topo"><div class="topo-in">
-    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 26)}</span>Jokenpy</div>
+    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 24)}</span>joken<b>py</b></div>
     <div class="stats">
-      <span class="stat" title="Lições concluídas">✓ ${feitas}/${LICOES.length}</span>
-      ${sequencia() ? `<span class="stat dias" title="Dias seguidos estudando">☀️ ${sequencia()} ${sequencia() === 1 ? 'dia' : 'dias'}</span>` : ''}
+      <span class="stat" title="Lições concluídas">${feitas}/${LICOES.length} lições</span>
+      ${sequencia() ? `<span class="stat dias" title="Dias seguidos estudando">${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}</span>` : ''}
       <button class="som" id="som" title="Ligar ou desligar o som" aria-label="Som">${prog.som ? '🔊' : '🔇'}</button>
     </div></div></header>`
 }
@@ -275,16 +281,11 @@ function htmlArquivo() {
   const linhas = JOGO
   const prontas = linhas.filter(([id, t]) => t && tem(id)).length, total = linhas.filter(([, t]) => t).length
   const pct = Math.round(100 * prontas / total)
-  return `<section class="seu-jogo">
-    <div class="seu-jogo-topo">
-      <div class="anel" style="--p:${pct}"><span>${pct}%</span></div>
-      <div class="seu-jogo-txt"><b>O seu <code>jokenpo.py</code></b><span>Cada lição concluída escreve uma parte do jogo.</span></div>
-      <button class="btn branco mini" id="ver-codigo" aria-expanded="false">Ver código</button>
-    </div>
-    <div class="arquivo" id="arquivo" hidden>
-      <pre>${blocosArquivo(linhas, tem)}</pre>
-    </div>
-  </section>`
+  return `<aside class="arquivo" aria-label="O seu jogo, montado conforme você conclui as lições">
+    <div class="arquivo-topo">${trio(pct === 100 ? 'feliz' : 'normal', 22)}<span>jokenpo.py</span><b>${pct}% escrito</b></div>
+    <pre>${blocosArquivo(linhas, tem)}</pre>
+    <div class="arquivo-barra"><div style="width:${pct}%"></div></div>
+  </aside>`
 }
 
 // linhas que faltam viram um comentário só por bloco: "# … 4 linhas: Funções, Quem ganhou?"
@@ -315,31 +316,31 @@ function renderHome() {
   app.innerHTML = `${topo()}
   <main class="home">
     <section class="hero">
-      <div class="hero-txt">
-        <span class="kicker">Curso de Python para iniciantes · grátis</span>
-        <h1>Aprenda Python jogando <span class="p1">pedra</span>, <span class="p2">papel</span> e <span class="p3">tesoura</span>.</h1>
-        <p class="sub">Explicações curtas, exercícios corrigidos na hora e dicas quando você travar. No fim, o jogo que você escreveu roda no seu computador.</p>
+      <div>
+        <span class="kicker">Curso prático de Python · ${LICOES.length} lições</span>
+        <h1>Aprenda Python construindo um <em>Jokenpô</em> de verdade.</h1>
+        <p class="sub">Cada lição explica um conceito, você pratica com exercícios corrigidos na hora e o arquivo ao lado ganha mais uma parte do jogo.</p>
         <div class="hero-acoes">
           ${alvo >= 0
-            ? `<button class="btn grande" id="seguir">${andamento ? 'Continuar de onde parei' : feitas ? 'Próxima lição' : 'Começar agora'}</button>`
-            : '<button class="btn grande" id="ver-fim">Ver o meu jogo</button>'}
-          ${feitas ? '<button class="btn branco grande" id="revisar-topo">🧠 Revisar</button>' : ''}
+            ? `<button class="btn grande" id="seguir">${andamento ? 'Continuar' : feitas ? 'Próxima lição' : 'Começar'} →</button>`
+            : '<button class="btn grande" id="ver-fim">Ver o meu jogo →</button>'}
+          ${feitas ? '<button class="btn branco grande" id="revisar-topo">Revisar</button>' : ''}
         </div>
+        <ol class="passos-home">
+          <li><span><b>Entenda</b> o conceito com exemplos que você mesmo roda.</span></li>
+          <li><span><b>Pratique</b> com exercícios corrigidos na hora e dicas passo a passo.</span></li>
+          <li><span><b>Construa</b>: cada lição escreve uma parte do <code>jokenpo.py</code>.</span></li>
+        </ol>
         ${alvo >= 0 ? `<p class="continuar-info">${andamento
-          ? `${LICOES[alvo].icone} <b>${esc(LICOES[alvo].titulo)}</b> · ${andamento.feitos} de ${LICOES[alvo].exercicios.length} exercícios`
-          : `${feitas ? 'Próxima' : 'Primeira'}: ${LICOES[alvo].icone} <b>${esc(LICOES[alvo].titulo)}</b> · ou escolha qualquer lição abaixo`}</p>` : ''}
+          ? `Você parou em <b>${esc(LICOES[alvo].titulo)}</b> (${andamento.feitos} de ${LICOES[alvo].exercicios.length} exercícios).`
+          : `${feitas ? 'Próxima' : 'Primeira'}: <b>${esc(LICOES[alvo].titulo)}</b>. Já sabe isso? Pule para qualquer lição abaixo.`}</p>` : ''}
       </div>
-      <div class="hero-arte" aria-hidden="true">
-        <div class="bolha-fala">print("Bora jogar?")</div>
-        ${personagem('pedra', 'feliz', 132, 'flutua f1')}${personagem('papel', 'normal', 132, 'flutua f2')}${personagem('tesoura', 'feliz', 132, 'flutua f3')}
-      </div>
+      ${htmlArquivo()}
     </section>
-
-    ${htmlArquivo()}
 
     ${atosDoCurso().map((ato, n) => `<section class="ato ato-${ato.tipo}">
       <div class="ato-topo">
-        ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LICOES[i].id]) ? 'feliz' : 'normal', 46)}
+        ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LICOES[i].id]) ? 'feliz' : 'normal', 48)}
         <div><span class="kicker">Parte ${n + 1}</span><h2>${esc(ato.titulo)}</h2></div>
         <span class="ato-cont">${ato.licoes.filter(i => prog.feitas[LICOES[i].id]).length}/${ato.licoes.length}</span>
       </div>
@@ -361,9 +362,9 @@ function renderHome() {
       </ol>
     </section>`).join('')}
 
-    ${feitas ? `<section class="painel revisao">${personagem('papel', 'normal', 54)}<div><b>Revisão rápida</b>
+    ${feitas ? `<section class="painel revisao">${personagem('papel', 'pensando', 54)}<div><b>Revisão rápida</b>
       <span>${TAM_REVISAO} perguntas do que você já estudou, começando pelo que você mais errou.</span></div>
-      <button class="btn" id="revisar">Revisar</button></section>` : ''}
+      <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
     ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim" style="margin-top:22px">🏆 Ver o meu jogo</button>' : ''}
     <button class="link" id="zerar">Apagar meu progresso</button>
   </main>`
@@ -371,10 +372,6 @@ function renderHome() {
   $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
   const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
   for (const id of ['#revisar', '#revisar-topo']) { const b = $(id); if (b) b.onclick = iniciarRevisao }
-  $('#ver-codigo').onclick = e => {
-    const a = $('#arquivo'); a.hidden = !a.hidden
-    e.currentTarget.textContent = a.hidden ? 'Ver código' : 'Esconder'; e.currentTarget.setAttribute('aria-expanded', !a.hidden)
-  }
   $('#zerar').onclick = () => {
     if (!confirm('Apagar todo o progresso (lições, rascunhos e revisão)?')) return
     const som = prog.som; prog = novoProgresso(); prog.som = som; salvarProgresso(); renderHome()
