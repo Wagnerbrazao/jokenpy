@@ -71,7 +71,7 @@ with sync_playwright() as p:
             pg.screenshot(path=f'shot-final{"-m" if MOBILE else ""}.png', full_page=True)
         pg.locator('#cont').click()
     pg.screenshot(path=f'shot-home{"-m" if MOBILE else ""}.png', full_page=True)
-    print('xp', pg.evaluate('prog.xp'), 'feitas', len(pg.evaluate('prog.feitas')))
+    print('lições feitas', len(pg.evaluate('prog.feitas')))
     b.close()
 
 print('\n'.join(erros) or 'SEM ERROS')

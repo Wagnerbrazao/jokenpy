@@ -36,6 +36,11 @@ with sync_playwright() as p:
     checa(pg.evaluate('LOCAL') is False, 'modo hospedado detectado')
     checa(pg.evaluate('TOQUE') is True, 'celular detectado')
 
+    # todas as lições liberadas: a 7ª abre sem ter feito as anteriores
+    pg.locator('.no[data-i="6"]').click()
+    checa(pg.locator('.cartao-licao [data-acao="comecar"]').count() == 1, 'lição avançada liberada')
+    pg.locator('.no[data-i="6"]').click()
+
     # lição 1 pulando a explicação; errar a primeira pergunta
     pg.locator('.no[data-i="0"]').click()
     pg.locator('[data-acao="exercicios"]').click()
@@ -43,14 +48,27 @@ with sync_playwright() as p:
     errada = next(k for k in range(len(it['opcoes'])) if k != it['certa'])
     pg.locator(f'.opcao[data-k="{errada}"]').click(); pg.locator('#principal').click()
     checa(pg.locator('#rodape.errado').count() == 1, 'resposta errada marcada')
-    checa(pg.evaluate('L.vidas') == 4, 'perdeu uma vida')
+    checa(pg.locator('#refazer').count() == 1, 'oferece refazer na hora')
     checa(pg.evaluate(f'prog.fracos["{it["id"]}"]') == 2, 'erro anotado para a revisão')
 
     # recarregar no meio e retomar
     pg.reload(); pg.wait_for_timeout(600)
-    checa(pg.locator('#retomar').count() == 1, 'botão continuar após recarregar')
-    pg.locator('#retomar').click()
-    checa(pg.evaluate('L.vidas') == 4, 'vidas mantidas ao retomar')
+    checa('Continuar' in pg.locator('#seguir').inner_text(), 'botão continuar após recarregar')
+    pg.locator('#seguir').click()
+    checa(pg.evaluate('L.erros') == 1, 'erros mantidos ao retomar')
+    checa(pg.evaluate('L.fila[L.fila.length - 1].id') == it['id'], 'pergunta errada voltou para o fim')
+
+    # dicas progressivas
+    dicas = pg.evaluate('L.fila[0].dicas || []')
+    if dicas:
+        btn = '#btn-dica' if pg.evaluate('L.fila[0].tipo') == 'codigo' else '#btn-dica-q'
+        pg.locator(btn).click()
+        checa(pg.locator('#dicas li').count() == 1, 'primeira dica aparece')
+        if len(dicas) > 1:
+            pg.locator('#mais-dica').click()
+            checa(pg.locator('#dicas li').count() == 2, 'segunda dica aparece')
+
+
 
     # chegar ao exercício de código, respondendo certo o resto
     while pg.evaluate('L.fila[0].tipo') != 'codigo':
@@ -115,7 +133,7 @@ with sync_playwright() as p:
                         usados.add(x.get_attribute('data-id')); x.click(); break
         pg.locator('#principal').click(); pg.locator('#principal').click(); pg.wait_for_timeout(100)
     pg.wait_for_selector('#cont')
-    checa('Revisão concluída' in pg.locator('h1').inner_text(), 'revisão conclui')
+    checa('Revisão feita' in pg.locator('h1').inner_text(), 'revisão conclui')
     checa(pg.evaluate('prog.emAndamento') is None and 'revisao' not in pg.evaluate('prog.feitas'), 'revisão não mexe nas lições')
 
     # tela final hospedada com download

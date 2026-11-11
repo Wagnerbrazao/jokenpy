@@ -13,7 +13,6 @@ const semLacunas = c => (c || '').replace(/\[\[\d+\]\]/g, '____')
 // compara a saída sem ligar para maiúsculas/minúsculas, acentos e espaços extras: "você jogou  Pedra" = "Você jogou pedra"
 const padrao = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ')
 const HEADERS = { 'Content-Type': 'application/json', 'X-Jokenpy': '1' }
-const META_DIARIA = 20
 // rodando no seu computador (localhost) ou hospedado na internet para qualquer pessoa
 const LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname)
 const TOQUE = matchMedia('(pointer: coarse)').matches   // celular/tablet: sem tecla Tab
@@ -73,14 +72,30 @@ const htmlEntender = erro => { const e = entenderErro(erro); return e ? `<div cl
 // Assim você não perde nada se fechar a aba, trocar de navegador ou limpar os dados do site.
 const CHAVE = 'jokenpy-progresso'
 const novoProgresso = () => ({
-  feitas: {}, xp: 0, sequencia: 0, ultimoDia: null, som: true,
+  feitas: {}, sequencia: 0, ultimoDia: null, som: true,
   xpHoje: { dia: null, xp: 0 },
-  emAndamento: null,   // lição aberta: onde parou, vidas, erros
+  emAndamento: null,   // lição aberta: onde parou e quantos erros
   rascunhos: {},       // código que você estava escrevendo, por exercício
   atualizado: 0,
 })
 let prog = carregarLocal()
 if (!prog.atualizado && (prog.xp || Object.keys(prog.feitas).length)) prog.atualizado = 1  // progresso antigo
+migrarProgresso()
+
+// O conteúdo foi reescrito (versão 2): exercícios mudaram de posição, então a lição em andamento,
+// os rascunhos e a lista de erros antigos não valem mais. As lições concluídas continuam.
+function migrarProgresso() {
+  if ((prog.versao || 1) >= 2) return
+  prog.emAndamento = null; prog.rascunhos = {}; prog.fracos = {}; prog.versao = 2
+  gravarLocal()
+}
+// a lição em andamento é guardada pelo id; a posição muda quando entram lições novas
+const indiceAndamento = () => {
+  const a = prog.emAndamento
+  if (!a) return -1
+  const i = LICOES.findIndex(l => l.id === a.id)
+  return i >= 0 ? i : -1
+}
 
 function carregarLocal() {
   try { return { ...novoProgresso(), ...JSON.parse(localStorage.getItem(CHAVE)) } } catch { return novoProgresso() }
@@ -104,7 +119,7 @@ function enviarProgresso() {
 async function sincronizar() {
   try {
     const remoto = await (await fetch('/progresso')).json()
-    if ((remoto.atualizado || 0) > (prog.atualizado || 0)) { prog = { ...novoProgresso(), ...remoto }; gravarLocal(); return true }
+    if ((remoto.atualizado || 0) > (prog.atualizado || 0)) { prog = { ...novoProgresso(), ...remoto }; migrarProgresso(); gravarLocal(); return true }
     if ((prog.atualizado || 0) > (remoto.atualizado || 0)) enviarProgresso()
   } catch {}
   return false
@@ -113,17 +128,10 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 const dia = d => { const x = new Date(); x.setDate(x.getDate() + d); return x.toLocaleDateString('sv') }
 const sequencia = () => prog.ultimoDia === dia(0) || prog.ultimoDia === dia(-1) ? prog.sequencia : 0
-const xpDeHoje = () => prog.xpHoje?.dia === dia(0) ? prog.xpHoje.xp : 0
-const liberada = i => i === 0 || !!prog.feitas[LICOES[i - 1].id]
 function marcarDia() {
   if (prog.ultimoDia === dia(0)) return
   prog.sequencia = prog.ultimoDia === dia(-1) ? prog.sequencia + 1 : 1
   prog.ultimoDia = dia(0)
-}
-function ganharXP(n) {
-  if (prog.xpHoje?.dia !== dia(0)) prog.xpHoje = { dia: dia(0), xp: 0 }
-  prog.xpHoje.xp += n
-  prog.xp += n
 }
 function limparRascunhos(licao) { licao.exercicios.forEach(it => delete prog.rascunhos[it.id]) }
 
@@ -167,11 +175,12 @@ function toast(msg) {
 
 // ---------- tela inicial ----------
 function topo() {
+  const feitas = LICOES.filter(l => prog.feitas[l.id]).length
   return `<header class="topo"><div class="topo-in">
-    <div class="marca">✊ Jokenpy</div>
+    <div class="marca"><span class="maos" aria-hidden="true">✊✋✌️</span>joken<b>py</b></div>
     <div class="stats">
-      <span class="fogo" title="Dias seguidos estudando">🔥 ${sequencia()}</span>
-      <span class="raio" title="XP total">⚡ ${prog.xp}</span>
+      <span class="stat" title="Lições concluídas">${feitas}/${LICOES.length} lições</span>
+      ${sequencia() ? `<span class="stat dias" title="Dias seguidos estudando">${sequencia()} ${sequencia() === 1 ? 'dia' : 'dias'} seguidos</span>` : ''}
       <button class="som" id="som" title="Ligar ou desligar o som" aria-label="Som">${prog.som ? '🔊' : '🔇'}</button>
     </div></div></header>`
 }
@@ -179,95 +188,160 @@ function ligarSom() {
   $('#som').onclick = () => { prog.som = !prog.som; salvarProgresso(); $('#som').textContent = prog.som ? '🔊' : '🔇' }
 }
 
-const X = [0, 58, 86, 58, 0, -58, -86, -58]
+// O jogo que você está construindo: cada trecho acende quando a lição dele é concluída.
+const JOGO = [
+  ['random', 'import random'],
+  ['', ''],
+  ['random', 'opcoes = ["pedra", "papel", "tesoura"]'],
+  ['dict', 'vence = {"pedra": "tesoura", "tesoura": "papel", "papel": "pedra"}'],
+  ['', ''],
+  ['funcao', 'def resultado(jogador, computador):'],
+  ['if', '    if jogador == computador:'],
+  ['if', '        return "empate"'],
+  ['dict', '    if vence[jogador] == computador:'],
+  ['funcao', '        return "vitoria"'],
+  ['funcao', '    return "derrota"'],
+  ['', ''],
+  ['while', 'pontos_jogador = 0'],
+  ['while', 'pontos_computador = 0'],
+  ['while', 'while True:'],
+  ['input', '    jogada = input("Sua jogada: ").strip().lower()'],
+  ['while', '    if jogada == "sair":'],
+  ['while', '        break'],
+  ['while', '    if jogada not in opcoes:'],
+  ['while', '        continue'],
+  ['random', '    computador = random.choice(opcoes)'],
+  ['print', '    print(f"Computador jogou {computador}")'],
+  ['funcao', '    r = resultado(jogada, computador)'],
+  ['if', '    if r == "vitoria":'],
+  ['while', '        pontos_jogador += 1'],
+  ['if', '    elif r == "derrota":'],
+  ['while', '        pontos_computador += 1'],
+  ['', ''],
+  ['print', 'print(f"Placar: Você {pontos_jogador} x {pontos_computador} Computador")'],
+]
+function htmlArquivo() {
+  const tem = id => !LICOES.some(l => l.id === id) || prog.feitas[id]
+  const linhas = JOGO
+  const prontas = linhas.filter(([id, t]) => t && tem(id)).length, total = linhas.filter(([, t]) => t).length
+  const pct = Math.round(100 * prontas / total)
+  return `<aside class="arquivo" aria-label="O seu jogo, montado conforme você conclui as lições">
+    <div class="arquivo-topo"><i></i><i></i><i></i><span>jokenpo.py</span><b>${pct}% pronto</b></div>
+    <pre>${blocosArquivo(linhas, tem)}</pre>
+    <div class="arquivo-barra"><div style="width:${pct}%"></div></div>
+  </aside>`
+}
+
+// linhas que faltam viram um comentário só por bloco: "# … 4 linhas: Funções, Quem ganhou?"
+function blocosArquivo(linhas, tem) {
+  const out = []
+  let grupo = null
+  for (const [id, t] of linhas) {
+    if (t && !tem(id)) {
+      const titulo = LICOES.find(l => l.id === id).titulo
+      if (!grupo) { grupo = { ind: t.match(/^ */)[0], n: 0, licoes: [] }; out.push(grupo) }
+      grupo.n++; if (!grupo.licoes.includes(titulo)) grupo.licoes.push(titulo)
+      continue
+    }
+    grupo = null
+    out.push(t ? `<span class="ln">${realcar(t)}</span>` : '<span class="ln"> </span>')
+  }
+  return out.map(x => typeof x === 'string' ? x
+    : `<span class="ln falta">${x.ind}# … ${x.n} ${x.n === 1 ? 'linha' : 'linhas'} · ${esc(x.licoes.join(', '))}</span>`).join('')
+}
 
 function renderHome() {
   L = null
+  const iAnd = indiceAndamento()
+  const andamento = iAnd >= 0 ? { ...prog.emAndamento, i: iAnd } : null
+  const sugerida = LICOES.findIndex(l => !prog.feitas[l.id] && !l.bonus)
+  const alvo = andamento ? andamento.i : sugerida
   const feitas = LICOES.filter(l => prog.feitas[l.id]).length
-  const andamento = prog.emAndamento && LICOES[prog.emAndamento.i] ? prog.emAndamento : null
-  const proxima = LICOES.findIndex((l, i) => liberada(i) && !prog.feitas[l.id])
-  const destaque = andamento ? andamento.i : proxima
-  const hoje = xpDeHoje()
+  const rotuloAlvo = alvo >= 0 ? `${String(alvo + 1).padStart(2, '0')} · ${esc(LICOES[alvo].titulo)}` : ''
   app.innerHTML = `${topo()}
   <main class="home">
-    <section class="unidade">
+    <section class="hero">
       <div>
-        <small>Unidade 1 · ${feitas} de ${LICOES.length} lições</small>
-        <h1>Construa um Jokenpô em Python</h1>
-        <p>Cada lição ensina uma peça do jogo. No fim, ele roda no seu terminal.</p>
+        <span class="kicker">Curso prático de Python · ${LICOES.length} lições</span>
+        <h1>Aprenda Python construindo um <em>Jokenpô</em> de verdade.</h1>
+        <p class="sub">Cada lição explica um conceito, você pratica com exercícios corrigidos na hora e o jogo ao lado ganha mais uma parte.</p>
+        <div class="hero-acoes">
+          ${alvo >= 0
+            ? `<button class="btn" id="seguir">${andamento ? 'Continuar' : feitas ? 'Próxima lição' : 'Começar do início'} →</button>`
+            : '<button class="btn" id="ver-fim">Ver o meu jogo →</button>'}
+          ${feitas ? `<button class="btn branco" id="revisar-topo">Revisar</button>` : ''}
+        </div>
+        <ol class="passos-home">
+          <li><span><b>Entenda</b> o conceito com exemplos que você mesmo roda.</span></li>
+          <li><span><b>Pratique</b> com exercícios corrigidos na hora e dicas passo a passo.</span></li>
+          <li><span><b>Construa</b>: cada lição libera uma parte do <code>jokenpo.py</code> ao lado.</span></li>
+        </ol>
+        ${alvo >= 0 ? `<p class="continuar-info">${andamento ? `Você parou em <b>${rotuloAlvo}</b> (${andamento.feitos} de ${LICOES[alvo].exercicios.length} exercícios).` : `Próxima sugerida: <b>${rotuloAlvo}</b>. Já sabe isso? Escolha qualquer lição abaixo.`}</p>` : ''}
       </div>
-      <div class="unidade-ico">✊</div>
+      ${htmlArquivo()}
     </section>
-    ${andamento ? htmlRetomar(andamento) : ''}
 
-    <section class="painel meta">
-      <div class="meta-topo"><b>🎯 Meta do dia</b><span>${Math.min(hoje, META_DIARIA)}/${META_DIARIA} XP</span></div>
-      <div class="barra fina ouro"><div style="width:${Math.min(100, 100 * hoje / META_DIARIA)}%"></div></div>
-      <small>${hoje >= META_DIARIA ? 'Meta batida! Volte amanhã para manter a sequência 🔥' : 'Uma lição nova vale 10 XP (15 se for perfeita).'}</small>
-    </section>
-    <div class="trilha">
-      ${LICOES.map((l, i) => {
-        const st = prog.feitas[l.id] ? 'feito' : liberada(i) ? 'livre' : 'bloqueado'
-        return `<div class="no-linha" style="--x:${X[i % X.length]}px">
-          ${i === destaque ? `<div class="balao">${andamento ? 'Continuar' : 'Começar'}</div>` : ''}
-          <button class="no ${st} ${i === destaque ? 'atual' : ''} ${l.final ? 'final' : ''}" data-i="${i}" aria-label="${esc(l.titulo)}">${l.icone}</button>
-          <div class="no-rotulo">${esc(l.titulo)}</div>
-          ${st === 'feito' ? '<div class="no-sub">✓ Concluída</div>' : ''}
-        </div>`
-      }).join('')}
+    <div class="secao-topo">
+      <div><span class="kicker">Sumário</span><h2>Lições</h2></div>
+      <p>Todas liberadas: siga a ordem ou pule para o que quiser.</p>
     </div>
-    ${feitas ? `<section class="painel revisao" style="margin-top:40px"><div><b>🧠 Revisão rápida</b>
-      <span>${TAM_REVISAO} perguntas das lições que você já fez, começando pelas que você mais errou · +5 XP</span></div>
+    <ol class="lista">
+      ${LICOES.map((l, i) => {
+        const feita = !!prog.feitas[l.id], and = andamento?.i === i
+        const tag = and ? `<span class="tag and">${andamento.feitos}/${l.exercicios.length}</span>`
+          : feita ? '<span class="tag ok">✓ feita</span>'
+          : i === sugerida ? '<span class="tag sug">próxima</span>'
+          : l.bonus ? '<span class="tag">bônus</span>' : ''
+        return `<li class="item">
+          <button class="no ${feita ? 'feito' : ''} ${i === sugerida && !andamento ? 'sugerida' : ''} ${l.bonus ? 'bonus' : ''}" data-i="${i}">
+            <span class="num">${String(i + 1).padStart(2, '0')}</span>
+            <span class="ico" aria-hidden="true">${l.icone}</span>
+            <span class="txt"><b>${esc(l.titulo)}</b><small>${esc(l.aprende)}</small></span>
+            ${tag}
+          </button>
+        </li>`
+      }).join('')}
+    </ol>
+    ${feitas ? `<section class="painel revisao"><div><b>🧠 Revisão rápida</b>
+      <span>${TAM_REVISAO} perguntas das lições que você já fez, começando pelas que você mais errou.</span></div>
       <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
-    ${prog.feitas.final ? '<button class="btn largo" id="ver-fim" style="margin-top:36px">🏆 Ver meu jogo</button>' : ''}
-    <button class="link" id="zerar">Recomeçar do zero</button>
+    ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim" style="margin-top:22px">🏆 Ver o meu jogo</button>' : ''}
+    <button class="link" id="zerar">Apagar meu progresso</button>
   </main>`
   ligarSom()
   $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
-  const r = $('#retomar'); if (r) r.onclick = retomar
-  const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
+  const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
+  for (const id of ['#revisar', '#revisar-topo']) { const b = $(id); if (b) b.onclick = iniciarRevisao }
   $('#zerar').onclick = () => {
-    if (!confirm('Apagar todo o progresso (XP, lições e rascunhos)?')) return
+    if (!confirm('Apagar todo o progresso (lições, rascunhos e revisão)?')) return
     const som = prog.som; prog = novoProgresso(); prog.som = som; salvarProgresso(); renderHome()
   }
   const vf = $('#ver-fim'); if (vf) vf.onclick = renderFim
 }
 
-function htmlRetomar(a) {
-  const l = LICOES[a.i]
-  return `<section class="painel retomar">
-    <div><small>Lição em andamento</small><b>${l.icone} ${esc(l.titulo)}</b>
-    <span>${a.feitos} de ${l.exercicios.length} exercícios · ❤️ ${a.vidas}</span></div>
-    <button class="btn" id="retomar">Continuar</button>
-  </section>`
-}
-
-// cartão que abre ao clicar numa lição da trilha
-function fecharCartao() { $('.cartao-licao')?.remove(); $$('.no-linha.aberta').forEach(n => n.classList.remove('aberta')) }
-function alternarCartao(i, linha) {
-  const aberto = linha.classList.contains('aberta')
+// detalhes que abrem ao clicar numa lição do sumário
+function fecharCartao() { $('.cartao-licao')?.remove(); $$('.item.aberta').forEach(n => n.classList.remove('aberta')) }
+function alternarCartao(i, item) {
+  const aberto = item.classList.contains('aberta')
   fecharCartao()
   if (aberto) return
-  const l = LICOES[i], feita = !!prog.feitas[l.id], livre = liberada(i)
-  const and = prog.emAndamento?.i === i ? prog.emAndamento : null
-  let corpo
-  if (!livre) corpo = `<p>🔒 Termine "${esc(LICOES[i - 1].titulo)}" para liberar esta lição.</p>`
-  else if (and) corpo = `<p>Você parou em ${and.feitos} de ${l.exercicios.length} exercícios.</p>
-    <button class="btn largo" data-acao="continuar">Continuar</button>
-    <button class="btn branco largo" data-acao="comecar">Começar do início</button>`
-  else corpo = `<p>Você vai aprender: ${esc(l.aprende)}.</p>
-    <button class="btn largo" data-acao="comecar">${feita ? '↻ Fazer de novo · +5 XP' : `Começar · +${l.final ? 30 : 10} XP`}</button>
-    <button class="btn branco largo" data-acao="exercicios">Pular explicação e ir aos exercícios</button>`
+  const l = LICOES[i], feita = !!prog.feitas[l.id]
+  const and = indiceAndamento() === i ? prog.emAndamento : null
   const c = document.createElement('div')
-  c.className = `cartao-licao ${!livre ? 'bloq' : feita ? 'ouro' : ''}`
-  c.innerHTML = `<small>Lição ${i + 1} de ${LICOES.length}${feita ? ' · concluída ✓' : ''}</small><h3>${esc(l.titulo)}</h3>${corpo}`
+  c.className = 'cartao-licao'
+  c.innerHTML = `<p>${and ? `Você parou em ${and.feitos} de ${l.exercicios.length} exercícios.` : `${l.ensino.length} explicações curtas e ${l.exercicios.length} exercícios. Você vai ver: ${esc(l.aprende)}.`}</p>
+    <div class="acoes">
+      ${and ? '<button class="btn" data-acao="continuar">Continuar</button>' : ''}
+      <button class="btn ${and ? 'branco' : ''}" data-acao="comecar">${and ? 'Começar do início' : feita ? 'Fazer de novo' : 'Começar'}</button>
+      ${and ? '' : '<button class="btn branco" data-acao="exercicios">Ir direto aos exercícios</button>'}
+    </div>`
   c.onclick = e => {
     const acao = e.target.closest('[data-acao]')?.dataset.acao
     if (acao === 'continuar') retomar()
     else if (acao === 'comecar') iniciar(i)
     else if (acao === 'exercicios') iniciar(i, null, true)
   }
-  linha.classList.add('aberta'); linha.append(c)
+  item.classList.add('aberta'); item.append(c)
   c.querySelector('.btn')?.focus({ preventScroll: true })
   c.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 }
@@ -285,15 +359,18 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LICOES[i]) {
   L = {
     i, licao, fila, total: licao.exercicios.length,
     fase: passo == null ? 'exercicios' : 'ensino', passo: passo ?? 0,
-    feitos: salvo?.feitos || 0, erros: salvo?.erros || 0, vidas: salvo?.vidas ?? 5, dicas: salvo?.dicas || 0,
+    feitos: salvo?.feitos || 0, erros: salvo?.erros || 0, dicas: salvo?.dicas || 0,
     inicio: Date.now() - (salvo?.decorrido || 0), codigoFinal: salvo?.codigoFinal || null, estado: 'responder',
   }
   app.innerHTML = `<div class="licao">
     <header class="licao-topo">
-      <button class="fechar" id="fechar" aria-label="Sair (o progresso fica salvo)" title="Sair (o progresso fica salvo)">✕</button>
+      <div class="licao-topo-in">
+        <button class="fechar" id="fechar" aria-label="Voltar ao sumário (o progresso fica salvo)" title="Voltar ao sumário (o progresso fica salvo)">←</button>
+        <div class="licao-nome"><small>${licao.revisao ? 'Revisão' : `Lição ${String(i + 1).padStart(2, '0')}`}</small><b>${licao.icone} ${esc(licao.titulo)}</b></div>
+        <span class="contador" id="contador"></span>
+        <button class="topo-btn" id="teoria" title="Resumo e explicações desta lição">📖 <span>Resumo</span></button>
+      </div>
       <div class="barra" role="progressbar" aria-label="Progresso da lição"><div id="barra"></div></div>
-      <button class="topo-btn" id="teoria" title="Rever a teoria desta lição">📖 <span>Teoria</span></button>
-      <div class="vidas" id="vidas" title="Vidas">❤️ ${L.vidas}</div>
     </header>
     <section class="corpo" id="corpo"></section>
     <footer class="rodape" id="rodape" aria-live="polite"></footer>
@@ -315,19 +392,18 @@ function iniciarRevisao() {
   iniciar(-1, null, true, { id: 'revisao', titulo: 'Revisão', icone: '🧠', aprende: 'revisar o que já viu', revisao: true, ensino: [], exercicios: embaralhar(escolhidos) })
 }
 
-function retomar() { const s = prog.emAndamento; if (s && LICOES[s.i]) iniciar(s.i, s) }
+function retomar() { const i = indiceAndamento(); if (i >= 0) iniciar(i, prog.emAndamento) }
 function sairDaLicao() { salvarAndamento(); toast(L.licao.revisao ? 'Revisão encerrada.' : 'Progresso salvo. Continue quando quiser.'); renderHome() }
 
 // guarda onde você está na lição (chamado a cada passo)
 function salvarAndamento() {
   if (!L || L.licao.revisao) return
-  if (L.vidas <= 0) { prog.emAndamento = null; return salvarProgresso() }
   let fila = L.fila
   if (L.estado === 'feedback' && L.ultimoCerto === true) fila = fila.slice(1)
   else if (L.estado === 'feedback' && L.ultimoCerto === false && fila[0].tipo !== 'codigo') fila = [...fila.slice(1), fila[0]]
   prog.emAndamento = {
-    i: L.i, passo: L.fase === 'ensino' ? L.passo : null, fila: fila.map(it => it.k), feitos: L.feitos, erros: L.erros,
-    vidas: L.vidas, dicas: L.dicas, decorrido: Date.now() - L.inicio, codigoFinal: L.codigoFinal,
+    i: L.i, id: L.licao.id, passo: L.fase === 'ensino' ? L.passo : null, fila: fila.map(it => it.k), feitos: L.feitos, erros: L.erros,
+    dicas: L.dicas, decorrido: Date.now() - L.inicio, codigoFinal: L.codigoFinal,
   }
   salvarProgresso()
 }
@@ -344,29 +420,27 @@ function renderEnsino() {
   Object.assign(L, { estado: 'ensino', sugestao: null })
   $('#barra').parentElement.classList.add('azul')
   $('#barra').style.width = (100 * (n + 1) / cartoes.length) + '%'
+  $('#contador').textContent = `explicação ${n + 1}/${cartoes.length}`
   $('#corpo').innerHTML = `<div class="corpo-in entrar">
     <div class="ensino-topo">
-      <span class="etiqueta">📘 Aprenda · ${n + 1} de ${cartoes.length}</span>
+      <span class="kicker">Conceito ${n + 1} de ${cartoes.length}</span>
       <div class="pontos" aria-hidden="true">${cartoes.map((_, k) => `<i class="${k < n ? 'visto' : k === n ? 'agora' : ''}"></i>`).join('')}</div>
     </div>
-    <div class="dica">
-      <div class="mascote">🐍</div>
-      <div class="bolha">
-        <h2>${esc(c.titulo)}</h2>
-        ${c.texto}
-        ${c.codigo ? htmlExemplo(c) : ''}
-      </div>
-    </div>
+    <article class="pagina">
+      <h2>${esc(c.titulo)}</h2>
+      ${c.texto}
+      ${c.codigo ? htmlExemplo(c) : ''}
+    </article>
   </div>`
   $('#corpo').scrollTop = 0
   const r = $('#rodape'); r.className = 'rodape'
   r.innerHTML = rodapeIn(`<div class="rodape-esq">
-      <button class="btn branco" id="pular-ensino" title="Ir direto para os exercícios">Pular explicação ⏭</button>
+      <button class="btn branco" id="pular-ensino" title="Pular a explicação e ir direto para os exercícios">Pular</button>
     </div>
     <div class="rodape-dir">
-      ${n > 0 ? '<button class="btn branco" id="voltar-ensino" aria-label="Cartão anterior">← Voltar</button>' : ''}
-      <button class="btn" id="principal">${ultimo ? 'Começar exercícios' : 'Continuar'}</button>
-    </div>`)
+      ${n > 0 ? '<button class="btn branco" id="voltar-ensino" aria-label="Explicação anterior">←</button>' : ''}
+      <button class="btn" id="principal">${ultimo ? 'Exercícios →' : 'Próximo →'}</button>
+    </div>`, 'uma-linha')
   $('#principal').onclick = () => ultimo ? irParaExercicios() : (L.passo++, proximo())
   $('#pular-ensino').onclick = irParaExercicios
   const v = $('#voltar-ensino'); if (v) v.onclick = () => { L.passo--; proximo() }
@@ -385,13 +459,13 @@ function irParaExercicios() {
 // exemplo do ensino: dá para editar e rodar quantas vezes quiser
 function htmlExemplo(c) {
   const digita = c.entrada ? c.entrada.replace(/\n$/, '').split('\n').map(v => `"${esc(v)}"`).join(' ⏎ ') : ''
-  return `<div class="rotulo">Exemplo · mude e rode à vontade</div>
+  return `<div class="rotulo">Experimente · mude o código e rode</div>
   ${digita ? `<div class="chips"><span class="chip">⌨️ O exemplo digita: ${digita}</span></div>` : ''}
   <div class="editor mini">
     <div class="editor-topo"><span>exemplo.py</span><button class="recomecar" id="ex-original" title="Voltar ao exemplo original">↺ Original</button></div>
     <textarea id="ex-editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Código do exemplo" rows="${c.codigo.split('\n').length + 1}">${esc(c.codigo)}</textarea>
   </div>
-  <button class="btn azul mini" id="ex-rodar">▶ Rodar exemplo</button>
+  <button class="btn azul mini" id="ex-rodar">▶ Rodar</button>
   <div class="saida" id="ex-saida" hidden><div class="saida-topo">Saída</div><pre id="ex-saida-texto"></pre><div id="ex-entender"></div></div>`
 }
 
@@ -414,23 +488,49 @@ function ligarExemplo(c) {
 
 function renderItem() {
   const it = L.fila[0]
-  Object.assign(L, { estado: 'responder', resp: null, falhas: 0, viuResposta: false, sugestao: null, ultimaExec: null, ultimoCerto: null })
+  Object.assign(L, { estado: 'responder', resp: null, falhas: 0, viuResposta: false, sugestao: null, ultimaExec: null, ultimoCerto: null, dicasVistas: 0 })
   let html = ''
   if (it.tipo === 'escolha') { L.ordem = embaralhar(it.opcoes.map((_, k) => k)); html = htmlEscolha(it) }
   else if (it.tipo === 'completar') html = htmlCompletar(it)
   else if (it.tipo === 'montar') { L.pecas = embaralhar([...it.certa, ...(it.extras || [])]).map((txt, id) => ({ txt, id })); L.montado = []; html = htmlMontar(it) }
   else if (it.tipo === 'codigo') html = htmlCodigo(it)
+  const TIPOS = { escolha: 'Escolha a resposta', completar: 'Complete o código', montar: 'Monte a linha', codigo: 'Escreva o código' }
+  $('#contador').textContent = `${L.feitos}/${L.total}`
   const corpo = $('#corpo')
-  corpo.innerHTML = `<div class="corpo-in entrar">${html}</div>`
+  corpo.innerHTML = `<div class="corpo-in entrar"><span class="kicker">${TIPOS[it.tipo]}</span>${html}
+    <div class="dicas" id="dicas" hidden></div></div>`
   corpo.scrollTop = 0
   rodapeResponder(it)
   ligarItem(it)
   salvarAndamento()
 }
 
+const htmlResumo = l => l.resumo?.length ? `<div class="resumo"><h3>Para guardar</h3><ul>${l.resumo.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''
+
+// dicas do exercício: cada clique revela a próxima, da mais geral à mais específica
+function mostrarDica(it) {
+  const dicas = it.dicas || []
+  if (!dicas.length) { if (IA_ATIVA && it.tipo === 'codigo') pedirDica(it); else abrirTeoria(); return }
+  if (L.dicasVistas < dicas.length) { L.dicasVistas++; L.dicas++; salvarAndamento() }
+  const box = $('#dicas'); box.hidden = false
+  const n = L.dicasVistas, acabou = n >= dicas.length
+  box.innerHTML = `<ol>${dicas.slice(0, n).map((d, k) => `<li class="${k === n - 1 ? 'nova' : ''}"><small>Dica ${k + 1} de ${dicas.length}</small>${d}</li>`).join('')}</ol>
+    <div class="dicas-acoes">
+      ${acabou ? '' : '<button class="btn branco mini" id="mais-dica">Mais uma dica</button>'}
+      ${acabou ? '<button class="btn branco mini" id="dica-resumo">📖 Rever a explicação</button>' : ''}
+      ${IA_ATIVA && it.tipo === 'codigo' ? '<button class="btn branco mini" id="dica-ia">Perguntar à IA sobre o meu código</button>' : ''}
+    </div>`
+  const md = $('#mais-dica'); if (md) md.onclick = () => mostrarDica(it)
+  const dr = $('#dica-resumo'); if (dr) dr.onclick = abrirTeoria
+  const di = $('#dica-ia'); if (di) di.onclick = () => pedirDica(it)
+  for (const id of ['#btn-dica', '#btn-dica-q']) { const b = $(id); if (b) b.textContent = acabou ? '💡 Dicas' : `💡 Dica (${n}/${dicas.length})` }
+  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+}
+
 // a teoria inteira da lição (todos os cartões do ensino), para consultar durante os exercícios
 function htmlTeoria(l) {
-  return `<small class="etiqueta">📖 Teoria · ${esc(l.titulo)}</small>
+  return `<span class="kicker">Resumo · ${esc(l.titulo)}</span>
+  ${htmlResumo(l)}
   ${l.ensino.map((c, k) => `<section class="teoria-cartao">
     <h3>${k + 1}. ${esc(c.titulo)}</h3>
     ${c.texto}
@@ -515,7 +615,7 @@ function ligarItem(it) {
       definirCodigo(it, it.inicial || ''); delete prog.rascunhos[it.id]; salvarProgresso()
       $('#saida').hidden = true; ta.focus()
     }
-    $('#btn-dica').onclick = () => IA_ATIVA ? pedirDica(it) : abrirTeoria()
+    $('#btn-dica').onclick = () => mostrarDica(it)
     const bc = $('#btn-completar'); if (bc) bc.onclick = () => pedirCompletar(it)
     $('#btn-previa').onclick = () => alternarPrevia(it)
   }
@@ -593,24 +693,25 @@ function abrirTeoria() {
 
 // ---------- rodapé: verificar, feedback ----------
 function podeVerificar(sim) { const b = $('#principal'); if (b && L.estado === 'responder') b.disabled = !sim }
-const rodapeIn = html => `<div class="rodape-in">${html}</div>`
+const rodapeIn = (html, classe = '') => `<div class="rodape-in ${classe}">${html}</div>`
 
 function rodapeResponder(it) {
   const r = $('#rodape'); r.className = 'rodape'; L.estado = 'responder'
-  const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição">Pular ⏭</button>'
+  const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição">Pular</button>'
   if (it.tipo === 'codigo') r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="executar">▶ Executar</button></div>
     <button class="btn" id="principal">Verificar</button>`)
-  else r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="btn-dica-q" title="${IA_ATIVA ? 'A Py dá uma pista sem entregar a resposta' : 'Rever a teoria da lição'}">💡 Dica</button></div>
+  else r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="btn-dica-q" title="Uma pista de cada vez, sem entregar a resposta">💡 Dica</button></div>
     <button class="btn" id="principal" disabled>Verificar</button>`)
   $('#principal').onclick = verificar
   $('#pular').onclick = pularExercicio
   const ex = $('#executar'); if (ex) ex.onclick = () => executarLivre(it)
-  const dq = $('#btn-dica-q'); if (dq) dq.onclick = () => IA_ATIVA ? dicaQuestao(it) : abrirTeoria()
+  const dq = $('#btn-dica-q'); if (dq) dq.onclick = () => (it.dicas?.length || !IA_ATIVA) ? mostrarDica(it) : dicaQuestao(it)
+  const n = it.dicas?.length; if (n && L.dicasVistas) for (const id of ['#btn-dica', '#btn-dica-q']) { const b = $(id); if (b) b.textContent = L.dicasVistas >= n ? '💡 Dicas' : `💡 Dica (${L.dicasVistas}/${n})` }
 }
 
 // pular não custa vida: o exercício só vai para o fim da fila
 function pularExercicio() {
-  if (L.fila.length === 1) { toast('É o último exercício. Tente, ou peça uma 💡 dica.'); return }
+  if (L.fila.length === 1) { toast('É o último exercício. Tente, ou abra uma 💡 dica.'); return }
   L.fila.push(L.fila.shift())
   toast('Exercício pulado. Ele volta no fim da lição.')
   proximo()
@@ -618,15 +719,18 @@ function pularExercicio() {
 
 function rodapeFeedback(certo, titulo, detalhe, extras = '', rotulo = 'Continuar') {
   const r = $('#rodape'); r.className = 'rodape ' + (certo ? 'certo' : 'errado')
-  r.innerHTML = rodapeIn(`<div class="fb"><div class="fb-ico">${certo ? '✓' : '✕'}</div>
+  r.innerHTML = rodapeIn(`<div class="fb"><div class="fb-ico">${certo ? '✓' : '✗'}</div>
     <div><h3>${titulo}</h3>${detalhe ? `<p>${detalhe}</p>` : ''}</div></div>
     <div class="fb-acoes">${extras}<button class="btn ${certo ? '' : 'vermelho'}" id="principal">${rotulo}</button></div>`)
   $('#principal').focus({ preventScroll: true })
 }
 
-const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Perfeito!', 'Correto!', 'Boa!']
+const ELOGIOS = ['Correto.', 'Isso mesmo.', 'Certo!', 'Exato.']
 const elogio = () => ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)]
-function atualizarBarra() { const b = $('#barra'); if (b) b.style.width = (100 * L.feitos / L.total) + '%' }
+function atualizarBarra() {
+  const b = $('#barra'); if (b) b.style.width = (100 * L.feitos / L.total) + '%'
+  const c = $('#contador'); if (c && L.fase === 'exercicios') c.textContent = `${L.feitos}/${L.total}`
+}
 
 function respostaAtual(it) {
   if (it.tipo === 'escolha') return L.resp == null ? '' : it.opcoes[L.resp]
@@ -677,15 +781,13 @@ function verificar() {
     rodapeFeedback(true, elogio(), it.explica || '')
     $('#principal').onclick = () => { L.fila.shift(); proximo() }
   } else {
-    somErro(); L.erros++; L.vidas--
-    const v = $('#vidas'); v.textContent = '❤️ ' + L.vidas; v.classList.remove('tremer'); void v.offsetWidth; v.classList.add('tremer')
-    const semVidas = L.vidas <= 0
-    rodapeFeedback(false, 'Resposta certa:', correta + (it.explica ? `<br>${it.explica}` : ''),
+    somErro(); L.erros++
+    rodapeFeedback(false, 'Não foi dessa vez', `A resposta é ${correta}.` + (it.explica ? `<br>${it.explica}` : '') + '<br><small>Ele volta no fim da lição para você tentar de novo.</small>',
       (IA_ATIVA ? '<button class="btn branco" id="explicar">💬 Explicar</button>' : '') +
-      (semVidas ? '' : '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">↻ Tentar de novo</button>'))
+      '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">↻ Refazer agora</button>')
     const ex = $('#explicar'); if (ex) ex.onclick = () => explicarErro(it)
-    const rf = $('#refazer'); if (rf) rf.onclick = () => renderItem()   // mesmo exercício, peças/opções embaralhadas de novo
-    $('#principal').onclick = () => { L.fila.push(L.fila.shift()); semVidas ? renderSemVidas() : proximo() }
+    $('#refazer').onclick = () => renderItem()   // mesmo exercício, peças/opções embaralhadas de novo
+    $('#principal').onclick = () => { L.fila.push(L.fila.shift()); proximo() }
   }
   salvarAndamento()
 }
@@ -747,19 +849,19 @@ async function verificarCodigo(it) {
     $('#editor').readOnly = true
     if (it.final) { L.codigoFinal = codigo; prog.meuJogo = codigo }
     descartarSugestao()
-    rodapeFeedback(true, L.viuResposta ? 'Passou!' : elogio(),
-      L.viuResposta ? 'Agora leia a solução linha por linha e tente refazer sozinho depois.' : 'Seu código passou em todos os testes.',
+    rodapeFeedback(true, L.viuResposta ? 'Passou.' : 'Passou em todos os testes!',
+      L.viuResposta ? 'Agora leia a solução linha por linha e tente refazer sozinho depois.' : 'O seu código faz o que foi pedido.',
       IA_ATIVA ? '<button class="btn branco" id="melhorar">🧠 Como melhorar?</button>' : '')
     const m = $('#melhorar'); if (m) m.onclick = () => pedirRevisao(it)
     $('#principal').onclick = () => { L.fila.shift(); proximo() }
   } else {
     somErro(); L.falhas++
-    const ajuda = L.falhas === 1 ? '<br>Corrija e tente de novo. Aqui você não perde vida.' : '<br>Travou? Peça uma 💡 dica ou use 👀 Ver resposta.'
+    const ajuda = L.falhas === 1 ? '<br>Corrija e verifique de novo: no código você pode tentar quantas vezes quiser.' : '<br>Travou? Abra uma 💡 dica ou use 👀 Ver resposta.'
     const explicado = entenderErro(falha)
-    rodapeFeedback(false, 'Ainda não', (explicado ? `${explicado}<br><small>O erro original está na Saída, acima.</small>` : esc(falha)) + ajuda, '<button class="btn branco" id="dica-falha">💡 Dica</button>', 'Tentar de novo')
+    rodapeFeedback(false, 'Ainda não passou', (explicado ? `${explicado}<br><small>O erro original está na Saída, acima.</small>` : esc(falha)) + ajuda, '<button class="btn branco" id="dica-falha">💡 Dica</button>', 'Tentar de novo')
     $('#saida').scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     $('#principal').onclick = () => { rodapeResponder(it); $('#editor').focus() }
-    $('#dica-falha').onclick = () => IA_ATIVA ? pedirDica(it) : abrirTeoria()
+    $('#dica-falha').onclick = () => { rodapeResponder(it); mostrarDica(it) }
   }
   salvarAndamento()
 }
@@ -878,28 +980,10 @@ function alternarPrevia(it) {
 }
 
 // ---------- fim da lição ----------
-function renderSemVidas() {
-  const i = L.i, revisao = L.licao.revisao
-  if (!revisao) { prog.emAndamento = null; limparRascunhos(L.licao) }
-  salvarProgresso()
-  app.innerHTML = `<main class="resultado">
-    <div class="trofeu">💔</div>
-    <h1 style="color:var(--vermelho-esc)">Acabaram as vidas</h1>
-    <p>Errar faz parte. Releia a teoria com calma e tente de novo.</p>
-    <p></p>
-    <button class="btn largo" id="denovo">Tentar de novo</button>
-    <button class="link" id="voltar">Voltar para a trilha</button>
-  </main>`
-  $('#denovo').onclick = () => revisao ? iniciarRevisao() : iniciar(i)
-  $('#voltar').onclick = renderHome
-  $('#denovo').focus()
-}
-
 async function concluir() {
   const l = L.licao
   const jaFeita = !!prog.feitas[l.id]
-  const xp = l.revisao || jaFeita ? 5 : (l.final ? 30 : 10) + (L.erros === 0 ? 5 : 0)
-  ganharXP(xp); marcarDia()
+  marcarDia()
   if (!l.revisao) { prog.feitas[l.id] = true; prog.emAndamento = null; limparRascunhos(l) }
   salvarProgresso()
   let arquivo = null
@@ -911,30 +995,38 @@ async function concluir() {
   }
   const seg = Math.round((Date.now() - L.inicio) / 1000)
   const tempo = `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`
-  const precisao = Math.round(100 * L.total / (L.total + L.erros))
-  const hoje = xpDeHoje()
+  const primeira = Math.round(100 * L.total / (L.total + L.erros))
+  const i = L.i, revisao = l.revisao
+  const seguinte = revisao ? -1 : LICOES.findIndex((x, k) => k > i && !prog.feitas[x.id])
   somFim()
   app.innerHTML = `${confete()}
   <main class="resultado">
-    <div class="trofeu">${l.final ? '🏆' : '🎉'}</div>
-    <h1>${l.final ? 'Você construiu um Jokenpô!' : l.revisao ? 'Revisão concluída!' : 'Lição concluída!'}</h1>
-    <p>${l.revisao ? (L.erros ? 'O que você errou volta com mais frequência nas próximas revisões.' : 'Tudo certo! Revisar é o que faz o conteúdo ficar na memória.')
-      : L.erros === 0 ? (jaFeita ? 'Lição perfeita de novo!' : 'Lição perfeita, sem perder nenhuma vida! +5 XP de bônus.') : `Você aprendeu: ${esc(l.aprende)}.`}</p>
-    <div class="cartoes">
-      <div class="cartao" style="--c:var(--ouro)"><small>XP ganho</small><b>⚡ ${xp}</b></div>
-      <div class="cartao" style="--c:var(--verde)"><small>Precisão</small><b>🎯 ${precisao}%</b></div>
-      <div class="cartao" style="--c:var(--azul)"><small>Tempo</small><b>⏱ ${tempo}</b></div>
+    <div class="resultado-topo">
+      <div class="trofeu">${l.final ? '🏆' : revisao ? '🧠' : l.icone}</div>
+      <span class="kicker">${revisao ? 'Revisão' : `Lição ${String(i + 1).padStart(2, '0')}`} concluída</span>
+      <h1>${l.final ? 'Você construiu um Jokenpô!' : revisao ? 'Revisão feita' : esc(l.titulo)}</h1>
+      <p>${revisao ? (L.erros ? 'O que você errou volta com mais frequência nas próximas revisões.' : 'Tudo certo. Revisar é o que faz o conteúdo ficar na memória.')
+        : L.erros === 0 ? 'Tudo certo de primeira.' : 'Os exercícios que você errou foram refeitos até sair.'}</p>
     </div>
-    <p class="resumo-meta">🎯 Meta do dia: ${Math.min(hoje, META_DIARIA)}/${META_DIARIA} XP${hoje >= META_DIARIA ? ' ✓' : ''} · 🔥 ${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}${L.dicas ? ` · 💡 ${L.dicas} ${L.dicas === 1 ? 'dica' : 'dicas'}` : ''}</p>
+    <div class="cartoes">
+      <div class="cartao"><small>De primeira</small><b>${primeira}%</b></div>
+      <div class="cartao"><small>Tempo</small><b>${tempo}</b></div>
+      <div class="cartao"><small>Dicas</small><b>${L.dicas}</b></div>
+    </div>
+    ${revisao ? '' : htmlResumo(l)}
     ${l.final ? htmlJogar(arquivo) : ''}
-    <button class="btn largo" id="cont">Continuar</button>
-    <button class="btn branco largo" id="denovo">↻ Fazer de novo</button>
+    ${!revisao && !l.final && !jaFeita ? '<p class="continuar-info" style="text-align:center">Mais uma parte do seu <code>jokenpo.py</code> foi liberada no início.</p>' : ''}
+    <div class="resultado-acoes">
+      ${seguinte >= 0 ? `<button class="btn largo" id="seguinte">Próxima: ${esc(LICOES[seguinte].titulo)} →</button>` : ''}
+      <button class="btn ${seguinte >= 0 ? 'branco' : ''} largo" id="cont">Voltar ao sumário</button>
+      <button class="btn branco largo" id="denovo">↻ Fazer de novo</button>
+    </div>
   </main>`
-  const i = L.i, revisao = l.revisao
   $('#cont').onclick = renderHome
   $('#denovo').onclick = () => revisao ? iniciarRevisao() : iniciar(i)
+  const sg = $('#seguinte'); if (sg) sg.onclick = () => iniciar(seguinte)
   const bx = $('#baixar'); if (bx) bx.onclick = baixarJogo
-  $('#cont').focus()
+  ;($('#seguinte') || $('#cont')).focus()
 }
 
 function baixarJogo() {
@@ -945,7 +1037,7 @@ function baixarJogo() {
 }
 function htmlJogar(arquivo) {
   if (!LOCAL) return `<div class="caixa-fim">
-    <h3>🎮 Jogue o seu jogo no computador</h3>
+    <h3>Jogue o seu jogo no computador</h3>
     ${prog.meuJogo ? '<button class="btn azul largo" id="baixar">⬇ Baixar meu_jokenpo.py</button>' : '<p>Passe no projeto final para baixar o seu código.</p>'}
     <ol>
       <li>Instale o Python em <code>python.org/downloads</code> (no Windows, marque <b>Add Python to PATH</b>).</li>
@@ -956,7 +1048,7 @@ function htmlJogar(arquivo) {
     <p>No celular, cole o código num app como o <b>Pydroid 3</b> (Android) ou no site <code>online-python.com</code>.</p>
   </div>`
   return `<div class="caixa-fim">
-    <h3>🎮 Jogue o seu jogo no terminal</h3>
+    <h3>Jogue o seu jogo no terminal</h3>
     <p>${arquivo ? `Seu código foi salvo em <code>${esc(arquivo)}</code>.` : 'Quando você passa no projeto final, seu código é salvo em <code>jokenpo/meu_jokenpo.py</code>.'} Abra um terminal e rode:</p>
     <pre class="cod">cd jokenpo
 python meu_jokenpo.py</pre>
@@ -967,20 +1059,23 @@ python meu_jokenpo.py</pre>
 function renderFim() {
   app.innerHTML = `${topo()}
   <main class="resultado">
-    <div class="trofeu">🏆</div>
-    <h1>Jokenpô completo!</h1>
-    <p>Tudo isso você já usa em Python:</p>
+    <div class="resultado-topo">
+      <div class="trofeu">🏆</div>
+      <span class="kicker">Projeto concluído</span>
+      <h1>O seu Jokenpô está pronto</h1>
+      <p>Tudo isso você já usa em Python:</p>
+    </div>
     <div class="aprendeu">${LICOES.map(l => `<span>${l.icone} ${esc(l.aprende)}</span>`).join('')}</div>
     ${htmlJogar(null)}
     <div class="caixa-fim">
-      <h3>🚀 Próximos passos</h3>
+      <h3>Próximos passos</h3>
       <ol>
-        <li>Faça a lição <b>🚀 Desafios bônus</b>: emojis, lagarto e Spock e melhor de 3.</li>
-        <li>Use a <b>🧠 Revisão</b> na trilha de vez em quando: ela repete o que você mais errou.</li>
-        <li>Invente uma regra sua (ex.: mostrar o histórico das jogadas numa lista) e teste no seu computador.</li>
+        <li>Faça os <b>Desafios bônus</b>: emojis, lagarto e Spock e melhor de 3.</li>
+        <li>Use a <b>Revisão</b> de vez em quando: ela repete o que você mais errou.</li>
+        <li>Invente uma regra sua (ex.: guardar o histórico das jogadas numa lista) e teste no seu computador.</li>
       </ol>
     </div>
-    <button class="btn largo" id="voltar">Voltar para a trilha</button>
+    <button class="btn largo" id="voltar">Voltar ao sumário</button>
   </main>`
   ligarSom()
   $('#voltar').onclick = renderHome
