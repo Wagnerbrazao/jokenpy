@@ -8,12 +8,19 @@ with open(sys.argv[1], encoding="utf-8") as f:
     dados = json.load(f)
 
 # Mostra o que foi "digitado", para a saída parecer um terminal de verdade.
-_input_original = builtins.input
+# A pergunta e o valor digitado vão entre as marcas \x01 e \x02: o servidor tira as marcas para mostrar
+# a saída e usa só o resto (o que o programa imprimiu) para corrigir.
+INICIO, FIM = "\x01", "\x02"
 
 
 def input_com_eco(prompt=""):
-    valor = _input_original(prompt)
-    print(valor)
+    sys.stdout.write(INICIO + str(prompt))
+    linha = sys.stdin.readline()
+    if not linha:
+        sys.stdout.write(FIM)
+        raise EOFError
+    valor = linha.rstrip("\n")
+    sys.stdout.write(valor + "\n" + FIM)
     return valor
 
 

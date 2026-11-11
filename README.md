@@ -100,7 +100,7 @@ O progresso fica no navegador e numa cópia em `progresso.json`.
 | `_executor.py` | Roda o código do aluno com a entrada do teste e devolve erros legíveis |
 | `jokenpo.py` | A resposta de referência do projeto final |
 | `Dockerfile` | Imagem para hospedar o curso (modo público) |
-| `testes/` | Testes de ponta a ponta com Playwright: percorrem o curso e os caminhos de erro |
+| `testes/` | Validador do conteúdo, 132 soluções de alunos (certas e erradas) e testes de ponta a ponta com Playwright |
 
 Quando você passa no projeto final, o seu código é salvo em `meu_jokenpo.py`. Para jogar: `python meu_jokenpo.py`.
 

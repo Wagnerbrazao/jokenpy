@@ -260,8 +260,8 @@ print(f"Você jogou {jogada}")` },
         inicial: `vitorias = input("Vitórias até agora: ")
 `,
         casos: [
-          { entrada: '3\n', espera: 'Com mais uma, serão 4' },
-          { entrada: '10\n', espera: 'Com mais uma, serão 11' },
+          { entrada: '3\n', espera: 'serão 4' },
+          { entrada: '10\n', espera: 'serão 11' },
         ],
         teste: `assert isinstance(vitorias, int), 'vitorias ainda é texto: converta com int()'`,
         dicas: [
@@ -374,10 +374,11 @@ print("Pedra" in opcoes)`,
         enunciado: 'Importe <code>random</code>, crie a lista <code>opcoes</code> com pedra, papel e tesoura (nessa ordem), sorteie a variável <code>computador</code> e mostre <b>Computador:</b> seguido do sorteado. No teste, o sorteio é fixado para sair <b>papel</b>.',
         inicial: '',
         antes: `import random as _r
-_r.choice = lambda seq: seq[1]`,
+_sorteios = []
+_r.choice = lambda seq: _sorteios.append(seq) or seq[1]`,
         espera: 'Computador: papel',
         teste: `assert opcoes == ["pedra", "papel", "tesoura"], 'opcoes deve ser ["pedra", "papel", "tesoura"]'
-assert computador == "papel", "sorteie computador com random.choice(opcoes)"`,
+assert computador == "papel" and _sorteios, "sorteie computador com random.choice(opcoes)"`,
         dicas: [
           `São quatro linhas: o <code>import</code>, a lista, o sorteio e o <code>print</code>.`,
           `A lista vai entre <code>[ ]</code>, com cada jogada entre aspas e vírgulas no meio. O sorteio é <code>random.choice</code> recebendo a lista.`,
@@ -533,7 +534,7 @@ else:
         ],
         explica: 'O Python lê <code>(jogada == "pedra") or ("papel")</code>. A primeira dá False, mas <code>"papel"</code> sozinho conta como verdadeiro, então o if sempre passa. O certo é <code>jogada == "pedra" or jogada == "papel"</code>.' },
       { tipo: 'montar', pergunta: 'Monte a linha que testa se deu empate',
-        certa: ['if', 'jogador', '==', 'computador', ':'], extras: ['=', 'else'],
+        certa: ['if', 'jogador ==', 'computador', ':'], extras: ['jogador =', 'else'],
         dicas: [
           `A linha começa com a palavra da decisão e termina com o sinal que abre o bloco.`,
           `Entre as duas variáveis vai o sinal que <b>compara</b>, não o que guarda.`,
@@ -547,9 +548,9 @@ computador = input("Computador: ")
 
 `,
         casos: [
-          { entrada: 'pedra\npedra\n', espera: 'Empate!', proibido: ['Não foi empate'] },
+          { entrada: 'pedra\npedra\n', espera: 'Empate!', proibido: ['Não foi'] },
           { entrada: 'pedra\npapel\n', espera: 'Não foi empate', proibido: ['Empate!'] },
-          { entrada: 'tesoura\ntesoura\n', espera: 'Empate!', proibido: ['Não foi empate'] },
+          { entrada: 'tesoura\ntesoura\n', espera: 'Empate!', proibido: ['Não foi'] },
         ],
         dicas: [
           `São dois caminhos e só um deve rodar: <code>if</code> e <code>else</code>.`,
@@ -690,11 +691,11 @@ else:
         ],
         explica: '<code>vence["papel"]</code> é "pedra", diferente de "papel", então cai no <code>else</code>. "Empate!" nem existe no código: é por isso que o empate deve ser testado primeiro.' },
       { tipo: 'montar', pergunta: 'Monte o <code>if</code> que verifica se o jogador venceu',
-        certa: ['if', 'vence[jogador]', '==', 'computador', ':'], extras: ['=', 'vence[computador]'],
+        certa: ['if', 'vence[jogador] ==', 'computador', ':'], extras: ['vence[jogador] =', 'vence[computador] =='],
         dicas: [
           `O jogador vence quando a jogada que <b>ele</b> vence é a do computador.`,
           `A busca no dicionário usa a jogada do jogador como chave. Depois compare com <code>==</code>.`,
-          `<code>if</code>, <code>vence[jogador]</code>, o sinal de comparar, <code>computador</code> e os dois-pontos.`,
+          `<code>if</code>, a peça <code>vence[jogador]</code> com o sinal de comparar, <code>computador</code> e os dois-pontos.`,
         ],
         explica: '<code>vence[jogador]</code> é quem o jogador vence. Se for a jogada do computador, ele ganhou. <code>vence[computador]</code> testaria o contrário.' },
       { tipo: 'codigo', titulo: 'Quem vence quem',
@@ -704,9 +705,9 @@ jogada = input("Jogada: ")
 
 `,
         casos: [
-          { entrada: 'pedra\n', espera: 'pedra vence tesoura' },
-          { entrada: 'papel\n', espera: 'papel vence pedra' },
-          { entrada: 'tesoura\n', espera: 'tesoura vence papel' },
+          { entrada: 'pedra\n', espera: 'pedra vence tesoura', proibido: ['papel vence', 'tesoura vence'] },
+          { entrada: 'papel\n', espera: 'papel vence pedra', proibido: ['pedra vence', 'tesoura vence'] },
+          { entrada: 'tesoura\n', espera: 'tesoura vence papel', proibido: ['pedra vence', 'papel vence'] },
         ],
         dicas: [
           `O dicionário já sabe a resposta: basta buscar com a jogada como chave.`,
@@ -1030,7 +1031,7 @@ print("Fim")`,
         ],
         explica: 'Primeira volta: mostra pedra. Segunda: lê "sair" e o <code>break</code> encerra o laço. O "papel" nunca chega a ser lido.' },
       { tipo: 'completar', pergunta: 'Some 1 ponto ao placar', codigo: `placar = 0
-placar [[0]] 1`, respostas: [['+=']],
+placar [[0]] 1`, respostas: [['+=', '= placar +']],
         dicas: [
           `Existe um atalho para <code>placar = placar + 1</code>.`,
           `São dois caracteres: o sinal da soma e o sinal de guardar, juntos.`,
@@ -1192,7 +1193,7 @@ print(historico)`,
         codigo: `vitorias = 0
 for r [[0]] resultados:
     if r [[1]] "vitoria":
-        vitorias [[2]] 1`, respostas: [['in'], ['=='], ['+=']],
+        vitorias [[2]] 1`, respostas: [['in'], ['=='], ['+=', '= vitorias +']],
         dicas: [
           `Três peças: a que liga a variável à lista no <code>for</code>, a que compara e a que soma no contador.`,
           `O <code>for</code> usa a mesma palavra do "está na lista?". A comparação é dupla. O contador usa o atalho de somar.`,
@@ -1389,13 +1390,15 @@ jogada = input("Sua jogada: ").strip().lower()
 # sorteie, mostre a jogada do computador e anuncie o resultado
 `,
         antes: `import random as _r
-_r.choice = lambda seq: "tesoura"`,
+_sorteios = []
+_r.choice = lambda seq: _sorteios.append(seq) or "tesoura"`,
         casos: [
           { entrada: 'pedra\n', espera: 'Você venceu!', proibido: ['Computador venceu!', 'Empate!'] },
           { entrada: 'papel\n', espera: 'Computador venceu!', proibido: ['Você venceu!', 'Empate!'] },
           { entrada: 'Tesoura\n', espera: 'Empate!', proibido: ['Você venceu!', 'Computador venceu!'] },
+          { entrada: 'pedra\n', espera: 'tesoura' },
         ],
-        teste: `assert computador == "tesoura", "sorteie computador com random.choice(opcoes)"`,
+        teste: `assert computador == "tesoura" and _sorteios, "sorteie computador com random.choice(opcoes)"`,
         dicas: [
           `Três passos: sortear, mostrar, e decidir a mensagem pelo que <code>resultado()</code> devolve.`,
           `Guarde <code>r = resultado(jogada, computador)</code> e compare <code>r</code> com <code>"vitoria"</code> e <code>"derrota"</code> num <code>if</code>/<code>elif</code>/<code>else</code>.`,
@@ -1448,7 +1451,8 @@ while True:
 print(f"Placar: Você {pontos_jogador} x {pontos_computador} Computador")
 `,
         antes: `import random as _r
-_r.choice = lambda seq: "tesoura"`,
+_sorteios = []
+_r.choice = lambda seq: _sorteios.append(seq) or "tesoura"`,
         casos: [
           { entrada: 'pedra\npapel\nbanana\npedra\nsair\n', espera: 'Você 2 x 1 Computador' },
           { entrada: 'tesoura\nsair\n', espera: 'Você 0 x 0 Computador' },
@@ -1457,7 +1461,8 @@ _r.choice = lambda seq: "tesoura"`,
         teste: `assert resultado("pedra", "tesoura") == "vitoria", 'resultado("pedra", "tesoura") deveria devolver "vitoria"'
 assert resultado("papel", "tesoura") == "derrota", 'resultado("papel", "tesoura") deveria devolver "derrota"'
 assert resultado("papel", "papel") == "empate", 'resultado("papel", "papel") deveria devolver "empate"'
-assert resultado("tesoura", "papel") == "vitoria", 'resultado("tesoura", "papel") deveria devolver "vitoria"'`,
+assert resultado("tesoura", "papel") == "vitoria", 'resultado("tesoura", "papel") deveria devolver "vitoria"'
+assert _sorteios, "sorteie a jogada do computador com random.choice(opcoes) a cada rodada"`,
         dicas: [
           `Comece pela função: é a mesma da lição de funções. Depois siga os comentários 1 a 4, rodando a cada passo.`,
           `Passos 1 e 2 são um <code>if</code> com <code>break</code> e outro com <code>not in</code> e <code>continue</code>. Os passos 3 e 4 são o exercício anterior, mais um <code>+= 1</code> no contador de quem venceu.`,
@@ -1568,11 +1573,11 @@ while a < 2 and b < 2:
         ],
         explica: 'Depois de duas voltas, <code>a</code> vale 2 e <code>a &lt; 2</code> fica False. Com <code>and</code>, basta um lado ser False para parar. Não é infinito porque <code>a</code> cresce.' },
       { tipo: 'montar', pergunta: 'Monte o laço da melhor de 3',
-        certa: ['while', 'pontos_jogador < 2', 'and', 'pontos_computador < 2', ':'], extras: ['or', 'if'],
+        certa: ['while', 'pontos_jogador < 2 and', 'pontos_computador < 2', ':'], extras: ['pontos_jogador < 2 or', 'if'],
         dicas: [
           `O laço continua enquanto <b>ninguém</b> chegou a 2 pontos.`,
           `As duas condições precisam valer ao mesmo tempo para continuar. Qual palavra exige isso?`,
-          `<code>while</code>, a condição do jogador, <code>and</code>, a do computador e os dois-pontos.`,
+          `<code>while</code>, a condição do jogador junto com o <code>and</code>, a do computador e os dois-pontos.`,
         ],
         explica: 'Com <code>and</code>, o laço para assim que um dos dois chega a 2. Com <code>or</code>, só pararia quando os <b>dois</b> chegassem a 2.' },
       { tipo: 'codigo', titulo: 'Desafio 1: emojis',
@@ -1675,12 +1680,14 @@ while True:  # troque esta condição
 # mostre quem venceu a partida
 `,
         antes: `import random as _r
-_r.choice = lambda seq: "tesoura"`,
+_sorteios = []
+_r.choice = lambda seq: _sorteios.append(seq) or "tesoura"`,
         casos: [
           { entrada: 'pedra\npedra\n', espera: 'Você venceu a partida!', proibido: ['Computador venceu a partida!'] },
           { entrada: 'papel\ntesoura\npapel\n', espera: 'Computador venceu a partida!', proibido: ['Você venceu a partida!'] },
           { entrada: 'pedra\nbanana\npapel\npedra\n', espera: 'Você venceu a partida!', proibido: ['Computador venceu a partida!'] },
         ],
+        teste: `assert _sorteios, "mantenha o sorteio com random.choice(opcoes)"`,
         dicas: [
           `Duas mudanças: a condição do <code>while</code> e um <code>if</code>/<code>else</code> depois do laço.`,
           `O laço continua enquanto os dois têm menos de 2 pontos. Depois dele, quem tiver 2 pontos venceu.`,

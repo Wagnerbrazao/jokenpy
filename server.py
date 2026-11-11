@@ -102,6 +102,16 @@ def gravar_progresso(dados: dict = Body(...), x_jokenpy: str | None = Header(def
     return {"ok": True}
 
 
+MARCA_INPUT = re.compile("\x01.*?\x02", re.S)
+
+
+def separar_saida(texto: str):
+    """Devolve (saída para mostrar, saída só com o que o programa imprimiu)."""
+    limpa = MARCA_INPUT.sub("", texto)
+    limpa = re.sub("\x01.*", "", limpa, flags=re.S)  # input() que não terminou (EOF ou tempo esgotado)
+    return texto.replace("\x01", "").replace("\x02", ""), limpa
+
+
 @app.post("/executar")
 def executar(dados: Execucao, x_jokenpy: str | None = Header(default=None)):
     checar_origem(x_jokenpy)
@@ -115,10 +125,12 @@ def executar(dados: Execucao, x_jokenpy: str | None = Header(default=None)):
                 text=True, encoding="utf-8", timeout=3, cwd=pasta,
             )
         except subprocess.TimeoutExpired as e:
-            saida = (e.stdout or b"").decode("utf-8", "replace")[-3000:]
-            return {"ok": False, "saida": saida,
+            bruto = e.stdout or b""
+            saida, limpa = separar_saida(bruto.decode("utf-8", "replace") if isinstance(bruto, bytes) else bruto)
+            return {"ok": False, "saida": saida[-3000:], "saida_limpa": limpa[-3000:],
                     "erro": "Tempo esgotado (3 s). Seu código entrou num loop infinito?"}
-    return {"ok": r.returncode == 0, "saida": r.stdout[-10000:], "erro": r.stderr.strip()}
+    saida, limpa = separar_saida(r.stdout)
+    return {"ok": r.returncode == 0, "saida": saida[-10000:], "saida_limpa": limpa[-10000:], "erro": r.stderr.strip()}
 
 
 class PedidoIA(BaseModel):

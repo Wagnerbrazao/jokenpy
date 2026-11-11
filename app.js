@@ -10,13 +10,28 @@ const embaralhar = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { c
 const norm = s => s.replace(/'/g, '"').replace(/\s+/g, '')
 const textoDe = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent }
 const semLacunas = c => (c || '').replace(/\[\[\d+\]\]/g, '____')
-// compara a saída sem ligar para maiúsculas/minúsculas, acentos, pontuação (! ? .) e espaços extras:
-// "você jogou  Pedra!" = "Você jogou pedra"
-const padrao = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[!?.¡¿]/g, '').replace(/\s+/g, ' ')
-// texto proibido só conta fora do texto esperado: "Não foi empate!" contém "empate!", mas não é um "Empate!"
+// compara a saída sem ligar para maiúsculas/minúsculas, acentos, pontuação e espaços extras:
+// "você jogou  Pedra!" = "Você jogou pedra" e "aceita:pedra" = "Aceita, pedra" = "aceita pedra"
+const padrao = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[!?.¡¿]/g, '')
+  .replace(/[,:;]/g, ' ').replace(/\s+/g, ' ')
+// a linha da saída mais parecida com o texto esperado, para mostrar a diferença ao aluno
+function linhaParecida(saida, espera) {
+  const alvo = new Set(padrao(espera).split(/[\s:]+/).filter(Boolean))
+  let melhor = '', nota = 0
+  for (const linha of (saida || '').split('\n')) {
+    const n = padrao(linha).split(/[\s:]+/).filter(p => alvo.has(p)).length
+    if (n > nota) { nota = n; melhor = linha.trim() }
+  }
+  return nota ? melhor : ''
+}
+// texto proibido dentro do texto esperado só conta fora dele: "Não foi empate!" contém "empate!",
+// mas não é um "Empate!". Se o proibido não cabe no esperado, procura na saída inteira.
 const temProibido = (saida, espera, proibido) => {
-  const resto = espera ? saida.split(padrao(espera)).join(' | ') : saida
-  return (proibido || []).find(p => resto.includes(padrao(p)))
+  const e = padrao(espera || '')
+  return (proibido || []).find(p => {
+    const q = padrao(p)
+    return (e && e.includes(q) ? saida.split(e).join(' | ') : saida).includes(q)
+  })
 }
 const HEADERS = { 'Content-Type': 'application/json', 'X-Jokenpy': '1' }
 // rodando no seu computador (localhost) ou hospedado na internet para qualquer pessoa
@@ -904,9 +919,15 @@ async function verificarCodigo(it) {
     L.ultimaExec = r
     mostrarSaida(r, casos.length > 1 ? `Saída · teste ${n + 1} de ${casos.length}` : 'Saída')
     const quando = casos.length > 1 ? ` quando digitam ${c.entrada.replace(/\n$/, '').split('\n').map(v => `"${v}"`).join(' e ')}` : ''
-    const saida = padrao(r.saida)
+    // corrige só o que o programa imprimiu: a pergunta do input() e o valor digitado ficam de fora
+    const saida = padrao(r.saida_limpa ?? r.saida)
     if (!r.ok) falha = r.erro
-    else if (c.espera && !saida.includes(padrao(c.espera))) falha = `A saída deveria mostrar "${c.espera}"${quando}. Compare com a sua saída acima: o texto precisa ser igual (maiúsculas, acentos e pontuação não importam).`
+    else if (c.espera && !saida.includes(padrao(c.espera))) {
+      const parecida = linhaParecida(r.saida_limpa ?? r.saida, c.espera)
+      falha = parecida
+        ? `A saída deveria mostrar "${c.espera}"${quando}, mas o seu programa mostrou "${parecida}". Compare letra por letra, incluindo os espaços (maiúsculas, acentos e pontuação não importam).`
+        : `A saída deveria mostrar "${c.espera}"${quando}. Compare com a sua saída acima (maiúsculas, acentos e pontuação não importam).`
+    }
     else { const p = temProibido(saida, c.espera, c.proibido); if (p) falha = `Não deveria aparecer "${p}"${quando}.` }
     if (falha) break
   }
