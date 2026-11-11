@@ -50,13 +50,14 @@ with sync_playwright() as p:
     checa(pg.locator('#rodape.errado').count() == 1, 'resposta errada marcada')
     checa(pg.locator('#refazer').count() == 1, 'oferece refazer na hora')
     checa(pg.evaluate(f'prog.fracos["{it["id"]}"]') == 2, 'erro anotado para a revisão')
+    errada_id = it['id']
 
     # recarregar no meio e retomar
     pg.reload(); pg.wait_for_timeout(600)
     checa('Continuar' in pg.locator('#seguir').inner_text(), 'botão continuar após recarregar')
     pg.locator('#seguir').click()
     checa(pg.evaluate('L.erros') == 1, 'erros mantidos ao retomar')
-    checa(pg.evaluate('L.fila[L.fila.length - 1].id') == it['id'], 'pergunta errada voltou para o fim')
+    checa(pg.evaluate('L.fila[L.fila.length - 1].id') == errada_id, 'pergunta errada voltou para o fim')
 
     # dicas progressivas
     dicas = pg.evaluate('L.fila[0].dicas || []')
@@ -116,8 +117,7 @@ with sync_playwright() as p:
     checa(pg.locator('#revisar').count() == 1, 'revisão aparece na trilha')
     pg.screenshot(path='shot-home-revisao-m.png')
     pg.locator('#revisar').click()
-    primeira = pg.evaluate('L.fila[0].id')
-    checa(primeira == it['id'] or pg.evaluate('L.fila.map(x => x.id)').count(it['id']) == 1, 'revisão inclui a pergunta errada')
+    checa(errada_id in pg.evaluate('L.fila.map(x => x.id)'), 'revisão inclui a pergunta errada')
     pg.locator('#teoria').click()
     checa(pg.locator('.modal').count() == 1, 'teoria abre na revisão'); pg.keyboard.press('Escape')
     while pg.evaluate('L && L.fila.length') :
