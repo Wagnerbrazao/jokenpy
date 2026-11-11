@@ -10,8 +10,14 @@ const embaralhar = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { c
 const norm = s => s.replace(/'/g, '"').replace(/\s+/g, '')
 const textoDe = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent }
 const semLacunas = c => (c || '').replace(/\[\[\d+\]\]/g, '____')
-// compara a saída sem ligar para maiúsculas/minúsculas, acentos e espaços extras: "você jogou  Pedra" = "Você jogou pedra"
-const padrao = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ')
+// compara a saída sem ligar para maiúsculas/minúsculas, acentos, pontuação (! ? .) e espaços extras:
+// "você jogou  Pedra!" = "Você jogou pedra"
+const padrao = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[!?.¡¿]/g, '').replace(/\s+/g, ' ')
+// texto proibido só conta fora do texto esperado: "Não foi empate!" contém "empate!", mas não é um "Empate!"
+const temProibido = (saida, espera, proibido) => {
+  const resto = espera ? saida.split(padrao(espera)).join(' | ') : saida
+  return (proibido || []).find(p => resto.includes(padrao(p)))
+}
 const HEADERS = { 'Content-Type': 'application/json', 'X-Jokenpy': '1' }
 // rodando no seu computador (localhost) ou hospedado na internet para qualquer pessoa
 const LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname)
@@ -900,8 +906,8 @@ async function verificarCodigo(it) {
     const quando = casos.length > 1 ? ` quando digitam ${c.entrada.replace(/\n$/, '').split('\n').map(v => `"${v}"`).join(' e ')}` : ''
     const saida = padrao(r.saida)
     if (!r.ok) falha = r.erro
-    else if (c.espera && !saida.includes(padrao(c.espera))) falha = `A saída deveria mostrar "${c.espera}"${quando}. Compare com a sua saída acima: o texto precisa ser igual (maiúsculas e acentos não importam).`
-    else { const p = (c.proibido || []).find(p => saida.includes(padrao(p))); if (p) falha = `Não deveria aparecer "${p}"${quando}.` }
+    else if (c.espera && !saida.includes(padrao(c.espera))) falha = `A saída deveria mostrar "${c.espera}"${quando}. Compare com a sua saída acima: o texto precisa ser igual (maiúsculas, acentos e pontuação não importam).`
+    else { const p = temProibido(saida, c.espera, c.proibido); if (p) falha = `Não deveria aparecer "${p}"${quando}.` }
     if (falha) break
   }
 

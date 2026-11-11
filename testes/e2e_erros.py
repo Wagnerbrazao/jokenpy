@@ -35,6 +35,10 @@ with sync_playwright() as p:
     pg.goto(URL); pg.wait_for_timeout(600)
     checa(pg.evaluate('LOCAL') is False, 'modo hospedado detectado')
     checa(pg.evaluate('TOQUE') is True, 'celular detectado')
+    # comparação da saída: "não foi empate!" não conta como o proibido "Empate!"
+    checa(pg.evaluate("""!temProibido(padrao('Você: pedra\\nnão foi empate!'), 'Não foi empate', ['Empate!'])"""), 'proibido não pega o texto esperado')
+    checa(pg.evaluate("""!!temProibido(padrao('Empate!\\nNão foi empate'), 'Não foi empate', ['Empate!'])"""), 'proibido ainda pega resposta errada')
+    checa(pg.evaluate("""padrao('Empate') === padrao('empate!')"""), 'pontuação no fim é ignorada')
 
     # todas as lições liberadas: a 7ª abre sem ter feito as anteriores
     pg.locator('.no[data-i="6"]').click()
