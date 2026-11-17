@@ -116,7 +116,9 @@ const htmlEntender = erro => { const e = entenderErro(erro); return e ? `<div cl
 // Fica salvo no navegador (localStorage), um registro por trilha. A trilha de Python também guarda uma cópia no servidor local.
 // Assim você não perde nada se fechar a aba, trocar de navegador ou limpar os dados do site.
 let CHAVE = CURSO.chave
+const META_DIARIA = 20
 const novoProgresso = () => ({
+  xp: 0, xpHoje: { dia: null, xp: 0 }, estrelas: {},
   feitas: {}, sequencia: 0, ultimoDia: null, som: true,
   xpHoje: { dia: null, xp: 0 },
   emAndamento: null,   // lição aberta: onde parou e quantos erros
@@ -180,6 +182,15 @@ function marcarDia() {
   prog.sequencia = prog.ultimoDia === dia(-1) ? prog.sequencia + 1 : 1
   prog.ultimoDia = dia(0)
 }
+const xpDeHoje = () => prog.xpHoje?.dia === dia(0) ? prog.xpHoje.xp : 0
+function ganharXP(n) {
+  if (prog.xpHoje?.dia !== dia(0)) prog.xpHoje = { dia: dia(0), xp: 0 }
+  prog.xpHoje.xp += n
+  prog.xp = (prog.xp || 0) + n
+}
+// 3 estrelas sem erro, 2 com até 2 erros, 1 para quem concluiu
+const estrelasPor = erros => erros === 0 ? 3 : erros <= 2 ? 2 : 1
+const htmlEstrelas = n => `<span class="estrelas" aria-label="${n} de 3 estrelas">${[1, 2, 3].map(k => `<i class="${k <= n ? 'acesa' : ''}">★</i>`).join('')}</span>`
 function limparRascunhos(licao) { licao.exercicios.forEach(it => delete prog.rascunhos[it.id]) }
 
 // ---------- servidor ----------
@@ -227,7 +238,7 @@ const TIPOS_P = ['pedra', 'papel', 'tesoura']
 const NOMES_P = { pedra: 'Pedra', papel: 'Papel', tesoura: 'Tesoura' }
 // a lição usa a cor do personagem da parte do curso em que ela está
 const tipoDaLicao = i => CURSO.partes.find(a => a.ids.includes(LISTA[i]?.id))?.tipo || TIPOS_P[((i % 3) + 3) % 3]
-const TINTA = '#17171F'
+const TINTA = '#1E1B2E'
 function rosto(cx, cy, humor, d = 10) {
   const olho = x => humor === 'feliz'
     ? `<path d="M${x - 4} ${cy + 1} Q${x} ${cy - 5} ${x + 4} ${cy + 1}" stroke="${TINTA}" stroke-width="3.4" fill="none" stroke-linecap="round"/>`
@@ -244,16 +255,16 @@ function personagem(tipo, humor = 'normal', tam = 64, classe = '') {
     papel: `<path d="M22 11H63L81 29V84C81 87 79 89 76 89H22C19 89 17 87 17 84V16C17 13 19 11 22 11Z"/>`,
     tesoura: `<path d="M27 44H73L61 86C59 90 55 92 50 92C45 92 41 90 39 86Z"/>`,
   }
-  const cor = { pedra: '#F07A55', papel: '#7FA6F2', tesoura: '#F2B53E' }[tipo]
-  const sombra = `<g transform="translate(4 4)" fill="${TINTA}">${formas[tipo]}</g>`
+  const cor = { pedra: '#FF6B5B', papel: '#4A9DFF', tesoura: '#1FC58F' }[tipo]
+  const sombra = `<g transform="translate(0 5)" fill="${TINTA}">${formas[tipo]}</g>`
   const extras = {
     pedra: `<path d="M30 30C35 25 41 23 47 23" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".7"/>`,
-    papel: `<path d="M63 11V25C63 27 65 29 67 29H81" fill="#C9DAFB" stroke="${TINTA}" stroke-width="3.5" stroke-linejoin="round"/>
+    papel: `<path d="M63 11V25C63 27 65 29 67 29H81" fill="#C4E3FF" stroke="${TINTA}" stroke-width="3.5" stroke-linejoin="round"/>
       <path d="M29 72H58M29 79H47" stroke="${TINTA}" stroke-width="3" stroke-linecap="round" opacity=".35"/>`,
     tesoura: '',
   }[tipo]
   const alcas = tipo === 'tesoura'
-    ? `<g fill="none" stroke-linecap="round"><circle cx="34" cy="26" r="13" stroke="${TINTA}" stroke-width="12" transform="translate(4 4)"/><circle cx="66" cy="26" r="13" stroke="${TINTA}" stroke-width="12" transform="translate(4 4)"/>
+    ? `<g fill="none" stroke-linecap="round"><circle cx="34" cy="26" r="13" stroke="${TINTA}" stroke-width="12" transform="translate(0 5)"/><circle cx="66" cy="26" r="13" stroke="${TINTA}" stroke-width="12" transform="translate(0 5)"/>
         <circle cx="34" cy="26" r="13" stroke="${TINTA}" stroke-width="12"/><circle cx="66" cy="26" r="13" stroke="${TINTA}" stroke-width="12"/>
         <circle cx="34" cy="26" r="13" stroke="${cor}" stroke-width="5.5"/><circle cx="66" cy="26" r="13" stroke="${cor}" stroke-width="5.5"/></g>` : ''
   const face = { pedra: [50, 50], papel: [49, 47], tesoura: [50, 61, 9] }[tipo]
@@ -316,12 +327,12 @@ const htmlTrilhas = () => `<nav class="trilhas" aria-label="Trilhas">${TRILHAS.m
 
 // ---------- tela inicial ----------
 function topo() {
-  const feitas = LISTA.filter(l => prog.feitas[l.id]).length
+  const seq = sequencia()
   return `<header class="topo"><div class="topo-in">
-    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 24)}</span>${CURSO.marca}</div>
+    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 26)}</span><span class="marca-nome">${CURSO.marca}</span></div>
     <div class="stats">
-      <span class="stat" title="Concluídos">${feitas}/${LISTA.length} ${CURSO.rotulos}</span>
-      ${sequencia() ? `<span class="stat dias" title="Dias seguidos estudando">${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}</span>` : ''}
+      <span class="stat fogo ${seq ? 'aceso' : ''}" title="Dias seguidos estudando">🔥 ${seq}</span>
+      <span class="stat raio" title="XP total">⚡ ${prog.xp || 0}</span>
       <button class="som" id="som" title="Ligar ou desligar o som" aria-label="Som">${prog.som ? '🔊' : '🔇'}</button>
     </div></div></header>`
 }
@@ -329,7 +340,7 @@ function ligarSom() {
   $('#som').onclick = () => { prog.som = !prog.som; salvarProgresso(); $('#som').textContent = prog.som ? '🔊' : '🔇' }
 }
 
-// As lições agrupadas em três atos, do mais simples ao jogo completo
+// As lições agrupadas em mundos; cada mundo tem um personagem-guia e uma cor
 function atosDoCurso() {
   const usados = new Set(CURSO.partes.flatMap(a => a.ids))
   const atos = CURSO.partes.map(a => ({ ...a, licoes: a.ids.map(id => LISTA.findIndex(l => l.id === id)).filter(i => i >= 0) }))
@@ -338,7 +349,6 @@ function atosDoCurso() {
   return atos
 }
 
-// O jogo que você está construindo: cada trecho acende quando a lição dele é concluída.
 const JOGO = [
   ['random', 'import random'],
   ['', ''],
@@ -417,6 +427,17 @@ function htmlVaga() {
   </aside>`
 }
 
+// deslocamento horizontal das casas, em zigue-zague
+const ZIGUE = [0, 54, 84, 54, 0, -54, -84, -54]
+
+function htmlMeta() {
+  const hoje = xpDeHoje(), pct = Math.min(100, Math.round(100 * hoje / META_DIARIA))
+  return `<section class="cartao-lado meta">
+    <div class="anel" style="--p:${pct}"><span>${pct}%</span></div>
+    <div><b>Meta do dia</b><span>${Math.min(hoje, META_DIARIA)} de ${META_DIARIA} XP${hoje >= META_DIARIA ? ' · batida! 🎉' : ''}</span></div>
+  </section>`
+}
+
 function renderHome() {
   L = null
   const iAnd = indiceAndamento()
@@ -424,71 +445,64 @@ function renderHome() {
   const sugerida = LISTA.findIndex(l => !prog.feitas[l.id] && !l.bonus)
   const alvo = andamento ? andamento.i : sugerida
   const feitas = LISTA.filter(l => prog.feitas[l.id]).length
+  let n = 0
   app.innerHTML = `${topo()}
-  <main class="home">
-    ${htmlTrilhas()}
-    <section class="hero">
-      <div>
-        <span class="kicker">${esc(CURSO.kicker)} · ${LISTA.length} ${CURSO.rotulos}</span>
+  <div class="home">
+    <main class="caminho-col">
+      ${htmlTrilhas()}
+      <section class="boas-vindas">
+        <span class="kicker">${esc(CURSO.kicker)}</span>
         <h1>${CURSO.titulo}</h1>
-        <p class="sub">${CURSO.subtitulo}</p>
-        <div class="hero-acoes">
-          ${alvo >= 0
-            ? `<button class="btn grande" id="seguir">${andamento ? 'Continuar' : feitas ? `Próxim${CURSO.rotulo === 'Lição' ? 'a lição' : 'o módulo'}` : 'Começar'} →</button>`
-            : CURSO.painel === 'jogo' ? '<button class="btn grande" id="ver-fim">Ver o meu jogo →</button>' : '<button class="btn grande" id="revisar-fim">Treinar as perguntas →</button>'}
-          ${feitas ? '<button class="btn branco grande" id="revisar-topo">Revisar</button>' : ''}
+      </section>
+      ${atosDoCurso().map((ato, m) => `<section class="mundo cor-${ato.tipo}">
+        <div class="mundo-banner">
+          <div><small>Mundo ${m + 1} · ${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</small><h2>${esc(ato.titulo)}</h2></div>
+          ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 58)}
         </div>
-        <ol class="passos-home">
-          ${(CURSO.passos || []).map(t => `<li><span>${t}</span></li>`).join('')}
+        <ol class="caminho">
+          ${ato.licoes.map(i => {
+            const l = LISTA[i], feita = !!prog.feitas[l.id], atual = i === alvo, x = ZIGUE[n++ % ZIGUE.length]
+            return `<li class="item ${atual ? 'atual' : ''}" style="--x:${x}px">
+              ${atual ? `<div class="balao">${andamento ? 'Continuar' : 'Começar'}</div>` : ''}
+              <button class="no cor-${tipoDaLicao(i)} ${feita ? 'feito' : ''} ${atual ? 'sugerida' : ''} ${l.bonus ? 'bonus' : ''}" data-i="${i}" aria-label="${esc(l.titulo)}">
+                <span class="hex"><span class="ico" aria-hidden="true">${feita && !atual ? '✓' : l.icone}</span></span>
+              </button>
+              <div class="rotulo-no"><b>${esc(l.titulo)}</b>${feita ? htmlEstrelas(prog.estrelas?.[l.id] || 1) : `<small>${CURSO.rotulo} ${i + 1}</small>`}</div>
+              ${atual ? `<div class="guia" aria-hidden="true">${personagem(ato.tipo, 'feliz', 64, 'flutua')}</div>` : ''}
+            </li>`
+          }).join('')}
         </ol>
-        ${alvo >= 0 ? `<p class="continuar-info">${andamento
-          ? `Você parou em <b>${esc(LISTA[alvo].titulo)}</b> (${andamento.feitos} de ${LISTA[alvo].exercicios.length} exercícios).`
-          : `${feitas ? 'Próxim' : 'Primeir'}${CURSO.rotulo === 'Lição' ? 'a' : 'o'}: <b>${esc(LISTA[alvo].titulo)}</b>. Tudo liberado: pule para o que quiser.`}</p>` : ''}
-      </div>
+      </section>`).join('')}
+      <button class="link" id="zerar">Apagar meu progresso</button>
+    </main>
+    <aside class="lateral">
+      ${alvo >= 0 ? `<section class="cartao-lado continuar cor-${tipoDaLicao(alvo)}">
+        <small>${andamento ? 'Você parou em' : feitas ? 'Próxima parada' : 'Comece por'}</small>
+        <b>${LISTA[alvo].icone} ${esc(LISTA[alvo].titulo)}</b>
+        ${andamento ? `<span>${andamento.feitos} de ${LISTA[alvo].exercicios.length} exercícios</span>` : ''}
+        <button class="btn largo" id="seguir">${andamento ? 'Continuar' : 'Começar'}</button>
+      </section>` : `<section class="cartao-lado continuar"><b>Tudo concluído! 🏆</b>
+        ${CURSO.painel === 'jogo' ? '<button class="btn largo" id="ver-fim">Ver o meu jogo</button>' : '<button class="btn largo" id="revisar-fim">Treinar as perguntas</button>'}</section>`}
+      ${htmlMeta()}
+      ${feitas ? `<section class="cartao-lado revisao">${personagem('papel', 'pensando', 48)}<div><b>Revisão rápida</b>
+        <span>${TAM_REVISAO} perguntas do que você mais errou.</span></div>
+        <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
       ${htmlArquivo()}
-    </section>
-
-    ${atosDoCurso().map((ato, n) => `<section class="ato ato-${ato.tipo}">
-      <div class="ato-topo">
-        ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 48)}
-        <div><span class="kicker">Parte ${n + 1}</span><h2>${esc(ato.titulo)}</h2></div>
-        <span class="ato-cont">${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</span>
-      </div>
-      <ol class="lista">
-        ${ato.licoes.map(i => {
-          const l = LISTA[i], feita = !!prog.feitas[l.id], and = andamento?.i === i
-          const estado = and ? `<span class="tag and">${andamento.feitos}/${l.exercicios.length}</span>`
-            : feita ? '<span class="check" title="Concluída">✓</span>'
-            : i === sugerida ? '<span class="tag sug">próxima</span>'
-            : l.bonus ? '<span class="tag">bônus</span>' : '<span class="seta">›</span>'
-          return `<li class="item">
-            <button class="no cor-${tipoDaLicao(i)} ${feita ? 'feito' : ''} ${i === alvo ? 'sugerida' : ''}" data-i="${i}">
-              <span class="ico" aria-hidden="true">${l.icone}</span>
-              <span class="txt"><small>${CURSO.rotulo} ${i + 1}</small><b>${esc(l.titulo)}</b><em>${esc(l.aprende)}</em></span>
-              ${estado}
-            </button>
-          </li>`
-        }).join('')}
-      </ol>
-    </section>`).join('')}
-
-    ${feitas ? `<section class="painel revisao">${personagem('papel', 'pensando', 54)}<div><b>Revisão rápida</b>
-      <span>${TAM_REVISAO} perguntas do que você já estudou, começando pelo que você mais errou.</span></div>
-      <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
-    ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim" style="margin-top:22px">🏆 Ver o meu jogo</button>' : ''}
-    <button class="link" id="zerar">Apagar meu progresso</button>
-  </main>`
+      ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim">🏆 Ver o meu jogo</button>' : ''}
+    </aside>
+  </div>`
   ligarSom()
   $$('.trilha').forEach(b => b.onclick = () => b.dataset.trilha !== CURSO.id && abrirTrilha(b.dataset.trilha))
   $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
   const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
   for (const id of ['#revisar', '#revisar-topo']) { const b = $(id); if (b) b.onclick = iniciarRevisao }
   $('#zerar').onclick = () => {
-    if (!confirm('Apagar todo o progresso (lições, rascunhos e revisão)?')) return
+    if (!confirm('Apagar todo o progresso (lições, XP, rascunhos e revisão)?')) return
     const som = prog.som; prog = novoProgresso(); prog.som = som; salvarProgresso(); renderHome()
   }
   const vf = $('#ver-fim'); if (vf) vf.onclick = renderFim
   const rf = $('#revisar-fim'); if (rf) rf.onclick = iniciarRevisao
+  $('.item.atual')?.scrollIntoView({ block: 'center' })
 }
 
 // detalhes que abrem ao clicar numa lição do sumário
@@ -501,7 +515,7 @@ function alternarCartao(i, item) {
   const and = indiceAndamento() === i ? prog.emAndamento : null
   const c = document.createElement('div')
   c.className = `cartao-licao cor-${tipoDaLicao(i)}`
-  c.innerHTML = `<p>${and ? `Você parou em ${and.feitos} de ${l.exercicios.length} exercícios.` : `${l.ensino.length} explicações curtas e ${l.exercicios.length} exercícios. Você vai ver: ${esc(l.aprende)}.`}</p>
+  c.innerHTML = `<h3>${esc(l.titulo)}</h3><p>${and ? `Você parou em ${and.feitos} de ${l.exercicios.length} exercícios.` : `${l.ensino.length} explicações curtas e ${l.exercicios.length} exercícios. Você vai ver: ${esc(l.aprende)}.`}</p>
     <div class="acoes">
       ${and ? '<button class="btn" data-acao="continuar">Continuar</button>' : ''}
       <button class="btn ${and ? 'branco' : ''}" data-acao="comecar">${and ? 'Começar do início' : feita ? 'Fazer de novo' : 'Começar'}</button>
@@ -966,7 +980,7 @@ function rodapeFeedback(certo, titulo, detalhe, extras = '', rotulo = 'Continuar
   $('#principal').focus({ preventScroll: true })
 }
 
-const ELOGIOS = ['Correto.', 'Isso mesmo.', 'Certo!', 'Exato.']
+const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Na mosca!', 'Perfeito!', 'Boa jogada!']
 const elogio = () => ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)]
 function atualizarBarra() {
   const b = $('#barra'); if (b) b.style.width = (100 * L.feitos / L.total) + '%'
@@ -1025,7 +1039,7 @@ function verificar() {
     somErro(); L.erros++
     rodapeFeedback(false, 'Não foi dessa vez', `A resposta é ${correta}.` + (it.explica ? `<br>${it.explica}` : '') + '<br><small>Ele volta no fim da lição para você tentar de novo.</small>',
       (IA_ATIVA ? '<button class="btn branco" id="explicar">💬 Explicar</button>' : '') +
-      '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">↻ Refazer agora</button>')
+      '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">↻ Refazer</button>')
     const ex = $('#explicar'); if (ex) ex.onclick = () => explicarErro(it)
     $('#refazer').onclick = () => renderItem()   // mesmo exercício, peças/opções embaralhadas de novo
     $('#principal').onclick = () => { L.fila.push(L.fila.shift()); proximo() }
@@ -1230,7 +1244,10 @@ function alternarPrevia(it) {
 async function concluir() {
   const l = L.licao
   const jaFeita = !!prog.feitas[l.id]
-  marcarDia()
+  const xp = l.revisao || jaFeita ? 5 : (l.final ? 30 : 10) + (L.erros === 0 ? 5 : 0)
+  const estrelas = estrelasPor(L.erros)
+  ganharXP(xp); marcarDia()
+  if (!l.revisao) { prog.estrelas = prog.estrelas || {}; prog.estrelas[l.id] = Math.max(prog.estrelas[l.id] || 0, estrelas) }
   if (!l.revisao) { prog.feitas[l.id] = true; prog.emAndamento = null; limparRascunhos(l) }
   salvarProgresso()
   let arquivo = null
@@ -1255,11 +1272,13 @@ async function concluir() {
       <p>${revisao ? (L.erros ? 'O que você errou volta com mais frequência nas próximas revisões.' : 'Tudo certo. Revisar é o que faz o conteúdo ficar na memória.')
         : L.erros === 0 ? 'Tudo certo de primeira.' : 'Os exercícios que você errou foram refeitos até sair.'}</p>
     </div>
+    ${revisao ? '' : `<div class="estrelas-grandes">${htmlEstrelas(estrelas)}</div>`}
     <div class="cartoes">
-      <div class="cartao"><small>De primeira</small><b>${primeira}%</b></div>
-      <div class="cartao"><small>Tempo</small><b>${tempo}</b></div>
-      <div class="cartao"><small>Dicas</small><b>${L.dicas}</b></div>
+      <div class="cartao c-xp"><small>XP</small><b>⚡ +${xp}</b></div>
+      <div class="cartao c-acerto"><small>De primeira</small><b>🎯 ${primeira}%</b></div>
+      <div class="cartao c-tempo"><small>Tempo</small><b>⏱ ${tempo}</b></div>
     </div>
+    <p class="continuar-info" style="text-align:center">🎯 Meta do dia: ${Math.min(xpDeHoje(), META_DIARIA)}/${META_DIARIA} XP · 🔥 ${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}${L.dicas ? ` · 💡 ${L.dicas} ${L.dicas === 1 ? 'dica' : 'dicas'}` : ''}</p>
     ${revisao ? '' : htmlResumo(l)}
     ${l.final ? htmlJogar(arquivo) : ''}
     ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no início.' : 'O painel da vaga no início foi atualizado.'}</p>` : ''}

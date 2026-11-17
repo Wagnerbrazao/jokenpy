@@ -58,7 +58,7 @@ with sync_playwright() as p:
 
     # recarregar no meio e retomar
     pg.reload(); pg.wait_for_timeout(600)
-    checa('Continuar' in pg.locator('#seguir').inner_text(), 'botão continuar após recarregar')
+    checa('continuar' in pg.locator('#seguir').inner_text().lower(), 'botão continuar após recarregar')
     pg.locator('#seguir').click()
     checa(pg.evaluate('L.erros') == 1, 'erros mantidos ao retomar')
     checa(pg.evaluate('L.fila[L.fila.length - 1].id') == errada_id, 'pergunta errada voltou para o fim')
