@@ -4,8 +4,10 @@ Rode dentro da pasta jokenpo:
     python -m uvicorn server:app --port 8080
 e abra http://localhost:8080
 """
+import base64
 import json
 import os
+import secrets
 import re
 import subprocess
 import sys
@@ -70,6 +72,31 @@ def licoes():
 @app.get("/app.js")
 def app_js():
     return FileResponse(PASTA / "app.js", media_type="text/javascript")
+
+
+# ---------- trilhas extras (ex.: trilhas/entrevista.js) ----------
+# O arquivo da trilha não vai para o repositório. Com SENHA_<ID> no ambiente, só é entregue com a senha
+# (Authorization: Basic). No modo público, uma trilha sem senha configurada não é entregue.
+@app.get("/trilhas/{nome}.js")
+def trilha(nome: str, authorization: str | None = Header(default=None)):
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", nome):
+        raise HTTPException(404, "Trilha não encontrada")
+    arquivo = PASTA / "trilhas" / f"{nome}.js"
+    if not arquivo.is_file():
+        raise HTTPException(404, "Trilha não instalada neste servidor")
+    senha = os.environ.get("SENHA_" + nome.upper().replace("-", "_"), "")
+    if not senha and PUBLICO:
+        raise HTTPException(403, "Trilha sem senha configurada")
+    if senha:
+        recebida = ""
+        if authorization and authorization.startswith("Basic "):
+            try:
+                recebida = base64.b64decode(authorization[6:]).decode("utf-8").partition(":")[2]
+            except Exception:
+                recebida = ""
+        if not secrets.compare_digest(recebida.encode(), senha.encode()):
+            raise HTTPException(401, "Senha incorreta")   # sem WWW-Authenticate: o app mostra o próprio formulário
+    return FileResponse(arquivo, media_type="text/javascript", headers={"Cache-Control": "no-store"})
 
 
 # ---------- progresso: cópia de segurança em arquivo (o navegador também guarda) ----------

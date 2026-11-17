@@ -1,5 +1,5 @@
 'use strict'
-// Jokenpy: a lógica da tela. O conteúdo das lições está em licoes.js e o servidor em server.py.
+// Jokenpy: a lógica da tela. O conteúdo da trilha de Python está em licoes.js; outras trilhas carregam de /trilhas/<id>.js.
 
 // ---------- utilidades ----------
 const $ = s => document.querySelector(s)
@@ -38,14 +38,38 @@ const HEADERS = { 'Content-Type': 'application/json', 'X-Jokenpy': '1' }
 const LOCAL = ['localhost', '127.0.0.1', ''].includes(location.hostname)
 const TOQUE = matchMedia('(pointer: coarse)').matches   // celular/tablet: sem tecla Tab
 
+// ---------- trilhas ----------
+// A trilha de Python (licoes.js) é pública. Outras trilhas ficam em /trilhas/<id>.js no servidor;
+// a privada só é entregue com senha (verificada no servidor) e não vai para o repositório.
+const CURSO_PYTHON = {
+  id: 'python', marca: 'joken<b>py</b>', kicker: 'Curso prático de Python',
+  titulo: 'Aprenda Python construindo um <em>Jokenpô</em> de verdade.',
+  subtitulo: 'Cada lição explica um conceito, você pratica com exercícios corrigidos na hora e o arquivo ao lado ganha mais uma parte do jogo.',
+  rotulo: 'Lição', rotulos: 'lições', painel: 'jogo', chave: 'jokenpy-progresso',
+  passos: ['<b>Entenda</b> o conceito com exemplos que você mesmo roda.', '<b>Pratique</b> com exercícios corrigidos na hora e dicas passo a passo.', '<b>Construa</b>: cada lição escreve uma parte do <code>jokenpo.py</code>.'],
+  partes: [
+    { titulo: 'Conversar com quem joga', tipo: 'pedra', ids: ['print', 'input'] },
+    { titulo: 'Decidir quem vence', tipo: 'papel', ids: ['random', 'if', 'dict', 'funcao'] },
+    { titulo: 'O jogo completo', tipo: 'tesoura', ids: ['while', 'for', 'final', 'desafios'] },
+  ],
+}
+const TRILHAS = [
+  { id: 'python', titulo: 'Python · Jokenpô', icone: '✊' },
+  { id: 'entrevista', titulo: 'Entrevista Radix', icone: '🔒', privada: true, arquivo: '/trilhas/entrevista.js' },
+]
+globalThis.TRILHAS_CARREGADAS = globalThis.TRILHAS_CARREGADAS || {}
+let CURSO = CURSO_PYTHON
+let LISTA = LICOES
+
 let L = null              // estado da lição aberta (null = tela inicial)
 let IA_ATIVA = false
 
 // cada exercício ganha um id estável ("print-0", "print-1"...) para salvar progresso e rascunhos
-LICOES.forEach(l => l.exercicios.forEach((it, k) => { it.id = `${l.id}-${k}`; it.k = k }))
+const prepararIds = lista => lista.forEach(l => l.exercicios.forEach((it, k) => { it.id = `${l.id}-${k}`; it.k = k }))
+prepararIds(LISTA)
 
 // ---------- realce de sintaxe Python (só para mostrar) ----------
-const RE_PY = /(#[^\n]*)|(f?"(?:[^"\\\n]|\\.)*"|f?'(?:[^'\\\n]|\\.)*')|\b(def|return|if|elif|else|while|for|in|not|and|or|import|from|break|continue|pass|True|False|None)\b|\b(\d+)\b|\b(print|input|int|str|len|range)\b(?=\()/g
+const RE_PY = /(#[^\n]*|\/\/[^\n]*|--[^\n]*)|(f?"(?:[^"\\\n]|\\.)*"|f?'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(def|return|if|elif|else|while|for|in|of|not|and|or|import|from|export|default|break|continue|pass|True|False|None|true|false|null|undefined|const|let|var|function|async|await|class|interface|type|extends|implements|new|this|try|catch|except|finally|raise|throw|with|as|lambda|yield|public|private|readonly|enum|query|mutation|subscription|SELECT|FROM|WHERE|JOIN|LEFT|INNER|ON|GROUP|BY|ORDER|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|PRIMARY|KEY|REFERENCES|FOREIGN|AND|OR|NOT|NULL|LIMIT|BEGIN|COMMIT|ROLLBACK)\b|\b(\d+)\b|\b(print|input|int|str|len|range|useState|useEffect|useMemo|useCallback|useContext|fetch|console\.log)\b(?=\()/g
 function realcar(txt) {
   let out = '', ultimo = 0, m
   RE_PY.lastIndex = 0
@@ -79,7 +103,7 @@ const ERROS = [
   [/'NoneType'/, () => 'Algo virou <code>None</code> (nada). Uma função sem <code>return</code> devolve <code>None</code>: confira se ela tem <code>return</code> em todos os caminhos.'],
   [/AttributeError: '(\w+)' object has no attribute '(\w+)'/, m => `Um valor do tipo <code>${m[1]}</code> não tem <code>.${m[2]}</code>. Confira o nome (ex.: <code>lower</code>, <code>strip</code>) e se a variável tem o tipo que você imagina.`],
   [/TypeError: (\w+)\(\) (takes|missing)/, m => `A função <code>${m[1]}</code> foi chamada com a quantidade errada de valores. Compare os parâmetros do <code>def</code> com a chamada.`],
-  [/Tempo esgotado/, () => 'O programa não terminou. Num <code>while</code>, confira se existe um <code>break</code> ou se a variável da condição muda a cada volta.'],
+  [/Tempo esgotado/, () => 'O programa passou de 3 segundos. Ou há um laço que nunca termina (confira o <code>break</code> e a condição do <code>while</code>), ou a solução é lenta demais para a entrada do teste: dois laços aninhados sobre uma lista grande são O(n²). Pense em dicionário ou conjunto para chegar a O(n).'],
   [/Teste: não encontrei '(\w+)'/, m => `O teste procura algo chamado <code>${m[1]}</code>. Use exatamente esse nome no seu código.`],
 ]
 function entenderErro(erro) {
@@ -89,9 +113,9 @@ function entenderErro(erro) {
 const htmlEntender = erro => { const e = entenderErro(erro); return e ? `<div class="entender"><b>🔎 O que isso quer dizer</b>${e}</div>` : '' }
 
 // ---------- progresso ----------
-// Fica salvo no navegador (localStorage) e no servidor (jokenpo/progresso.json).
+// Fica salvo no navegador (localStorage), um registro por trilha. A trilha de Python também guarda uma cópia no servidor local.
 // Assim você não perde nada se fechar a aba, trocar de navegador ou limpar os dados do site.
-const CHAVE = 'jokenpy-progresso'
+let CHAVE = CURSO.chave
 const novoProgresso = () => ({
   feitas: {}, sequencia: 0, ultimoDia: null, som: true,
   xpHoje: { dia: null, xp: 0 },
@@ -114,7 +138,7 @@ function migrarProgresso() {
 const indiceAndamento = () => {
   const a = prog.emAndamento
   if (!a) return -1
-  const i = LICOES.findIndex(l => l.id === a.id)
+  const i = LISTA.findIndex(l => l.id === a.id)
   return i >= 0 ? i : -1
 }
 
@@ -134,10 +158,12 @@ function salvarProgresso() {
 function enviarProgresso() {
   clearTimeout(timerEnvio)
   envioPendente = false
+  if (CURSO.id !== 'python') return
   fetch('/progresso', { method: 'PUT', headers: HEADERS, body: JSON.stringify(prog), keepalive: true })
     .then(r => marcarServidor(r.ok)).catch(() => marcarServidor(false))
 }
 async function sincronizar() {
+  if (CURSO.id !== 'python') return false
   try {
     const remoto = await (await fetch('/progresso')).json()
     if ((remoto.atualizado || 0) > (prog.atualizado || 0)) { prog = { ...novoProgresso(), ...remoto }; migrarProgresso(); gravarLocal(); return true }
@@ -200,7 +226,7 @@ function toast(msg) {
 const TIPOS_P = ['pedra', 'papel', 'tesoura']
 const NOMES_P = { pedra: 'Pedra', papel: 'Papel', tesoura: 'Tesoura' }
 // a lição usa a cor do personagem da parte do curso em que ela está
-const tipoDaLicao = i => ATOS.find(a => a.ids.includes(LICOES[i]?.id))?.tipo || TIPOS_P[((i % 3) + 3) % 3]
+const tipoDaLicao = i => CURSO.partes.find(a => a.ids.includes(LISTA[i]?.id))?.tipo || TIPOS_P[((i % 3) + 3) % 3]
 const TINTA = '#17171F'
 function rosto(cx, cy, humor, d = 10) {
   const olho = x => humor === 'feliz'
@@ -236,13 +262,65 @@ function personagem(tipo, humor = 'normal', tam = 64, classe = '') {
 }
 const trio = (humor = 'feliz', tam = 56) => TIPOS_P.map(t => personagem(t, humor, tam)).join('')
 
+// ---------- troca de trilha ----------
+const DEFAULTS_TRILHA = { rotulo: 'Módulo', rotulos: 'módulos', painel: 'vaga' }
+function abrirTrilha(id) {
+  const t = TRILHAS.find(x => x.id === id)
+  if (!t) return
+  if (id === 'python') { CURSO = CURSO_PYTHON; LISTA = LICOES }
+  else {
+    const dados = TRILHAS_CARREGADAS[id]
+    if (!dados) return pedirSenha(t)
+    CURSO = { ...DEFAULTS_TRILHA, ...dados.CURSO, id, chave: `jokenpy-trilha-${id}` }
+    LISTA = dados.LICOES
+    if (!LISTA[0]?.exercicios[0]?.id) prepararIds(LISTA)
+  }
+  CHAVE = CURSO.chave
+  prog = carregarLocal(); migrarProgresso()
+  try { localStorage.setItem('jokenpy-trilha', id) } catch {}
+  renderHome(); scrollTo(0, 0)
+}
+
+// trilha privada: o servidor só entrega o arquivo com a senha certa
+async function carregarTrilha(t, senha) {
+  const res = await fetch(t.arquivo, { headers: { Authorization: 'Basic ' + btoa('aluno:' + senha) }, cache: 'no-store' })
+  if (res.status === 401) throw new Error('Senha incorreta.')
+  if (!res.ok) throw new Error('Esta trilha não está disponível neste servidor.')
+  new Function(await res.text())()   // o arquivo registra a trilha em TRILHAS_CARREGADAS
+  if (!TRILHAS_CARREGADAS[t.id]) throw new Error('O arquivo da trilha veio incompleto.')
+  try { localStorage.setItem(`jokenpy-senha-${t.id}`, senha) } catch {}
+}
+function pedirSenha(t) {
+  if ($('.modal-fundo')) return
+  const m = document.createElement('div'); m.className = 'modal-fundo'
+  m.innerHTML = `<form class="modal senha" role="dialog" aria-modal="true" aria-label="Senha da trilha">
+    <button type="button" class="modal-fechar" aria-label="Fechar">✕</button>
+    <span class="kicker">Trilha privada</span><h3>${t.icone} ${esc(t.titulo)}</h3>
+    <p>Esta trilha tem conteúdo pessoal. Digite a senha para abrir.</p>
+    <input type="password" id="senha-trilha" autocomplete="current-password" aria-label="Senha" required>
+    <p class="senha-erro" id="senha-erro" hidden></p>
+    <button class="btn largo" id="senha-ok">Abrir trilha</button></form>`
+  document.body.append(m)
+  const fechar = () => m.remove()
+  m.onclick = e => { if (e.target === m || e.target.closest('.modal-fechar')) fechar() }
+  m.querySelector('form').onsubmit = async e => {
+    e.preventDefault()
+    const b = $('#senha-ok'); b.disabled = true; b.textContent = 'Abrindo…'
+    try { await carregarTrilha(t, $('#senha-trilha').value); fechar(); abrirTrilha(t.id) }
+    catch (err) { const x = $('#senha-erro'); x.hidden = false; x.textContent = err.message; b.disabled = false; b.textContent = 'Abrir trilha' }
+  }
+  $('#senha-trilha').focus()
+}
+const htmlTrilhas = () => `<nav class="trilhas" aria-label="Trilhas">${TRILHAS.map(t => `<button class="trilha ${CURSO.id === t.id ? 'ativa' : ''}" data-trilha="${t.id}">
+  <span aria-hidden="true">${t.privada && TRILHAS_CARREGADAS[t.id] ? '🔓' : t.icone}</span>${esc(t.titulo)}</button>`).join('')}</nav>`
+
 // ---------- tela inicial ----------
 function topo() {
-  const feitas = LICOES.filter(l => prog.feitas[l.id]).length
+  const feitas = LISTA.filter(l => prog.feitas[l.id]).length
   return `<header class="topo"><div class="topo-in">
-    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 24)}</span>joken<b>py</b></div>
+    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 24)}</span>${CURSO.marca}</div>
     <div class="stats">
-      <span class="stat" title="Lições concluídas">${feitas}/${LICOES.length} lições</span>
+      <span class="stat" title="Concluídos">${feitas}/${LISTA.length} ${CURSO.rotulos}</span>
       ${sequencia() ? `<span class="stat dias" title="Dias seguidos estudando">${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}</span>` : ''}
       <button class="som" id="som" title="Ligar ou desligar o som" aria-label="Som">${prog.som ? '🔊' : '🔇'}</button>
     </div></div></header>`
@@ -252,15 +330,10 @@ function ligarSom() {
 }
 
 // As lições agrupadas em três atos, do mais simples ao jogo completo
-const ATOS = [
-  { titulo: 'Conversar com quem joga', tipo: 'pedra', ids: ['print', 'input'] },
-  { titulo: 'Decidir quem vence', tipo: 'papel', ids: ['random', 'if', 'dict', 'funcao'] },
-  { titulo: 'O jogo completo', tipo: 'tesoura', ids: ['while', 'for', 'final', 'desafios'] },
-]
 function atosDoCurso() {
-  const usados = new Set(ATOS.flatMap(a => a.ids))
-  const atos = ATOS.map(a => ({ ...a, licoes: a.ids.map(id => LICOES.findIndex(l => l.id === id)).filter(i => i >= 0) }))
-  const resto = LICOES.map((l, i) => i).filter(i => !usados.has(LICOES[i].id))
+  const usados = new Set(CURSO.partes.flatMap(a => a.ids))
+  const atos = CURSO.partes.map(a => ({ ...a, licoes: a.ids.map(id => LISTA.findIndex(l => l.id === id)).filter(i => i >= 0) }))
+  const resto = LISTA.map((l, i) => i).filter(i => !usados.has(LISTA[i].id))
   if (resto.length) atos[atos.length - 1].licoes.push(...resto)
   return atos
 }
@@ -297,8 +370,8 @@ const JOGO = [
   ['', ''],
   ['print', 'print(f"Placar: Você {pontos_jogador} x {pontos_computador} Computador")'],
 ]
-function htmlArquivo() {
-  const tem = id => !LICOES.some(l => l.id === id) || prog.feitas[id]
+function htmlJogo() {
+  const tem = id => !LISTA.some(l => l.id === id) || prog.feitas[id]
   const linhas = JOGO
   const prontas = linhas.filter(([id, t]) => t && tem(id)).length, total = linhas.filter(([, t]) => t).length
   const pct = Math.round(100 * prontas / total)
@@ -315,7 +388,7 @@ function blocosArquivo(linhas, tem) {
   let grupo = null
   for (const [id, t] of linhas) {
     if (t && !tem(id)) {
-      const titulo = LICOES.find(l => l.id === id).titulo
+      const titulo = LISTA.find(l => l.id === id).titulo
       if (!grupo) { grupo = { ind: t.match(/^ */)[0], n: 0, licoes: [] }; out.push(grupo) }
       grupo.n++; if (!grupo.licoes.includes(titulo)) grupo.licoes.push(titulo)
       continue
@@ -327,47 +400,63 @@ function blocosArquivo(linhas, tem) {
     : `<span class="ln falta">${x.ind}# … ${x.n} ${x.n === 1 ? 'linha' : 'linhas'} · ${esc(x.licoes.join(', '))}</span>`).join('')
 }
 
+// Painel da vaga: cada requisito acende quando o módulo que o cobre é concluído.
+const htmlArquivo = () => CURSO.painel === 'vaga' ? htmlVaga() : htmlJogo()
+function htmlVaga() {
+  const feito = id => !!prog.feitas[id]
+  const reqs = CURSO.vaga
+  const prontos = reqs.filter(r => r.modulos.every(feito)).length
+  const pct = Math.round(100 * prontos / reqs.length)
+  return `<aside class="arquivo" aria-label="Requisitos da vaga e o seu preparo">
+    <div class="arquivo-topo">${trio(pct === 100 ? 'feliz' : 'normal', 22)}<span>${esc(CURSO.arquivo)}</span><b>${pct}% preparado</b></div>
+    <pre>${reqs.map(r => {
+      const ok = r.modulos.every(feito), parte = r.modulos.some(feito)
+      return `<span class="ln req ${ok ? 'ok' : parte ? 'parte' : 'falta'}">${ok ? '[x]' : parte ? '[~]' : '[ ]'} ${esc(r.texto)}${r.diferencial ? ' <i>(diferencial)</i>' : ''}</span>`
+    }).join('')}</pre>
+    <div class="arquivo-barra"><div style="width:${pct}%"></div></div>
+  </aside>`
+}
+
 function renderHome() {
   L = null
   const iAnd = indiceAndamento()
   const andamento = iAnd >= 0 ? { ...prog.emAndamento, i: iAnd } : null
-  const sugerida = LICOES.findIndex(l => !prog.feitas[l.id] && !l.bonus)
+  const sugerida = LISTA.findIndex(l => !prog.feitas[l.id] && !l.bonus)
   const alvo = andamento ? andamento.i : sugerida
-  const feitas = LICOES.filter(l => prog.feitas[l.id]).length
+  const feitas = LISTA.filter(l => prog.feitas[l.id]).length
   app.innerHTML = `${topo()}
   <main class="home">
+    ${htmlTrilhas()}
     <section class="hero">
       <div>
-        <span class="kicker">Curso prático de Python · ${LICOES.length} lições</span>
-        <h1>Aprenda Python construindo um <em>Jokenpô</em> de verdade.</h1>
-        <p class="sub">Cada lição explica um conceito, você pratica com exercícios corrigidos na hora e o arquivo ao lado ganha mais uma parte do jogo.</p>
+        <span class="kicker">${esc(CURSO.kicker)} · ${LISTA.length} ${CURSO.rotulos}</span>
+        <h1>${CURSO.titulo}</h1>
+        <p class="sub">${CURSO.subtitulo}</p>
         <div class="hero-acoes">
           ${alvo >= 0
-            ? `<button class="btn grande" id="seguir">${andamento ? 'Continuar' : feitas ? 'Próxima lição' : 'Começar'} →</button>`
-            : '<button class="btn grande" id="ver-fim">Ver o meu jogo →</button>'}
+            ? `<button class="btn grande" id="seguir">${andamento ? 'Continuar' : feitas ? `Próxim${CURSO.rotulo === 'Lição' ? 'a lição' : 'o módulo'}` : 'Começar'} →</button>`
+            : CURSO.painel === 'jogo' ? '<button class="btn grande" id="ver-fim">Ver o meu jogo →</button>' : '<button class="btn grande" id="revisar-fim">Treinar as perguntas →</button>'}
           ${feitas ? '<button class="btn branco grande" id="revisar-topo">Revisar</button>' : ''}
         </div>
         <ol class="passos-home">
-          <li><span><b>Entenda</b> o conceito com exemplos que você mesmo roda.</span></li>
-          <li><span><b>Pratique</b> com exercícios corrigidos na hora e dicas passo a passo.</span></li>
-          <li><span><b>Construa</b>: cada lição escreve uma parte do <code>jokenpo.py</code>.</span></li>
+          ${(CURSO.passos || []).map(t => `<li><span>${t}</span></li>`).join('')}
         </ol>
         ${alvo >= 0 ? `<p class="continuar-info">${andamento
-          ? `Você parou em <b>${esc(LICOES[alvo].titulo)}</b> (${andamento.feitos} de ${LICOES[alvo].exercicios.length} exercícios).`
-          : `${feitas ? 'Próxima' : 'Primeira'}: <b>${esc(LICOES[alvo].titulo)}</b>. Já sabe isso? Pule para qualquer lição abaixo.`}</p>` : ''}
+          ? `Você parou em <b>${esc(LISTA[alvo].titulo)}</b> (${andamento.feitos} de ${LISTA[alvo].exercicios.length} exercícios).`
+          : `${feitas ? 'Próxim' : 'Primeir'}${CURSO.rotulo === 'Lição' ? 'a' : 'o'}: <b>${esc(LISTA[alvo].titulo)}</b>. Tudo liberado: pule para o que quiser.`}</p>` : ''}
       </div>
       ${htmlArquivo()}
     </section>
 
     ${atosDoCurso().map((ato, n) => `<section class="ato ato-${ato.tipo}">
       <div class="ato-topo">
-        ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LICOES[i].id]) ? 'feliz' : 'normal', 48)}
+        ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 48)}
         <div><span class="kicker">Parte ${n + 1}</span><h2>${esc(ato.titulo)}</h2></div>
-        <span class="ato-cont">${ato.licoes.filter(i => prog.feitas[LICOES[i].id]).length}/${ato.licoes.length}</span>
+        <span class="ato-cont">${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</span>
       </div>
       <ol class="lista">
         ${ato.licoes.map(i => {
-          const l = LICOES[i], feita = !!prog.feitas[l.id], and = andamento?.i === i
+          const l = LISTA[i], feita = !!prog.feitas[l.id], and = andamento?.i === i
           const estado = and ? `<span class="tag and">${andamento.feitos}/${l.exercicios.length}</span>`
             : feita ? '<span class="check" title="Concluída">✓</span>'
             : i === sugerida ? '<span class="tag sug">próxima</span>'
@@ -375,7 +464,7 @@ function renderHome() {
           return `<li class="item">
             <button class="no cor-${tipoDaLicao(i)} ${feita ? 'feito' : ''} ${i === alvo ? 'sugerida' : ''}" data-i="${i}">
               <span class="ico" aria-hidden="true">${l.icone}</span>
-              <span class="txt"><small>Lição ${i + 1}</small><b>${esc(l.titulo)}</b><em>${esc(l.aprende)}</em></span>
+              <span class="txt"><small>${CURSO.rotulo} ${i + 1}</small><b>${esc(l.titulo)}</b><em>${esc(l.aprende)}</em></span>
               ${estado}
             </button>
           </li>`
@@ -390,6 +479,7 @@ function renderHome() {
     <button class="link" id="zerar">Apagar meu progresso</button>
   </main>`
   ligarSom()
+  $$('.trilha').forEach(b => b.onclick = () => b.dataset.trilha !== CURSO.id && abrirTrilha(b.dataset.trilha))
   $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
   const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
   for (const id of ['#revisar', '#revisar-topo']) { const b = $(id); if (b) b.onclick = iniciarRevisao }
@@ -398,6 +488,7 @@ function renderHome() {
     const som = prog.som; prog = novoProgresso(); prog.som = som; salvarProgresso(); renderHome()
   }
   const vf = $('#ver-fim'); if (vf) vf.onclick = renderFim
+  const rf = $('#revisar-fim'); if (rf) rf.onclick = iniciarRevisao
 }
 
 // detalhes que abrem ao clicar numa lição do sumário
@@ -406,7 +497,7 @@ function alternarCartao(i, item) {
   const aberto = item.classList.contains('aberta')
   fecharCartao()
   if (aberto) return
-  const l = LICOES[i], feita = !!prog.feitas[l.id]
+  const l = LISTA[i], feita = !!prog.feitas[l.id]
   const and = indiceAndamento() === i ? prog.emAndamento : null
   const c = document.createElement('div')
   c.className = `cartao-licao cor-${tipoDaLicao(i)}`
@@ -430,7 +521,7 @@ document.addEventListener('click', e => { if (!e.target.closest('.cartao-licao, 
 
 // ---------- lição ----------
 // A lição tem duas fases: "ensino" (cartões de explicação, pode pular) e "exercicios".
-function iniciar(i, salvo = null, pularEnsino = false, licao = LICOES[i]) {
+function iniciar(i, salvo = null, pularEnsino = false, licao = LISTA[i]) {
   fecharCartao()
   const fila = salvo
     ? salvo.fila.filter(k => typeof k === 'number' && k >= 0).map(k => licao.exercicios[k]).filter(Boolean)
@@ -449,7 +540,7 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LICOES[i]) {
       <div class="licao-topo-in">
         <button class="fechar" id="fechar" aria-label="Voltar ao início (o progresso fica salvo)" title="Voltar ao início (o progresso fica salvo)">✕</button>
         <div class="licao-meio">
-          <div class="licao-nome"><small>${licao.revisao ? 'Revisão' : `Lição ${i + 1}`}</small><b>${esc(licao.titulo)}</b><span class="contador" id="contador"></span></div>
+          <div class="licao-nome"><small>${licao.revisao ? 'Revisão' : `${CURSO.rotulo} ${i + 1}`}</small><b>${esc(licao.titulo)}</b><span class="contador" id="contador"></span></div>
           <div class="barra" role="progressbar" aria-label="Progresso da lição"><div id="barra"></div></div>
         </div>
         <button class="topo-btn" id="teoria" title="Resumo e explicações desta lição">📖 <span>Resumo</span></button>
@@ -466,10 +557,11 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LICOES[i]) {
 }
 
 const TAM_REVISAO = 6
-const licaoDe = it => LICOES.find(l => l.exercicios.includes(it))
+const licaoDe = it => LISTA.find(l => l.exercicios.includes(it))
 function iniciarRevisao() {
   const fracos = prog.fracos || {}
-  const banco = LICOES.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios.filter(it => it.tipo !== 'codigo'))
+  const banco = LISTA.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios.filter(it => it.tipo !== 'codigo'))
+  if (!banco.length) { toast('Conclua um módulo para liberar a revisão.'); return }
   const escolhidos = banco.map(it => ({ it, peso: (fracos[it.id] || 0) + Math.random() }))
     .sort((a, b) => b.peso - a.peso).slice(0, TAM_REVISAO).map(x => x.it)
   iniciar(-1, null, true, { id: 'revisao', titulo: 'Revisão', icone: '🧠', aprende: 'revisar o que já viu', revisao: true, ensino: [], exercicios: embaralhar(escolhidos) })
@@ -483,7 +575,7 @@ function salvarAndamento() {
   if (!L || L.licao.revisao) return
   let fila = L.fila
   if (L.estado === 'feedback' && L.ultimoCerto === true) fila = fila.slice(1)
-  else if (L.estado === 'feedback' && L.ultimoCerto === false && fila[0].tipo !== 'codigo') fila = [...fila.slice(1), fila[0]]
+  else if (L.estado === 'feedback' && L.ultimoCerto === false && !['codigo', 'entrevista'].includes(fila[0].tipo)) fila = [...fila.slice(1), fila[0]]
   prog.emAndamento = {
     i: L.i, id: L.licao.id, passo: L.fase === 'ensino' ? L.passo : null, fila: fila.map(it => it.k), feitos: L.feitos, erros: L.erros,
     dicas: L.dicas, decorrido: Date.now() - L.inicio, codigoFinal: L.codigoFinal,
@@ -511,8 +603,8 @@ function renderEnsino() {
     </div>
     <article class="pagina">
       <div class="pagina-topo">${personagem(L.tipo, n === cartoes.length - 1 ? 'feliz' : 'normal', 52)}<h2>${esc(c.titulo)}</h2></div>
-      ${c.texto}
-      ${c.codigo ? htmlExemplo(c) : ''}
+      ${marcarAjustes(c.texto)}
+      ${c.codigo ? (roda(c) ? htmlExemplo(c) : htmlTrecho(c)) : ''}
     </article>
   </div>`
   $('#corpo').scrollTop = 0
@@ -527,7 +619,7 @@ function renderEnsino() {
   $('#principal').onclick = () => ultimo ? irParaExercicios() : (L.passo++, proximo())
   $('#pular-ensino').onclick = irParaExercicios
   const v = $('#voltar-ensino'); if (v) v.onclick = () => { L.passo--; proximo() }
-  if (c.codigo) ligarExemplo(c)
+  if (c.codigo && roda(c)) ligarExemplo(c)
   $('#principal').focus({ preventScroll: true })
   salvarAndamento()
 }
@@ -538,6 +630,11 @@ function irParaExercicios() {
   atualizarBarra()
   proximo()
 }
+
+// só Python roda no servidor; TypeScript, React, SQL, GraphQL e YAML aparecem como trecho de leitura
+const roda = c => !c.linguagem || c.linguagem === 'python'
+const NOME_LING = { ts: 'TypeScript', tsx: 'React (TSX)', js: 'JavaScript', jsx: 'React (JSX)', sql: 'SQL', graphql: 'GraphQL', yaml: 'YAML', bash: 'Terminal', json: 'JSON', css: 'CSS', html: 'HTML', python: 'Python', texto: 'Texto' }
+const htmlTrecho = c => `<div class="rotulo">${esc(NOME_LING[c.linguagem] || c.linguagem)} · para ler</div><pre class="cod">${realcar(c.codigo)}</pre>`
 
 // exemplo do ensino: dá para editar e rodar quantas vezes quiser
 function htmlExemplo(c) {
@@ -577,7 +674,8 @@ function renderItem() {
   else if (it.tipo === 'completar') html = htmlCompletar(it)
   else if (it.tipo === 'montar') { L.pecas = embaralhar([...it.certa, ...(it.extras || [])]).map((txt, id) => ({ txt, id })); L.montado = []; html = htmlMontar(it) }
   else if (it.tipo === 'codigo') html = htmlCodigo(it)
-  const TIPOS = { escolha: 'Escolha a resposta', completar: 'Complete o código', montar: 'Monte a linha', codigo: 'Escreva o código' }
+  else if (it.tipo === 'entrevista') html = htmlEntrevista(it)
+  const TIPOS = { escolha: 'Escolha a resposta', completar: 'Complete o código', montar: 'Monte a linha', codigo: 'Escreva o código', entrevista: 'Pergunta de entrevista' }
   $('#contador').textContent = `${L.feitos}/${L.total}`
   const corpo = $('#corpo')
   corpo.innerHTML = `<div class="corpo-in entrar"><span class="kicker">${TIPOS[it.tipo]}</span>${html}
@@ -676,6 +774,7 @@ function htmlCodigo(it) {
 }
 
 function ligarItem(it) {
+  if (it.tipo === 'entrevista') return ligarEntrevista(it)
   if (it.tipo === 'escolha') {
     $$('.opcao').forEach(b => b.onclick = () => {
       $$('.opcao').forEach(x => x.classList.remove('sel'))
@@ -778,8 +877,67 @@ function abrirTeoria() {
 function podeVerificar(sim) { const b = $('#principal'); if (b && L.estado === 'responder') b.disabled = !sim }
 const rodapeIn = (html, classe = '') => `<div class="rodape-in ${classe}">${html}</div>`
 
+function htmlEntrevista(it) {
+  const rascunho = prog.rascunhos[it.id] ?? ''
+  return `<h2>${it.pergunta}</h2>
+  ${it.avalia ? `<p class="enunciado"><b>O que avaliam:</b> ${it.avalia}</p>` : ''}
+  <div class="ensaio">
+    <div class="ensaio-topo"><span>Responda em voz alta ou anote os tópicos</span><span class="cronometro" id="cronometro">0:00</span></div>
+    <textarea id="ensaio" rows="5" placeholder="Ex.: contexto → o que eu fiz → resultado → o que aprendi" aria-label="Seus tópicos">${esc(rascunho)}</textarea>
+  </div>
+  <div class="modelo" id="modelo" hidden></div>`
+}
+function ligarEntrevista(it) {
+  const ta = $('#ensaio'), ini = Date.now()
+  ta.oninput = () => { prog.rascunhos[it.id] = ta.value; salvarProgresso() }
+  clearInterval(L.relogio)
+  L.relogio = setInterval(() => {
+    const c = $('#cronometro'); if (!c) return clearInterval(L.relogio)
+    const s = Math.round((Date.now() - ini) / 1000)
+    c.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+    c.classList.toggle('longo', s > (it.tempo || 120))
+  }, 1000)
+}
+// trechos "[ajuste: …]" são lembretes para o dono completar com a própria história
+const marcarAjustes = html => (html || '').replace(/\[ajuste:\s*([^\]]*)\]/g, '<mark class="ajuste" title="Complete com a sua história real">✏️ $1</mark>')
+
+function mostrarModelo(it) {
+  clearInterval(L.relogio)
+  const m = $('#modelo'); m.hidden = false
+  m.innerHTML = `<div class="modelo-bloco"><span class="kicker">Resposta-modelo</span>${marcarAjustes(it.resposta)}</div>
+    ${it.pontos?.length ? `<div class="modelo-bloco"><span class="kicker">Confira: você falou de…</span>
+      <ul class="checklist">${it.pontos.map((p, k) => `<li><label><input type="checkbox" data-k="${k}"> <span>${p}</span></label></li>`).join('')}</ul></div>` : ''}
+    ${it.evitar?.length ? `<div class="modelo-bloco evitar"><span class="kicker">Evite</span><ul>${it.evitar.map(e => `<li>${e}</li>`).join('')}</ul></div>` : ''}
+    ${it.seguimento?.length ? `<div class="modelo-bloco"><span class="kicker">Perguntas que costumam vir depois</span><ul>${it.seguimento.map(e => `<li>${e}</li>`).join('')}</ul></div>` : ''}`
+  m.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  L.estado = 'feedback'
+  const r = $('#rodape'); r.className = 'rodape'
+  r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="treinar">Treinar de novo depois</button></div>
+    <div class="rodape-dir"><button class="btn verde" id="principal">Mandei bem →</button></div>`, 'uma-linha')
+  const marcar = certo => {
+    prog.fracos = prog.fracos || {}
+    prog.fracos[it.id] = Math.max(0, (prog.fracos[it.id] || 0) + (certo ? -1 : 2))
+    if (!prog.fracos[it.id]) delete prog.fracos[it.id]
+    L.ultimoCerto = certo
+    if (certo) { somCerto(); L.feitos++; atualizarBarra(); L.fila.shift() }
+    else { L.erros++; L.fila.push(L.fila.shift()) }
+    salvarProgresso(); proximo()
+  }
+  $('#principal').onclick = () => marcar(true)
+  $('#treinar').onclick = () => marcar(false)
+  $('#principal').focus({ preventScroll: true })
+}
+
 function rodapeResponder(it) {
   const r = $('#rodape'); r.className = 'rodape'; L.estado = 'responder'
+  if (it.tipo === 'entrevista') {
+    r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="pular">Pular</button><button class="btn branco" id="btn-dica-q">💡 Dica</button></div>
+      <button class="btn" id="principal">Ver resposta-modelo</button>`)
+    $('#principal').onclick = () => mostrarModelo(it)
+    $('#pular').onclick = pularExercicio
+    $('#btn-dica-q').onclick = () => mostrarDica(it)
+    return
+  }
   const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição">Pular</button>'
   if (it.tipo === 'codigo') r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="executar">▶ Executar</button></div>
     <button class="btn" id="principal">Verificar</button>`)
@@ -1086,13 +1244,13 @@ async function concluir() {
   const tempo = `${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`
   const primeira = Math.round(100 * L.total / (L.total + L.erros))
   const i = L.i, revisao = l.revisao
-  const seguinte = revisao ? -1 : LICOES.findIndex((x, k) => k > i && !prog.feitas[x.id])
+  const seguinte = revisao ? -1 : LISTA.findIndex((x, k) => k > i && !prog.feitas[x.id])
   somFim()
   app.innerHTML = `${confete()}
   <main class="resultado">
     <div class="resultado-topo">
       <div class="trofeu">${l.final ? trio('feliz', 84) : personagem(L.tipo, 'feliz', 110)}</div>
-      <span class="kicker">${revisao ? 'Revisão' : `Lição ${i + 1}`} concluída</span>
+      <span class="kicker">${revisao ? 'Revisão concluída' : `${CURSO.rotulo} ${i + 1} concluíd${CURSO.rotulo === 'Lição' ? 'a' : 'o'}`}</span>
       <h1>${l.final ? 'Você construiu um Jokenpô!' : revisao ? 'Revisão feita' : esc(l.titulo)}</h1>
       <p>${revisao ? (L.erros ? 'O que você errou volta com mais frequência nas próximas revisões.' : 'Tudo certo. Revisar é o que faz o conteúdo ficar na memória.')
         : L.erros === 0 ? 'Tudo certo de primeira.' : 'Os exercícios que você errou foram refeitos até sair.'}</p>
@@ -1104,9 +1262,9 @@ async function concluir() {
     </div>
     ${revisao ? '' : htmlResumo(l)}
     ${l.final ? htmlJogar(arquivo) : ''}
-    ${!revisao && !l.final && !jaFeita ? '<p class="continuar-info" style="text-align:center">Mais uma parte do seu <code>jokenpo.py</code> foi liberada no início.</p>' : ''}
+    ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no início.' : 'O painel da vaga no início foi atualizado.'}</p>` : ''}
     <div class="resultado-acoes">
-      ${seguinte >= 0 ? `<button class="btn largo" id="seguinte">Próxima: ${esc(LICOES[seguinte].titulo)} →</button>` : ''}
+      ${seguinte >= 0 ? `<button class="btn largo" id="seguinte">Próxima: ${esc(LISTA[seguinte].titulo)} →</button>` : ''}
       <button class="btn ${seguinte >= 0 ? 'branco' : ''} largo" id="cont">Voltar ao início</button>
       <button class="btn branco largo" id="denovo">↻ Fazer de novo</button>
     </div>
@@ -1154,7 +1312,7 @@ function renderFim() {
       <h1>O seu Jokenpô está pronto</h1>
       <p>Tudo isso você já usa em Python:</p>
     </div>
-    <div class="aprendeu">${LICOES.map(l => `<span>${l.icone} ${esc(l.aprende)}</span>`).join('')}</div>
+    <div class="aprendeu">${LISTA.map(l => `<span>${l.icone} ${esc(l.aprende)}</span>`).join('')}</div>
     ${htmlJogar(null)}
     <div class="caixa-fim">
       <h3>Próximos passos</h3>
@@ -1199,7 +1357,16 @@ document.addEventListener('keydown', e => {
 
 // ---------- início ----------
 async function iniciarApp() {
-  renderHome()
+  let ultima = 'python'
+  try { ultima = localStorage.getItem('jokenpy-trilha') || 'python' } catch {}
+  const t = TRILHAS.find(x => x.id === ultima)
+  if (t?.privada) {
+    let senha = null
+    try { senha = localStorage.getItem(`jokenpy-senha-${t.id}`) } catch {}
+    if (senha) { try { await carregarTrilha(t, senha) } catch {} }
+  }
+  if (t && t.id !== 'python' && TRILHAS_CARREGADAS[t.id]) abrirTrilha(t.id)
+  else renderHome()
   try {
     const d = await (await fetch('/ia/status')).json()
     IA_ATIVA = !!d.ativa; marcarServidor(true)

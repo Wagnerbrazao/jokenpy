@@ -11,3 +11,6 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# trilhas privadas (conteúdo pessoal): ficam só no servidor
+trilhas/*.js

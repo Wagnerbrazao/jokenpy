@@ -128,6 +128,42 @@ code,pre,textarea,.peca,.teclas button,.lacuna{font-family:'IBM Plex Mono',ui-mo
 .revisao b{display:block;font-family:'Space Grotesk',sans-serif;font-size:18px}
 .revisao span{color:var(--tinta-2);font-size:14px}
 
+/* painel da vaga */
+.arquivo .ln.req.ok{color:#B8E07A}
+.arquivo .ln.req.parte{color:var(--ambar)}
+.arquivo .ln.req.falta{color:#8A8697}
+.arquivo .ln.req i{color:#8A8697;font-style:italic}
+.arquivo pre{white-space:pre-wrap}
+.arquivo .ln{white-space:pre-wrap;padding-left:3.2em;text-indent:-2.4em}
+
+/* pergunta de entrevista */
+.ensaio{border:2px solid var(--tinta);border-radius:var(--raio);background:var(--folha);box-shadow:3px 3px 0 var(--tinta);overflow:hidden;margin-bottom:14px}
+.ensaio-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 12px;border-bottom:1.5px solid var(--tinta);background:var(--fundo);font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.cronometro{font-size:13px;color:var(--tinta)}
+.cronometro.longo{color:var(--erro)}
+.ensaio textarea{display:block;width:100%;border:0;outline:none;resize:vertical;padding:12px 14px;font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.55;background:transparent;color:var(--tinta)}
+.modelo{display:grid;gap:12px;margin-top:6px}
+.modelo-bloco{border:2px solid var(--tinta);border-radius:var(--raio);background:var(--folha);padding:14px 16px;box-shadow:3px 3px 0 var(--tinta)}
+.modelo-bloco:first-child{border-left:8px solid var(--ok)}
+.modelo-bloco p,.modelo-bloco li{color:var(--tinta-2);line-height:1.65;font-size:15.5px}
+.modelo-bloco ul{padding-left:20px;margin:6px 0 0}
+.modelo-bloco.evitar{border-left:8px solid var(--erro)}
+.modelo-bloco code{background:var(--fundo);padding:0 5px;border-radius:4px;font-size:.88em}
+.checklist{list-style:none;padding:0 !important}
+.checklist li{margin:6px 0}
+.checklist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checklist input{width:18px;height:18px;margin-top:4px;accent-color:var(--ok);flex:none}
+
+mark.ajuste{background:var(--ambar-claro);border:1.5px dashed var(--ambar);border-radius:4px;padding:0 4px;color:#7A5200;font-weight:600}
+
+/* seletor de trilhas */
+.trilhas{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px}
+.trilha{display:flex;align-items:center;gap:8px;background:var(--folha);border:2px solid var(--tinta);border-radius:var(--raio);padding:8px 14px;font-weight:700;font-size:14.5px;box-shadow:3px 3px 0 var(--tinta)}
+.trilha:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--tinta)}
+.trilha.ativa{background:var(--tinta);color:var(--folha);box-shadow:3px 3px 0 var(--pedra)}
+.modal.senha input{width:100%;font-size:16px;padding:11px 12px;border:2px solid var(--tinta);border-radius:var(--raio);margin:6px 0 12px;background:var(--folha)}
+.senha-erro{color:var(--erro);font-weight:600;margin:-4px 0 10px}
+
 /* partes do curso */
 .ato{margin-top:44px}
 .ato-topo{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--tinta)}
