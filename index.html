@@ -304,6 +304,7 @@ pre.cod{background:var(--cod);color:var(--cod-txt);border-radius:16px;padding:14
 .cronometro.longo{color:var(--erro)}
 .ensaio textarea{display:block;width:100%;border:0;outline:none;resize:vertical;padding:12px 14px;font-family:'Inter',system-ui,sans-serif;font-size:15.5px;line-height:1.55;background:transparent;color:var(--texto)}
 .modelo{display:grid;gap:12px;margin-top:6px}
+.modelo-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
 .modelo-bloco{background:var(--card);border:2px solid var(--linha);border-radius:18px;padding:14px 16px}
 .modelo-bloco:first-child{border-color:var(--ok)}
 .modelo-bloco p,.modelo-bloco li{color:var(--texto-2);line-height:1.65;font-size:15.5px}
@@ -374,6 +375,22 @@ mark.ajuste{background:#FFF3CC;border:1.5px dashed var(--sol);border-radius:6px;
   .lateral > *{order:1}
 }
 @media (max-width:520px){
+  .rotulo-btn{display:none}
+  .uma-linha .rodape-esq .btn{flex:none;min-width:52px;padding:12px 14px}
+  .caminho{gap:18px;padding-top:40px}
+  .item{transform:translateX(calc(var(--x) * .75))}
+  .item.atual{margin-top:26px}
+  .hex{width:70px;height:64px}
+  .no .ico{font-size:25px}
+  .rotulo-no{margin-top:7px}
+  .rotulo-no b{font-size:13px}
+  .mundo{margin-bottom:22px}
+  .modelo-bloco{padding:12px 14px}
+  .modelo-bloco p,.modelo-bloco li{font-size:15px;line-height:1.6}
+  .checklist label{padding:4px 0}
+  .ensaio textarea{min-height:110px}
+  .pagina p,.pagina li{font-size:15.5px}
+  .opcao{padding:12px 14px;font-size:15px}
   .topo-in{padding:9px 14px}
   .marca{font-size:20px}
   .marca-trio .pers{width:22px;height:22px}

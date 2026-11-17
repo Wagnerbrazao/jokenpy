@@ -702,6 +702,11 @@ function renderItem() {
 
 const htmlResumo = l => l.resumo?.length ? `<div class="resumo"><h3>Para guardar</h3><ul>${l.resumo.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''
 
+function rotularDica(vistas, total) {
+  const txt = vistas >= total ? ' Dicas' : ` Dica (${vistas}/${total})`
+  const b = $('#btn-dica'); if (b) b.textContent = '💡' + txt
+  const q = $('#btn-dica-q'); if (q) q.innerHTML = `💡<span class="rotulo-btn">${txt}</span>`
+}
 // dicas do exercício: cada clique revela a próxima, da mais geral à mais específica
 function mostrarDica(it) {
   const dicas = it.dicas || []
@@ -718,7 +723,7 @@ function mostrarDica(it) {
   const md = $('#mais-dica'); if (md) md.onclick = () => mostrarDica(it)
   const dr = $('#dica-resumo'); if (dr) dr.onclick = abrirTeoria
   const di = $('#dica-ia'); if (di) di.onclick = () => pedirDica(it)
-  for (const id of ['#btn-dica', '#btn-dica-q']) { const b = $(id); if (b) b.textContent = acabou ? '💡 Dicas' : `💡 Dica (${n}/${dicas.length})` }
+  rotularDica(n, dicas.length)
   box.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 }
 
@@ -915,20 +920,35 @@ function ligarEntrevista(it) {
 // trechos "[ajuste: …]" são lembretes para o dono completar com a própria história
 const marcarAjustes = html => (html || '').replace(/\[ajuste:\s*([^\]]*)\]/g, '<mark class="ajuste" title="Complete com a sua história real">✏️ $1</mark>')
 
+// lê a resposta-modelo em voz alta (bom para estudar no celular, andando ou no ônibus)
+function ouvir(texto, botao) {
+  const fala = window.speechSynthesis
+  if (fala.speaking) { fala.cancel(); botao.textContent = '🔊 Ouvir'; return }
+  const u = new SpeechSynthesisUtterance(texto)
+  u.lang = 'pt-BR'; u.rate = 1.05
+  const voz = fala.getVoices().find(v => v.lang?.toLowerCase().startsWith('pt'))
+  if (voz) u.voice = voz
+  u.onend = u.onerror = () => { if (botao.isConnected) botao.textContent = '🔊 Ouvir' }
+  botao.textContent = '⏹ Parar'
+  fala.speak(u)
+}
+
 function mostrarModelo(it) {
   clearInterval(L.relogio)
   const m = $('#modelo'); m.hidden = false
-  m.innerHTML = `<div class="modelo-bloco"><span class="kicker">Resposta-modelo</span>${marcarAjustes(it.resposta)}</div>
+  m.innerHTML = `<div class="modelo-bloco"><div class="modelo-topo"><span class="kicker">Resposta-modelo</span>${'speechSynthesis' in window ? '<button class="btn branco mini" id="ouvir">🔊 Ouvir</button>' : ''}</div>${marcarAjustes(it.resposta)}</div>
     ${it.pontos?.length ? `<div class="modelo-bloco"><span class="kicker">Confira: você falou de…</span>
       <ul class="checklist">${it.pontos.map((p, k) => `<li><label><input type="checkbox" data-k="${k}"> <span>${p}</span></label></li>`).join('')}</ul></div>` : ''}
     ${it.evitar?.length ? `<div class="modelo-bloco evitar"><span class="kicker">Evite</span><ul>${it.evitar.map(e => `<li>${e}</li>`).join('')}</ul></div>` : ''}
     ${it.seguimento?.length ? `<div class="modelo-bloco"><span class="kicker">Perguntas que costumam vir depois</span><ul>${it.seguimento.map(e => `<li>${e}</li>`).join('')}</ul></div>` : ''}`
   m.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  const ou = $('#ouvir'); if (ou) ou.onclick = () => ouvir(textoDe(it.resposta.replace(/\[ajuste:[^\]]*\]/g, '')), ou)
   L.estado = 'feedback'
   const r = $('#rodape'); r.className = 'rodape'
-  r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="treinar">Treinar de novo depois</button></div>
-    <div class="rodape-dir"><button class="btn verde" id="principal">Mandei bem →</button></div>`, 'uma-linha')
+  r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="treinar" title="Esta pergunta volta para você treinar de novo">↻ Treinar</button></div>
+    <div class="rodape-dir"><button class="btn verde" id="principal">✓ Mandei bem</button></div>`, 'uma-linha')
   const marcar = certo => {
+    if ('speechSynthesis' in window) speechSynthesis.cancel()
     prog.fracos = prog.fracos || {}
     prog.fracos[it.id] = Math.max(0, (prog.fracos[it.id] || 0) + (certo ? -1 : 2))
     if (!prog.fracos[it.id]) delete prog.fracos[it.id]
@@ -945,23 +965,23 @@ function mostrarModelo(it) {
 function rodapeResponder(it) {
   const r = $('#rodape'); r.className = 'rodape'; L.estado = 'responder'
   if (it.tipo === 'entrevista') {
-    r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="pular">Pular</button><button class="btn branco" id="btn-dica-q">💡 Dica</button></div>
-      <button class="btn" id="principal">Ver resposta-modelo</button>`)
+    r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="pular" title="Pular" aria-label="Pular">⏭<span class="rotulo-btn"> Pular</span></button><button class="btn branco" id="btn-dica-q" title="Dica" aria-label="Dica">💡<span class="rotulo-btn"> Dica</span></button></div>
+      <div class="rodape-dir"><button class="btn" id="principal">Ver resposta</button></div>`, 'uma-linha')
     $('#principal').onclick = () => mostrarModelo(it)
     $('#pular').onclick = pularExercicio
     $('#btn-dica-q').onclick = () => mostrarDica(it)
     return
   }
-  const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição">Pular</button>'
-  if (it.tipo === 'codigo') r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="executar">▶ Executar</button></div>
-    <button class="btn" id="principal">Verificar</button>`)
-  else r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="btn-dica-q" title="Uma pista de cada vez, sem entregar a resposta">💡 Dica</button></div>
-    <button class="btn" id="principal" disabled>Verificar</button>`)
+  const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição" aria-label="Pular">⏭<span class="rotulo-btn"> Pular</span></button>'
+  if (it.tipo === 'codigo') r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="executar" title="Executar" aria-label="Executar">▶<span class="rotulo-btn"> Executar</span></button></div>
+    <div class="rodape-dir"><button class="btn" id="principal">Verificar</button></div>`, 'uma-linha')
+  else r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="btn-dica-q" title="Uma pista de cada vez, sem entregar a resposta" aria-label="Dica">💡<span class="rotulo-btn"> Dica</span></button></div>
+    <div class="rodape-dir"><button class="btn" id="principal" disabled>Verificar</button></div>`, 'uma-linha')
   $('#principal').onclick = verificar
   $('#pular').onclick = pularExercicio
   const ex = $('#executar'); if (ex) ex.onclick = () => executarLivre(it)
   const dq = $('#btn-dica-q'); if (dq) dq.onclick = () => (it.dicas?.length || !IA_ATIVA) ? mostrarDica(it) : dicaQuestao(it)
-  const n = it.dicas?.length; if (n && L.dicasVistas) for (const id of ['#btn-dica', '#btn-dica-q']) { const b = $(id); if (b) b.textContent = L.dicasVistas >= n ? '💡 Dicas' : `💡 Dica (${L.dicasVistas}/${n})` }
+  const n = it.dicas?.length; if (n && L.dicasVistas) rotularDica(L.dicasVistas, n)
 }
 
 // pular não custa vida: o exercício só vai para o fim da fila
