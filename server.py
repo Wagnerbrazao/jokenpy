@@ -17,7 +17,7 @@ import urllib.request
 from pathlib import Path
 
 from fastapi import Body, FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel
 
 PASTA = Path(__file__).parent
@@ -61,17 +61,22 @@ def checar_origem(x_jokenpy: str | None):
 
 @app.get("/")
 def pagina():
-    return FileResponse(PASTA / "index.html")
+    # Os scripts levam a versão (data de modificação) na URL: depois de uma atualização, o navegador
+    # nunca mistura o HTML novo com um app.js antigo guardado em cache.
+    versao = int(max((PASTA / f).stat().st_mtime for f in ("app.js", "licoes.js", "index.html")))
+    html = (PASTA / "index.html").read_text(encoding="utf-8")
+    html = html.replace('src="/licoes.js"', f'src="/licoes.js?v={versao}"').replace('src="/app.js"', f'src="/app.js?v={versao}"')
+    return HTMLResponse(html, headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/licoes.js")
 def licoes():
-    return FileResponse(PASTA / "licoes.js", media_type="text/javascript")
+    return FileResponse(PASTA / "licoes.js", media_type="text/javascript", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/app.js")
 def app_js():
-    return FileResponse(PASTA / "app.js", media_type="text/javascript")
+    return FileResponse(PASTA / "app.js", media_type="text/javascript", headers={"Cache-Control": "no-cache"})
 
 
 # ---------- trilhas extras (ex.: trilhas/entrevista.js) ----------
