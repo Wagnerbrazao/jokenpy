@@ -58,11 +58,11 @@ const CURSO_PYTHON = {
 // Catálogo: aparece no início mesmo antes de a trilha ser baixada. As públicas vêm de /cursos/<id>.js
 // (geradas de conteudo/<id>/); a lista de quais existem neste servidor está em /cursos/indice.json.
 const TRILHAS = [
-  { id: 'python', titulo: 'Python', sub: 'Aprenda construindo um Jokenpô', icone: '🐍', cor: '#5B5BF0', nivel: 'Do zero', publica: true },
-  { id: 'java-spring', titulo: 'Java + Spring Boot', sub: 'APIs Java para quem já sabe NestJS', icone: '☕', cor: '#E8590C', nivel: 'Intermediário', arquivo: '/cursos/java-spring.js' },
-  { id: 'react', titulo: 'React', sub: 'Componentes, estado e dados de uma API', icone: '⚛️', cor: '#0891B2', nivel: 'Intermediário', arquivo: '/cursos/react.js' },
-  { id: 'django', titulo: 'Django', sub: 'Back-end e API em Python', icone: '🌿', cor: '#0E9F6E', nivel: 'Depois do Python', arquivo: '/cursos/django.js' },
-  { id: 'sql', titulo: 'SQL', sub: 'Consultas de verdade no PostgreSQL', icone: '🗄️', cor: '#C026D3', nivel: 'Todos os níveis', arquivo: '/cursos/sql.js' },
+  { id: 'python', sigla: 'Py', titulo: 'Python', sub: 'Aprenda construindo um Jokenpô', icone: '🐍', cor: '#5B5BF0', nivel: 'Do zero', publica: true },
+  { id: 'java-spring', sigla: 'Jv', titulo: 'Java + Spring Boot', sub: 'APIs Java para quem já sabe NestJS', icone: '☕', cor: '#E8590C', nivel: 'Intermediário', arquivo: '/cursos/java-spring.js' },
+  { id: 'react', sigla: 'Re', titulo: 'React', sub: 'Componentes, estado e dados de uma API', icone: '⚛️', cor: '#0891B2', nivel: 'Intermediário', arquivo: '/cursos/react.js' },
+  { id: 'django', sigla: 'Dj', titulo: 'Django', sub: 'Back-end e API em Python', icone: '🌿', cor: '#0E9F6E', nivel: 'Depois do Python', arquivo: '/cursos/django.js' },
+  { id: 'sql', sigla: 'SQL', titulo: 'SQL', sub: 'Consultas de verdade no PostgreSQL', icone: '🗄️', cor: '#C026D3', nivel: 'Todos os níveis', arquivo: '/cursos/sql.js' },
 ]
 let INDICE = {}   // /cursos/indice.json: { id: { modulos: [...], exercicios } }
 const trilhaDe = id => TRILHAS.find(t => t.id === id)
@@ -339,7 +339,24 @@ const ICONE = {
   revisar: svg('<path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M5.5 10A8 8 0 0 1 19 7.5M18.5 14A8 8 0 0 1 5 16.5"/>'),
   baixar: svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),
   celular: svg('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
+  sol: svg('<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>'),
+  lua: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/>'),
   alvo: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>'),
+}
+
+// selo animado de acerto/erro: o círculo cresce e o traço se desenha
+const seloResposta = certo => `<svg class="selo-resp ${certo ? 'sim' : 'nao'}" viewBox="0 0 48 48" width="48" height="48" aria-hidden="true">
+  <circle cx="24" cy="24" r="22"/>${certo ? '<path d="M14 24.5l7 7 13-14"/>' : '<path d="M17 17l14 14M31 17 17 31"/>'}</svg>`
+const marcaTrilha = (t, classe = '') => `<span class="sigla ${classe}" style="--cor-t:${t.cor}" aria-hidden="true">${t.sigla || t.icone}</span>`
+
+// transição suave entre telas (View Transitions), quando o navegador tem e a pessoa não pediu menos movimento
+const MENOS_MOVIMENTO = matchMedia('(prefers-reduced-motion: reduce)').matches
+let emTransicao = false
+function comTransicao(fn) {
+  if (emTransicao || MENOS_MOVIMENTO || !document.startViewTransition) return fn()
+  emTransicao = true
+  const vt = document.startViewTransition(() => { try { fn() } finally { emTransicao = false } })
+  vt.finished.catch(() => {})
 }
 
 // ---------- trilhas: troca, download e progresso de cada uma ----------
@@ -423,7 +440,7 @@ function pedirSenha(t, tela = 'trilha') {
 
 // ---------- casca do app: topo, abas e navegação ----------
 let TELA = 'hoje'
-function irPara(tela) { TELA = tela; renderHome(); scrollTo(0, 0) }
+function irPara(tela) { comTransicao(() => { TELA = tela; renderHome(); scrollTo(0, 0) }) }
 function renderHome() {
   L = null
   fecharCartao()
@@ -437,11 +454,11 @@ function renderHome() {
 function topo() {
   const seq = sequencia()
   return `<header class="topo"><div class="topo-in">
-    <button class="marca" data-ir="hoje" aria-label="Jokenpy: ir para Hoje"><span class="marca-trio" aria-hidden="true">${trio('normal', 24)}</span><span class="marca-nome">joken<b>py</b></span></button>
+    <button class="marca" data-ir="hoje" aria-label="Jokenpy: ir para Hoje"><span class="marca-sinal" aria-hidden="true"></span><span>joken<b>py</b></span></button>
     ${abas('topo')}
     <div class="stats">
       <span class="stat fogo ${estudouHoje() ? 'aceso' : seq ? 'risco' : ''}" title="${seq} ${seq === 1 ? 'dia seguido' : 'dias seguidos'}${seq && !estudouHoje() ? ': estude hoje para manter' : ''}">${ICONE.fogo}<b>${seq}</b></span>
-      <span class="stat raio" title="XP total">${ICONE.raio}<b>${HAB.xp || 0}</b></span>
+      <button class="tema-btn" id="tema-rapido" aria-label="Mudar para o tema ${temaEscuro() ? 'claro' : 'escuro'}" title="Tema ${temaEscuro() ? 'claro' : 'escuro'}">${temaEscuro() ? ICONE.sol : ICONE.lua}</button>
     </div></div></header>`
 }
 const ABAS = [['hoje', 'Hoje', 'casa'], ['trilhas', 'Trilhas', 'mapa'], ['perfil', 'Você', 'pessoa']]
@@ -452,6 +469,8 @@ function abas(onde) {
 }
 const casca = (classe, html) => `${topo()}<main class="tela ${classe}">${html}</main>${abas('baixo')}`
 function ligarCasca() {
+  const tr = $('#tema-rapido')
+  if (tr) tr.onclick = () => comTransicao(() => { HAB.tema = temaEscuro() ? 'claro' : 'escuro'; salvarHabito(); aplicarTema(); renderHome() })
   $$('[data-ir]').forEach(b => b.onclick = () => { const t = b.dataset.ir; t === TELA ? scrollTo({ top: 0, behavior: 'smooth' }) : irPara(t) })
   $$('[data-trilha]').forEach(b => b.onclick = () => abrirTrilha(b.dataset.trilha))
 }
@@ -501,69 +520,50 @@ function anelSvg(pct, tam, traco, classe = '') {
 function renderHoje() {
   const t = trilhaDe(CURSO.id), alvo = proximaLicao()
   const seq = sequencia(), hoje = xpDeHoje(), meta = metaDiaria(), pct = Math.min(100, Math.round(100 * hoje / meta)), bateu = hoje >= meta
-  const r = resumoTrilha(CURSO.id)
   const feitas = LISTA.filter(l => prog.feitas[l.id]).length, nDevidos = devidos().length
-  const outras = TRILHAS.filter(x => x.id !== CURSO.id && disponivel(x) && resumoTrilha(x.id).mexeu)
-  const java = trilhaDe('java-spring')
-  const sugerirJava = CURSO.id !== 'java-spring' && disponivel(java) && !resumoTrilha('java-spring').mexeu
-  const frase = bateu ? 'Meta de hoje batida. 🎉'
+  const frase = bateu ? 'Meta de hoje batida.'
     : estudouHoje() ? `Faltam ${meta - hoje} XP para a meta.`
-    : seq ? `${seq} ${seq === 1 ? 'dia' : 'dias'} seguidos. Não quebre hoje.`
+    : seq ? `${seq} ${seq === 1 ? 'dia' : 'dias'} seguidos. Mantenha hoje.`
     : 'Cinco minutos já contam.'
   app.innerHTML = casca('hoje', `
     <section class="saudacao">
       <span class="kicker">${saudacao()}</span>
       <h1>${frase}</h1>
     </section>
-    ${alvo ? htmlFoco(t, alvo, r) : `<section class="foco"><span class="foco-trilha">${t.icone} ${esc(t.titulo)}</span>
-      <h2>Trilha concluída 🏆</h2><p>Revise de vez em quando para não esquecer, ou comece outra trilha.</p>
+    ${alvo ? htmlFoco(t, alvo) : `<section class="foco"><span class="foco-rotulo">${marcaTrilha(t, 'mini')}${esc(t.titulo)}</span>
+      <h2>Trilha concluída</h2><p class="foco-porque">Revise de vez em quando para não esquecer, ou comece outra trilha.</p>
       <button class="btn largo" data-ir="trilhas">Escolher outra trilha ${ICONE.seta}</button></section>`}
-    <section class="dia ${bateu ? 'bateu' : ''}">
-      <div class="dia-meta" role="img" aria-label="Meta do dia: ${Math.min(hoje, meta)} de ${meta} XP">${anelSvg(pct, 64, 7, 'sol')}<span><b>${Math.min(hoje, meta)}</b><small>/${meta}</small></span></div>
-      <div class="dia-semana">
-        <div class="dia-linha"><b class="fogo-txt ${estudouHoje() ? 'aceso' : ''}">${ICONE.fogo}${seq} ${seq === 1 ? 'dia' : 'dias'}</b>
-          <span class="protetor" title="Protetores: cada um cobre um dia sem estudo. Ganhe um a cada 7 dias seguidos.">${ICONE.escudo}${HAB.protetores || 0}</span></div>
-        ${semana()}
+    <section class="semana-bloco ${bateu ? 'bateu' : ''}">
+      <div class="semana-topo">
+        <span class="fogo-txt ${estudouHoje() ? 'aceso' : ''}">${ICONE.fogo}<b>${seq}</b> ${seq === 1 ? 'dia' : 'dias'}</span>
+        <span class="meta-txt"><b>${Math.min(hoje, meta)}</b>/${meta} XP hoje</span>
       </div>
+      <span class="barra-meta" role="progressbar" aria-label="Meta do dia" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="--w:${pct}%"></i></span>
+      ${semana()}
     </section>
-    <div class="linhas">
+    ${feitas || !HAB.lembrete?.ativo ? `<div class="linhas">
       ${feitas ? `<button class="linha" id="revisar">
-        <span class="li-ico azul">${ICONE.revisar}</span>
-        <span class="li-txt"><b>${nDevidos ? 'Revisão do dia' : 'Treino extra'}</b><small>${nDevidos ? `${Math.min(nDevidos, 8)} ${nDevidos === 1 ? 'pergunta pronta' : 'perguntas prontas'} para lembrar · ~2 min` : 'Nada vencendo hoje. Treine o que você mais errou.'}</small></span>
+        <span class="li-ico">${ICONE.revisar}</span>
+        <span class="li-txt"><b>${nDevidos ? 'Revisão do dia' : 'Treino extra'}</b><small>${nDevidos ? `${Math.min(nDevidos, 8)} ${nDevidos === 1 ? 'pergunta' : 'perguntas'} para lembrar · 2 min` : 'Treine o que você mais errou'}</small></span>
         ${nDevidos ? `<span class="selo">${Math.min(nDevidos, 8)}</span>` : ICONE.seta}</button>` : ''}
       ${htmlConviteLembrete()}
-      ${sugerirJava ? `<button class="linha" data-trilha="java-spring">
-        <span class="li-ico" style="background:color-mix(in srgb,${java.cor} 14%,var(--card))">${java.icone}</span>
-        <span class="li-txt"><b>${java.titulo}</b><small>Nova trilha: cada conceito comparado com o NestJS</small></span>${ICONE.seta}</button>` : ''}
-      ${htmlConviteInstalar()}
-    </div>
-    ${outras.length ? `<section class="bloco"><h3 class="titulo-bloco">Outras trilhas</h3><div class="mini-trilhas">${outras.map(x => {
-      const rx = resumoTrilha(x.id)
-      return `<button class="mini-trilha" data-trilha="${x.id}" style="--cor-t:${x.cor}"><span class="mt-ico">${x.icone}</span><span class="mt-txt"><b>${esc(x.titulo)}</b>
-        <span class="barra-fina"><i style="width:${rx.pct}%"></i></span></span><small>${rx.pct}%</small></button>`
-    }).join('')}</div></section>` : ''}
+    </div>` : ''}
   `)
-  const sg = $('#seguir'); if (sg) sg.onclick = () => alvo.andamento ? retomar() : iniciar(alvo.i)
-  const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
+  const sg = $('#seguir'); if (sg) sg.onclick = () => comTransicao(() => alvo.andamento ? retomar() : iniciar(alvo.i))
+  const rv = $('#revisar'); if (rv) rv.onclick = () => comTransicao(iniciarRevisao)
   ligarConvites()
   atualizarSelo(nDevidos)
 }
 // número no ícone do app instalado: quantas revisões estão esperando
 function atualizarSelo(n) { try { n ? navigator.setAppBadge?.(n).catch(() => {}) : navigator.clearAppBadge?.().catch(() => {}) } catch {} }
 
-function htmlFoco(t, alvo, r) {
-  const l = LISTA[alvo.i], a = prog.emAndamento
+function htmlFoco(t, alvo) {
+  const l = LISTA[alvo.i], a = prog.emAndamento, r = resumoTrilha(CURSO.id)
   return `<section class="foco" style="--cor-t:${t.cor}">
-    <div class="foco-topo"><button class="foco-trilha" data-ir="trilha">${t.icone} ${esc(t.titulo)}</button><span class="foco-tempo">${ICONE.relogio}${minutos(l)} min</span></div>
-    <div class="foco-meio">
-      <div class="foco-anel">${anelSvg(r.pct, 92, 6, 'trilha')}<span class="foco-ico">${l.icone}</span></div>
-      <div class="foco-txt">
-        <small>${alvo.andamento ? `Parou em ${a.feitos} de ${l.exercicios.length}` : `${CURSO.rotulo} ${alvo.i + 1} de ${LISTA.length}`}</small>
-        <h2>${esc(l.titulo)}</h2>
-      </div>
-    </div>
+    <button class="foco-rotulo" data-ir="trilha">${marcaTrilha(t, 'mini')}${esc(t.titulo)}<span>· ${CURSO.rotulo} ${alvo.i + 1} de ${LISTA.length}</span></button>
+    <h2>${esc(l.titulo)}</h2>
     <p class="foco-porque">${esc(l.porque || `Você vai ver: ${l.aprende}.`)}</p>
-    ${!alvo.andamento && l.gancho ? `<p class="foco-gancho">${ICONE.raio}<span>Começa com um desafio: <b>${esc(l.gancho.titulo)}</b></span></p>` : ''}
+    <div class="foco-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${alvo.andamento ? `${a.feitos}/${l.exercicios.length} nesta lição` : `${minutos(l)} min`}</small></div>
     <button class="btn grande largo" id="seguir">${alvo.andamento ? 'Continuar' : 'Começar'} ${ICONE.seta}</button>
   </section>`
 }
@@ -578,7 +578,7 @@ function renderTrilhas() {
     <div class="lista-trilhas">${TRILHAS.filter(disponivel).map(t => {
       const r = resumoTrilha(t.id), atual = t.id === CURSO.id
       return `<button class="card-trilha ${atual ? 'atual' : ''}" data-trilha="${t.id}" style="--cor-t:${t.cor}">
-        <span class="ct-ico" aria-hidden="true">${t.icone}</span>
+        ${marcaTrilha(t)}
         <span class="ct-txt"><b>${esc(t.titulo)}</b><span>${esc(t.sub)}</span>
           <span class="ct-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${r.pct ? `${r.feitos}/${r.total}` : `${r.total} ${t.id === 'python' ? 'lições' : 'módulos'}`}</small></span></span>
         ${atual ? '<span class="ct-atual">Atual</span>' : ''}
@@ -597,15 +597,13 @@ function renderTrilha() {
     <div class="caminho-col">
       <button class="voltar-trilhas" data-ir="trilhas">${ICONE.voltar} Trilhas</button>
       <section class="trilha-cabeca" style="--cor-t:${t.cor}">
-        <span class="ct-ico grande" aria-hidden="true">${t.icone}</span>
-        <span class="kicker">${esc(CURSO.kicker)}</span>
-        <h1>${CURSO.titulo}</h1>
-        <p>${CURSO.subtitulo}</p>
+        ${marcaTrilha(t, 'grande')}
+        <h1>${esc(t.titulo)}</h1>
+        <p>${esc(t.sub)}</p>
         <div class="ct-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${r.feitos} de ${r.total}</small></div>
       </section>
       ${atosDoCurso().map((ato, m) => `<section class="parte cor-${ato.tipo}">
         <div class="parte-cab">
-          ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 40)}
           <div><small>Parte ${m + 1} · ${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</small><h2>${esc(ato.titulo)}</h2></div>
         </div>
         <ol class="linha-tempo">
@@ -613,7 +611,7 @@ function renderTrilha() {
             const l = LISTA[i], feita = !!prog.feitas[l.id], atual = i === alvo
             return `<li class="etapa ${feita ? 'feita' : ''} ${atual ? 'atual' : ''}">
               <button class="etapa-btn" data-i="${i}" aria-label="${esc(l.titulo)}${feita ? ' (concluída)' : ''}">
-                <span class="etapa-no" aria-hidden="true">${feita ? ICONE.check : l.icone}</span>
+                <span class="etapa-no" aria-hidden="true">${feita ? ICONE.check : String(i + 1).padStart(2, '0')}</span>
                 <span class="etapa-txt"><b>${esc(l.titulo)}</b><small>${CURSO.rotulo} ${i + 1} · ${minutos(l)} min${l.bonus ? ' · bônus' : ''}</small></span>
                 ${feita ? htmlEstrelas(prog.estrelas?.[l.id] || 1) : ''}
               </button>
@@ -638,8 +636,8 @@ function renderTrilha() {
     </aside>
   </div>`)
   $$('.etapa-btn').forEach(b => b.onclick = () => +b.dataset.i === alvo ? null : alternarCartao(+b.dataset.i, b.parentElement))
-  const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
-  const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
+  const sg = $('#seguir'); if (sg) sg.onclick = () => comTransicao(() => andamento ? retomar() : iniciar(alvo))
+  const rv = $('#revisar'); if (rv) rv.onclick = () => comTransicao(iniciarRevisao)
   $('#zerar').onclick = () => {
     if (!confirm(`Apagar o progresso da trilha ${t.titulo} (lições, estrelas, rascunhos e revisão)? A ofensiva e o XP total continuam.`)) return
     prog = novoProgresso(); salvarProgresso(); renderHome()
@@ -719,6 +717,7 @@ function htmlConstancia() {
 }
 
 // ---------- tema ----------
+const temaEscuro = () => HAB.tema === 'escuro' || ((HAB.tema || 'auto') === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)
 function aplicarTema() {
   const t = HAB.tema || 'auto'
   if (t === 'auto') delete document.documentElement.dataset.tema
@@ -818,7 +817,7 @@ async function desativarLembrete() {
 function htmlConviteLembrete() {
   if (HAB.lembrete?.ativo) return ''
   return `<button class="linha" id="convite-lembrete">
-    <span class="li-ico sol">${ICONE.sino}</span>
+    <span class="li-ico">${ICONE.sino}</span>
     <span class="li-txt"><b>Escolha a hora de estudar</b><small>Com horário fixo você estuda mais. A gente lembra.</small></span>${ICONE.seta}</button>`
 }
 function htmlLembrete() {
@@ -1061,7 +1060,7 @@ function iniciarRevisao() {
   iniciar(-1, null, true, { id: 'revisao', titulo: espacada ? 'Revisão do dia' : 'Treino extra', icone: '🧠', aprende: 'revisar o que já viu', revisao: true, ensino: [], exercicios: embaralhar(escolhidos) })
 }
 
-function retomar() { const i = indiceAndamento(); if (i >= 0) iniciar(i, prog.emAndamento) }
+function retomar() { const i = indiceAndamento(); if (i >= 0) comTransicao(() => iniciar(i, prog.emAndamento)) }
 function sairDaLicao() { salvarAndamento(); toast(L.licao.revisao ? 'Revisão encerrada.' : 'Progresso salvo. Continue quando quiser.'); renderHome() }
 
 // guarda onde você está na lição (chamado a cada passo)
@@ -1134,7 +1133,7 @@ function renderEnsino() {
       <div class="pontos" aria-hidden="true">${cartoes.map((_, k) => `<i class="${k < n ? 'visto' : k === n ? 'agora' : ''}"></i>`).join('')}</div>
     </div>
     <article class="pagina">
-      <div class="pagina-topo">${personagem(L.tipo, n === cartoes.length - 1 ? 'feliz' : 'normal', 52)}<h2>${esc(c.titulo)}</h2></div>
+      <div class="pagina-topo"><h2>${esc(c.titulo)}</h2></div>
       ${marcarAjustes(c.texto)}
       ${c.codigo ? (roda(c) ? htmlExemplo(c) : htmlTrecho(c)) : ''}
     </article>
@@ -1512,7 +1511,7 @@ function pularExercicio() {
 
 function rodapeFeedback(certo, titulo, detalhe, extras = '', rotulo = 'Continuar') {
   const r = $('#rodape'); r.className = 'rodape ' + (certo ? 'certo' : 'errado')
-  r.innerHTML = rodapeIn(`<div class="fb"><div class="fb-ico">${personagem(L.tipo || 'pedra', certo ? 'feliz' : 'pensando', 54, certo ? 'pula' : 'balanca')}</div>
+  r.innerHTML = rodapeIn(`<div class="fb"><div class="fb-ico">${seloResposta(certo)}</div>
     <div><h3>${titulo}</h3>${detalhe ? `<p>${detalhe}</p>` : ''}</div></div>
     <div class="fb-acoes">${extras}<button class="btn ${certo ? '' : 'vermelho'}" id="principal">${rotulo}</button></div>`)
   $('#principal').focus({ preventScroll: true })
@@ -1521,7 +1520,8 @@ function rodapeFeedback(certo, titulo, detalhe, extras = '', rotulo = 'Continuar
 const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Na mosca!', 'Perfeito!', 'Boa jogada!']
 const elogio = () => ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)]
 function atualizarBarra() {
-  const b = $('#barra'); if (b) b.style.width = (100 * L.feitos / L.total) + '%'
+  const b = $('#barra')
+  if (b) { const w = (100 * L.feitos / L.total) + '%'; if (b.style.width && b.style.width !== w) { b.classList.remove('brilha'); void b.offsetWidth; b.classList.add('brilha') } b.style.width = w }
   const cb = $('#combo')
   if (cb) { cb.hidden = L.combo < 3; cb.textContent = `🔥 ${L.combo}`; if (L.combo >= 3) { cb.classList.remove('pop'); void cb.offsetWidth; cb.classList.add('pop') } }
   const c = $('#contador'); if (c && L.fase === 'exercicios') c.textContent = `${L.feitos}/${L.total}`
@@ -1812,7 +1812,7 @@ async function concluir() {
   app.innerHTML = `${confete()}
   <main class="resultado">
     <div class="resultado-topo">
-      <div class="trofeu">${l.final ? trio('feliz', 84) : personagem(L.tipo, 'feliz', 110)}</div>
+      <div class="trofeu">${seloResposta(true).replace('width="48" height="48"', 'width="88" height="88"')}</div>
       <span class="kicker">${revisao ? 'Revisão concluída' : `${CURSO.rotulo} ${i + 1} concluíd${CURSO.rotulo === 'Lição' ? 'a' : 'o'}`}</span>
       <h1>${l.final ? 'Você construiu um Jokenpô!' : revisao ? 'Revisão feita' : esc(l.titulo)}</h1>
       <p>${revisao ? (L.erros ? 'O que você errou volta com mais frequência nas próximas revisões.' : 'Tudo certo. Revisar é o que faz o conteúdo ficar na memória.')
@@ -1820,9 +1820,9 @@ async function concluir() {
     </div>
     ${revisao ? '' : `<div class="estrelas-grandes">${htmlEstrelas(estrelas)}</div>`}
     <div class="cartoes">
-      <div class="cartao c-xp"><small>XP</small><b>⚡ +<span class="contar" data-n="${xp}">0</span></b></div>
-      <div class="cartao c-acerto"><small>De primeira</small><b>🎯 ${primeira}%</b></div>
-      <div class="cartao c-tempo"><small>Tempo</small><b>⏱ ${tempo}</b></div>
+      <div class="cartao c-xp"><small>XP</small><b>+<span class="contar" data-n="${xp}">0</span></b></div>
+      <div class="cartao c-acerto"><small>De primeira</small><b><span class="contar" data-n="${primeira}">0</span>%</b></div>
+      <div class="cartao c-tempo"><small>Tempo</small><b>${tempo}</b></div>
     </div>
     ${novoDia || bateuMeta || ganhouProtetor ? `<div class="conquistas">
       ${novoDia ? `<div class="conquista fogo-c">${ICONE.fogo}<span><b>${sequencia()} ${sequencia() === 1 ? 'dia' : 'dias'} de ofensiva</b><small>${sequencia() === 1 ? 'O primeiro dia é o mais difícil. Volte amanhã.' : 'Mais um dia na conta. Volte amanhã.'}</small></span></div>` : ''}
@@ -1834,7 +1834,7 @@ async function concluir() {
     ${l.final ? htmlJogar(arquivo) : ''}
     ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no mapa da trilha.' : 'Suas competências no mapa da trilha foram atualizadas.'}</p>` : ''}
     <div class="resultado-acoes">
-      ${seguinte >= 0 ? `<button class="btn largo" id="seguinte">Próxima: ${esc(LISTA[seguinte].titulo)} →</button>` : ''}
+      ${seguinte >= 0 ? `<button class="btn largo" id="seguinte"><span>Próxima: ${esc(LISTA[seguinte].titulo)}</span>${ICONE.seta}</button>` : ''}
       <button class="btn ${seguinte >= 0 ? 'branco' : ''} largo" id="cont">Voltar ao início</button>
       <button class="btn branco largo" id="denovo">↻ Fazer de novo</button>
     </div>
@@ -1881,7 +1881,7 @@ function renderFim() {
   app.innerHTML = `${topo()}
   <main class="resultado">
     <div class="resultado-topo">
-      <div class="trofeu">${trio('feliz', 84)}</div>
+      <div class="trofeu">${seloResposta(true).replace('width="48" height="48"', 'width="88" height="88"')}</div>
       <span class="kicker">Projeto concluído</span>
       <h1>O seu Jokenpô está pronto</h1>
       <p>Tudo isso você já usa em Python:</p>
@@ -1903,10 +1903,14 @@ function renderFim() {
   const bx = $('#baixar'); if (bx) bx.onclick = baixarJogo
 }
 
+// partículas discretas na cor da trilha: saem do selo e caem
 function confete() {
-  const emojis = ['✊', '✋', '✌️', '⭐', '🐍']
-  return `<div class="confete" aria-hidden="true">${Array.from({ length: 28 }, () =>
-    `<span style="left:${Math.random() * 100}%;animation-delay:${(Math.random() * 0.8).toFixed(2)}s">${emojis[Math.floor(Math.random() * emojis.length)]}</span>`).join('')}</div>`
+  if (MENOS_MOVIMENTO) return ''
+  const cores = [getComputedStyle(document.documentElement).getPropertyValue('--acao').trim() || '#5B5BF0', '#12B76A', '#FFB020', '#4A9DFF']
+  return `<div class="confete" aria-hidden="true">${Array.from({ length: 34 }, (_, k) => {
+    const ang = (Math.PI * 2 * k) / 34 + Math.random() * 0.3, dist = 90 + Math.random() * 130
+    return `<span style="--dx:${(Math.cos(ang) * dist).toFixed(0)}px;--dy:${(Math.sin(ang) * dist - 40).toFixed(0)}px;--r:${Math.round(Math.random() * 540 - 270)}deg;background:${cores[k % cores.length]};animation-delay:${(0.15 + Math.random() * 0.15).toFixed(2)}s;${k % 3 ? '' : 'border-radius:50%;'}"></span>`
+  }).join('')}</div>`
 }
 
 // ---------- teclado ----------
