@@ -4,6 +4,20 @@ MODULOS.push({
   icone: '🔌',
   aprende: 'ModelSerializer, validação, APIView, ViewSet com router, permissões e paginação',
   porque: 'A maioria das vagas Django é de API para front-end ou app, e o Django REST Framework é o padrão de mercado para isso.',
+  gancho: {
+    titulo: 'O JSON que falou demais',
+    pergunta: 'O que aparece no JSON de <code>GET /api/usuarios/</code>?',
+    linguagem: 'django',
+    codigo: `from django.contrib.auth.models import User
+
+class UsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = "__all__"`,
+    opcoes: ['Só id, username e email', 'Tudo, menos a senha (o Django esconde)', 'Tudo, inclusive o hash da senha', 'Erro: password é protegido'],
+    certa: 2,
+    revelacao: '<code>"__all__"</code> é literal: vão <code>password</code> (o hash), <code>is_superuser</code> e o resto, sem nenhum <code>@Exclude()</code> automático como no class-transformer. Nesta lição você vai ver como declarar campos, <code>write_only</code> e permissões para a API expor só o que deve.',
+  },
   resumo: [
     'O <b>serializer</b> converte model em JSON e valida o JSON que chega: é DTO e validação ao mesmo tempo',
     '<code>validate_&lt;campo&gt;(self, value)</code> valida um campo; <code>validate(self, attrs)</code> valida o conjunto',

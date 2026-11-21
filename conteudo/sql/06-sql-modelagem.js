@@ -4,6 +4,20 @@ MODULOS.push({
   icone: '🏗️',
   aprende: 'CREATE TABLE, tipos, chaves, restrições, índices (inclusive compostos) e transações',
   porque: 'Restrições no banco seguram dados ruins que escapam da validação da API, e o índice certo transforma segundos em milissegundos.',
+  gancho: {
+    titulo: 'O DELETE de 30 segundos',
+    pergunta: '<code>pedidos</code> tem 5 milhões de linhas. Apagar <b>um</b> cliente leva 30 s. Qual a causa mais provável?',
+    linguagem: 'sql',
+    codigo: `CREATE TABLE pedidos (
+  id         bigint PRIMARY KEY,
+  cliente_id bigint REFERENCES clientes (id)
+);
+
+DELETE FROM clientes WHERE id = 42;  -- 30 s`,
+    opcoes: ['Falta índice em clientes.id', 'Falta índice em pedidos.cliente_id', 'A FK deveria ser ON DELETE CASCADE'],
+    certa: 1,
+    revelacao: 'Para checar a FK, o banco procura pedidos com <code>cliente_id = 42</code>, e o PostgreSQL <b>não</b> cria índice nessa coluna sozinho: vira Seq Scan em 5 milhões de linhas (<code>clientes.id</code> já tem índice pela PK). Nesta lição você vai ver tipos, chaves, índices (inclusive compostos) e transações.',
+  },
   resumo: [
     'Dinheiro é <code>numeric(10,2)</code>, nunca <code>float</code>; data e hora é <code>timestamptz</code>',
     '<code>PRIMARY KEY</code> = único + não nulo; <code>FOREIGN KEY</code> garante que a referência existe',

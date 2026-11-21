@@ -29,6 +29,18 @@ MODULOS.push({
   icone: '🏗️',
   aprende: 'venv/uv, startproject, startapp, manage.py e settings.py',
   porque: 'Todo projeto Django começa igual, e entender essa estrutura é o que permite achar qualquer coisa num código que você não escreveu.',
+  gancho: {
+    titulo: 'Migration que não vem',
+    pergunta: 'Você criou o app com <code>startapp assistidos</code>, escreveu o model e rodou o comando. Por que nada aconteceu?',
+    linguagem: 'bash',
+    codigo: `$ python manage.py startapp assistidos
+# ...escreve class Assistido(models.Model) em assistidos/models.py
+$ python manage.py makemigrations
+No changes detected`,
+    opcoes: ['Faltou rodar migrate antes', 'O app não está em INSTALLED_APPS', 'O model precisa de class Meta', 'O runserver precisa reiniciar'],
+    certa: 1,
+    revelacao: 'O Django só enxerga apps listados em <code>INSTALLED_APPS</code>, como um módulo do NestJS que ninguém colocou nos <code>imports</code> do <code>AppModule</code>. Nesta lição você vai ver como projeto e apps se encaixam e onde o Django procura cada coisa.',
+  },
   resumo: [
     'Cada projeto tem seu <b>ambiente virtual</b> (<code>.venv</code>), criado com <code>uv venv</code> ou <code>python -m venv</code>',
     '<code>django-admin startproject config .</code> cria o <b>projeto</b>: settings, urls e o <code>manage.py</code>',
@@ -188,6 +200,19 @@ MODULOS.push({
   icone: '🗃️',
   aprende: 'models.Model, campos, ForeignKey, ManyToMany, migrations, __str__ e Meta',
   porque: 'O model é a fonte da verdade do banco: errar um on_delete ou um campo obrigatório vira dado perdido ou migration dolorosa em produção.',
+  gancho: {
+    titulo: 'Obrigatório, mas nem tanto',
+    pergunta: '<code>nome</code> não tem <code>blank</code> nem <code>null</code>. O que acontece aqui?',
+    linguagem: 'django',
+    codigo: `class Assistido(models.Model):
+    nome = models.CharField(max_length=120)
+    cpf = models.CharField(max_length=11)
+
+Assistido.objects.create()`,
+    opcoes: ['IntegrityError: NOT NULL', 'ValidationError: campo obrigatório', 'Salva com nome e cpf vazios ("")', 'TypeError: faltam argumentos'],
+    certa: 2,
+    revelacao: 'O <code>CharField</code> tem padrão <code>""</code>, e <code>blank=False</code> só é checado por forms e <code>full_clean()</code>, nunca no <code>save()</code>: é como um DTO com class-validator que ninguém passou pelo pipe. Nesta lição você vai ver o que cada opção de campo garante de verdade e onde.',
+  },
   resumo: [
     'Um model é uma classe que herda de <code>models.Model</code>: cada classe vira uma tabela, cada campo uma coluna',
     '<code>CharField</code> pede <code>max_length</code>; textos longos vão em <code>TextField</code>',
@@ -359,6 +384,17 @@ MODULOS.push({
   icone: '🔎',
   aprende: 'QuerySets, filter/get, lookups, Q e F, annotate/aggregate e N+1',
   porque: 'Quase todo problema de desempenho em Django é uma consulta mal feita, e o ORM esconde o SQL até você aprender a enxergá-lo.',
+  gancho: {
+    titulo: 'A listagem que engasga',
+    pergunta: 'A tela lista 50 processos com o nome do assistido. Quantas consultas vão ao banco?',
+    linguagem: 'django',
+    codigo: `processos = Processo.objects.all()[:50]
+for p in processos:
+    print(p.numero, p.assistido.nome)`,
+    opcoes: ['1', '2', '50', '51'],
+    certa: 3,
+    revelacao: 'Uma consulta busca os processos e cada <code>p.assistido</code> dispara mais uma: é o N+1, o mesmo das relações lazy do TypeORM. Nesta lição você vai ver como enxergar o SQL e resolver com <code>select_related</code> numa linha.',
+  },
   resumo: [
     'QuerySet é <b>preguiçoso</b>: só vai ao banco quando você itera, usa <code>len()</code>, <code>list()</code>, <code>bool()</code> ou imprime',
     '<code>filter()</code> e <code>exclude()</code> devolvem QuerySet; <code>get()</code> devolve <b>um</b> objeto ou lança <code>DoesNotExist</code>',
@@ -520,6 +556,18 @@ MODULOS.push({
   icone: '🧭',
   aprende: 'urls.py e path, views em função e em classe, templates, get_object_or_404 e redirect',
   porque: 'É o caminho de toda requisição: saber ligar URL, view e template é o que permite entregar uma tela nova sem se perder no projeto.',
+  gancho: {
+    titulo: 'A rota sequestrada',
+    pergunta: 'Qual view atende <code>GET /processos/novo/</code>?',
+    linguagem: 'django',
+    codigo: `urlpatterns = [
+    path("processos/<str:numero>/", views.detalhe),
+    path("processos/novo/", views.novo),
+]`,
+    opcoes: ['views.novo', 'views.detalhe, com numero="novo"', '404: rota ambígua', 'Erro ao subir: rotas em conflito'],
+    certa: 1,
+    revelacao: 'O Django testa as rotas <b>na ordem</b> e para na primeira que casa; <code>novo</code> é uma <code>str</code> válida. Nesta lição você vai ver como URL, view e template se ligam e como ordenar e nomear rotas sem surpresas.',
+  },
   resumo: [
     '<code>path("decks/&lt;int:pk&gt;/", views.detalhe, name="deck-detalhe")</code> liga a URL à view e dá um nome a ela',
     'Uma view recebe <code>request</code> e devolve um <code>HttpResponse</code>; <code>render()</code> monta a resposta com um template',
@@ -696,6 +744,16 @@ MODULOS.push({
   icone: '📝',
   aprende: 'Form e ModelForm, is_valid, cleaned_data, clean_campo, CSRF e o admin',
   porque: 'Toda entrada do usuário é suspeita: forms validam antes de salvar, e o admin entrega um painel de gestão de graça.',
+  gancho: {
+    titulo: 'Dados limpos cedo demais',
+    pergunta: 'O que este código faz?',
+    linguagem: 'django',
+    codigo: `form = AssistidoForm(data={"nome": "Ana", "cpf": "12345678901"})
+print(form.cleaned_data["nome"])`,
+    opcoes: ['Imprime Ana', 'Imprime None', 'KeyError: nome', 'AttributeError: sem cleaned_data'],
+    certa: 3,
+    revelacao: '<code>cleaned_data</code> só passa a existir depois que <code>is_valid()</code> roda a validação; antes disso o atributo nem existe. Nesta lição você vai ver o ciclo do form, onde colocar suas regras e o admin que vem de graça.',
+  },
   resumo: [
     '<code>forms.Form</code> declara campos à mão; <code>forms.ModelForm</code> gera os campos a partir do model',
     'Só depois de <code>form.is_valid()</code> existe <code>form.cleaned_data</code>, com valores limpos e convertidos',
@@ -880,6 +938,20 @@ MODULOS.push({
   icone: '🔌',
   aprende: 'ModelSerializer, validação, APIView, ViewSet com router, permissões e paginação',
   porque: 'A maioria das vagas Django é de API para front-end ou app, e o Django REST Framework é o padrão de mercado para isso.',
+  gancho: {
+    titulo: 'O JSON que falou demais',
+    pergunta: 'O que aparece no JSON de <code>GET /api/usuarios/</code>?',
+    linguagem: 'django',
+    codigo: `from django.contrib.auth.models import User
+
+class UsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = "__all__"`,
+    opcoes: ['Só id, username e email', 'Tudo, menos a senha (o Django esconde)', 'Tudo, inclusive o hash da senha', 'Erro: password é protegido'],
+    certa: 2,
+    revelacao: '<code>"__all__"</code> é literal: vão <code>password</code> (o hash), <code>is_superuser</code> e o resto, sem nenhum <code>@Exclude()</code> automático como no class-transformer. Nesta lição você vai ver como declarar campos, <code>write_only</code> e permissões para a API expor só o que deve.',
+  },
   resumo: [
     'O <b>serializer</b> converte model em JSON e valida o JSON que chega: é DTO e validação ao mesmo tempo',
     '<code>validate_&lt;campo&gt;(self, value)</code> valida um campo; <code>validate(self, attrs)</code> valida o conjunto',
@@ -1090,6 +1162,21 @@ MODULOS.push({
   icone: '🧪',
   aprende: 'TestCase, Client, testes de model, view e API, fixtures, factories e pytest-django',
   porque: 'Teste é o que deixa você mexer em model, query ou permissão sem medo, e é o diferencial que aparece no code review e na entrevista.',
+  gancho: {
+    titulo: 'O banco que sumiu',
+    pergunta: 'Seu banco de desenvolvimento tem 3.000 assistidos. O que acontece ao rodar os testes?',
+    linguagem: 'django',
+    codigo: `class AssistidoTests(TestCase):
+    def test_cria(self):
+        Assistido.objects.create(nome="Ana")
+        self.assertEqual(Assistido.objects.count(), 1)
+
+    def test_vazio(self):
+        self.assertEqual(Assistido.objects.count(), 0)`,
+    opcoes: ['Os dois passam', 'Os dois falham: há 3.000 registros', 'test_vazio falha se rodar depois de test_cria'],
+    certa: 0,
+    revelacao: 'O Django cria um <b>banco de teste vazio</b> e desfaz cada teste com uma transação, então a ordem não importa e seus dados de dev ficam intactos. Nesta lição você vai ver como testar model, view e API com esse isolamento.',
+  },
   resumo: [
     '<code>django.test.TestCase</code> cria um banco de teste e desfaz cada teste com uma transação',
     '<code>setUpTestData</code> cria os dados <b>uma vez</b> por classe; <code>setUp</code> roda antes de <b>cada</b> teste',

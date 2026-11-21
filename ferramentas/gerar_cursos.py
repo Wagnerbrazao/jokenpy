@@ -99,6 +99,23 @@ def validar(tid: str, dados: dict) -> list[str]:
                 p.append(f'{lid} cartão {k}: código sem linguagem (sem linguagem o app tenta rodar como Python)')
             if c.get('linguagem') == 'python':
                 p.append(f'{lid} cartão {k}: linguagem python roda no servidor; use outra (ex.: django) para trecho só de leitura')
+        g = l.get('gancho')
+        if not isinstance(g, dict):
+            p.append(f'{lid}: sem gancho (desafio relâmpago antes da explicação)')
+        else:
+            for campo in ('titulo', 'pergunta', 'opcoes', 'revelacao'):
+                if not g.get(campo):
+                    p.append(f'{lid} gancho: sem {campo}')
+            ops = g.get('opcoes') or []
+            if not (2 <= len(ops) <= 4) or not isinstance(g.get('certa'), int) or not (0 <= g['certa'] < len(ops)):
+                p.append(f'{lid} gancho: 2 a 4 opções e certa válida')
+            if g.get('codigo') and not g.get('linguagem'):
+                p.append(f'{lid} gancho: código sem linguagem')
+            for campo in ('pergunta', 'revelacao'):
+                if tags_ruins(g.get(campo)):
+                    p.append(f'{lid} gancho: {campo} com tags não permitidas {tags_ruins(g.get(campo))}')
+        if not l.get('porque'):
+            p.append(f'{lid}: sem porque')
         exs = l.get('exercicios', [])
         if not (6 <= len(exs) <= 9):
             p.append(f'{lid}: {len(exs)} exercícios (6 a 9)')

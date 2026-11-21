@@ -4,6 +4,16 @@ MODULOS.push({
   icone: '🧮',
   aprende: 'COUNT, SUM, AVG, MIN, MAX, GROUP BY, HAVING e FILTER',
   porque: 'Dashboards, relatórios e métricas são agregações, e calcular no banco é muito mais barato do que trazer tudo para o Node.',
+  gancho: {
+    titulo: 'Dois COUNTs diferentes',
+    pergunta: 'A tabela tem 10 clientes; 4 estão com <code>cidade</code> nula. O que volta?',
+    linguagem: 'sql',
+    codigo: `SELECT COUNT(*), COUNT(cidade)
+FROM clientes;`,
+    opcoes: ['10 e 10', '10 e 6', '6 e 6'],
+    certa: 1,
+    revelacao: '<code>COUNT(*)</code> conta linhas; <code>COUNT(cidade)</code> conta só os valores não nulos, e <code>SUM</code>/<code>AVG</code> também ignoram nulos. Nesta lição você vai ver como agregar, agrupar, filtrar grupos com <code>HAVING</code> e contar várias coisas numa passada com <code>FILTER</code>.',
+  },
   resumo: [
     '<code>COUNT(*)</code> conta linhas; <code>COUNT(coluna)</code> conta valores <b>não nulos</b>',
     '<code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> ignoram nulos; <code>SUM</code> de nada é <code>NULL</code>',

@@ -4,6 +4,21 @@ MODULOS.push({
   icone: '🧺',
   aprende: 'List, Set, Map, Streams, Optional e method references',
   porque: 'Toda consulta ao banco e toda resposta de API volta como coleção, e Streams são o jeito idiomático de transformar isso em DTO.',
+  gancho: {
+    titulo: 'O map que não rodou',
+    pergunta: 'O que aparece no console?',
+    linguagem: 'java',
+    codigo: `List<String> nomes = List.of("Ana", "Bia");
+nomes.stream()
+     .map(n -> {
+         System.out.println(n);
+         return n.toUpperCase();
+     });
+System.out.println("fim");`,
+    opcoes: ['Ana, Bia e fim', 'ANA, BIA e fim', 'Só fim', 'Não compila'],
+    certa: 2,
+    revelacao: 'Stream é <b>preguiçoso</b>: sem uma operação final (<code>toList()</code>, <code>count()</code>...), o <code>map</code> nunca executa. No JS, <code>array.map</code> roda na hora. Nesta lição você vai ver List, Set, Map, Streams e as armadilhas de imutabilidade.',
+  },
   resumo: [
     '<code>List.of</code>, <code>Set.of</code> e <code>Map.of</code> criam coleções <b>imutáveis</b> e rejeitam <code>null</code>',
     'Lista mutável: <code>new ArrayList&lt;&gt;(...)</code>. Mapa mutável: <code>new HashMap&lt;&gt;()</code>',

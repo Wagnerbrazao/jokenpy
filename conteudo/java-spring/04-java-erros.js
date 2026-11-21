@@ -4,6 +4,21 @@ MODULOS.push({
   icone: '🧯',
   aprende: 'checked vs unchecked, try-with-resources, exceção de domínio e Optional',
   porque: 'Tratamento de erro bem feito é o que separa uma API que devolve 404 claro de uma que devolve 500 com stack trace.',
+  gancho: {
+    titulo: 'Um compila, outro não',
+    pergunta: 'Qual destes métodos compila?',
+    linguagem: 'java',
+    codigo: `void validarPrazo() {
+    throw new IllegalStateException("prazo vencido");
+}
+
+void lerPeticao() {
+    throw new IOException("arquivo ilegível");
+}`,
+    opcoes: ['Os dois', 'Só validarPrazo', 'Só lerPeticao', 'Nenhum'],
+    certa: 1,
+    revelacao: '<code>IOException</code> é <b>checked</b>: o compilador exige <code>try/catch</code> ou <code>throws IOException</code> na assinatura. <code>IllegalStateException</code> é unchecked e passa livre. Nesta lição você vai ver essa divisão, como criar exceção de domínio e onde o <code>Optional</code> entra.',
+  },
   resumo: [
     '<b>Checked</b> (filhas de <code>Exception</code>) o compilador obriga a tratar ou declarar; <b>unchecked</b> (filhas de <code>RuntimeException</code>) não',
     '<code>finally</code> sempre roda; <b>try-with-resources</b> fecha o recurso sozinho',

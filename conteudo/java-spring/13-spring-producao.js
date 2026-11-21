@@ -4,6 +4,21 @@ MODULOS.push({
   icone: '🚀',
   aprende: 'perfis, configuração externa, Actuator, logs, Docker e virtual threads',
   porque: 'A mesma imagem precisa rodar em homologação e produção mudando só a configuração, e com saúde e métricas visíveis para quem opera.',
+  gancho: {
+    titulo: 'Homologação no banco errado',
+    pergunta: 'O perfil <code>hml</code> está ativo, mas o container foi copiado do de produção. Em qual banco a aplicação conecta?',
+    linguagem: 'yaml',
+    codigo: `# application-hml.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://db-hml/atendimentos
+
+# variável no container:
+# SPRING_DATASOURCE_URL=jdbc:postgresql://db-prod/atendimentos`,
+    opcoes: ['db-hml: o perfil vence', 'db-prod: a variável vence', 'Nenhum: falha por conflito'],
+    certa: 1,
+    revelacao: 'Variável de ambiente tem <b>precedência</b> sobre os arquivos <code>application*.yml</code>, inclusive os de perfil: <code>SPRING_DATASOURCE_URL</code> vira <code>spring.datasource.url</code>. Nesta lição você vai ver perfis, configuração externa, Actuator, logs, Docker e virtual threads.',
+  },
   resumo: [
     '<code>application-prod.yml</code> sobrescreve o <code>application.yml</code> quando o perfil <code>prod</code> está ativo (<code>SPRING_PROFILES_ACTIVE=prod</code>)',
     'Variável de ambiente sobrescreve propriedade: <code>SPRING_DATASOURCE_URL</code> vira <code>spring.datasource.url</code>',

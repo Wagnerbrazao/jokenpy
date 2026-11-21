@@ -4,6 +4,22 @@ MODULOS.push({
   icone: '🔁',
   aprende: 'useState, eventos, atualização funcional, imutabilidade, estado derivado e levantar estado',
   porque: 'A maioria dos bugs de React em produção é estado mutado, duplicado ou no componente errado.',
+  gancho: {
+    titulo: 'Três cliques em um',
+    pergunta: 'Começando em 0, quanto vale <code>atendidos</code> depois de um clique?',
+    linguagem: 'tsx',
+    codigo: `const [atendidos, setAtendidos] = useState(0)
+
+function registrarTres() {
+  setAtendidos(atendidos + 1)
+  setAtendidos(atendidos + 1)
+  setAtendidos(atendidos + 1)
+}`,
+    opcoes: ['3', '1', '0'],
+    certa: 1,
+    opcoesCodigo: true,
+    revelacao: 'Naquela renderização <code>atendidos</code> vale 0 nas três linhas, então as três pedem "mude para 1". Nesta lição você vai ver por que o estado é um retrato de cada render, quando usar <code>setAtendidos(a =&gt; a + 1)</code> e por que nunca mutar o estado.',
+  },
   resumo: [
     `<code>const [x, setX] = useState(inicial)</code>: chamar <code>setX</code> agenda uma <b>nova renderização</b>`,
     `O estado é um <b>retrato</b> daquela renderização: depois de <code>setX</code>, <code>x</code> ainda vale o valor antigo`,

@@ -31,6 +31,18 @@ MODULOS.push({
   icone: '☕',
   aprende: 'JVM, tipos, String, == vs equals, packages e static',
   porque: 'Todo código Spring que você vai ler na entrevista ou no trabalho assume que essas regras básicas do Java já são automáticas para você.',
+  gancho: {
+    titulo: 'O 127 e o 128',
+    pergunta: 'O que este código imprime?',
+    linguagem: 'java',
+    codigo: `Integer a = 127, b = 127;
+Integer c = 128, d = 128;
+System.out.println(a == b);
+System.out.println(c == d);`,
+    opcoes: ['true e true', 'true e false', 'false e false', 'Não compila'],
+    certa: 1,
+    revelacao: '<code>==</code> em <code>Integer</code> compara <b>referência</b>, e por padrão a JVM reaproveita os objetos de -128 a 127. Por isso 127 "funciona" e 128 não. Nesta lição você vai ver primitivos, wrappers e por que objeto se compara com <code>equals</code>.',
+  },
   resumo: [
     '<code>javac</code> compila para <b>bytecode</b> (<code>.class</code>); a <b>JVM</b> executa. Os tipos continuam existindo em tempo de execução',
     'Primitivos (<code>int</code>, <code>long</code>, <code>boolean</code>) não aceitam <code>null</code>; wrappers (<code>Integer</code>, <code>Long</code>) aceitam',
@@ -199,6 +211,21 @@ MODULOS.push({
   icone: '🧱',
   aprende: 'classes, construtores, records, interfaces, enums e generics',
   porque: 'Entidade, DTO, serviço e repositório do Spring são, respectivamente, classe, record, classe e interface: é a gramática de todo projeto.',
+  gancho: {
+    titulo: 'Mesma forma, outro tipo',
+    pergunta: 'A classe tem exatamente o método da interface. O que acontece na última linha?',
+    linguagem: 'java',
+    codigo: `interface Notificador { void enviar(String msg); }
+
+class EmailService {
+    public void enviar(String msg) { /* ... */ }
+}
+
+Notificador n = new EmailService();`,
+    opcoes: ['Compila: a forma bate', 'Erro de compilação', 'ClassCastException ao rodar'],
+    certa: 1,
+    revelacao: 'No TypeScript a tipagem é estrutural; no Java ela é <b>nominal</b>: sem <code>implements Notificador</code>, o compilador recusa (<i>incompatible types</i>). Nesta lição você vai ver classes, records, interfaces, enums e generics do jeito que o Spring usa.',
+  },
   resumo: [
     'Sem modificador, o membro é visível só no <b>pacote</b>. Campos são <code>private</code> e saem por métodos',
     'Declarou um construtor? O construtor vazio padrão <b>some</b>',
@@ -390,6 +417,21 @@ MODULOS.push({
   icone: '🧺',
   aprende: 'List, Set, Map, Streams, Optional e method references',
   porque: 'Toda consulta ao banco e toda resposta de API volta como coleção, e Streams são o jeito idiomático de transformar isso em DTO.',
+  gancho: {
+    titulo: 'O map que não rodou',
+    pergunta: 'O que aparece no console?',
+    linguagem: 'java',
+    codigo: `List<String> nomes = List.of("Ana", "Bia");
+nomes.stream()
+     .map(n -> {
+         System.out.println(n);
+         return n.toUpperCase();
+     });
+System.out.println("fim");`,
+    opcoes: ['Ana, Bia e fim', 'ANA, BIA e fim', 'Só fim', 'Não compila'],
+    certa: 2,
+    revelacao: 'Stream é <b>preguiçoso</b>: sem uma operação final (<code>toList()</code>, <code>count()</code>...), o <code>map</code> nunca executa. No JS, <code>array.map</code> roda na hora. Nesta lição você vai ver List, Set, Map, Streams e as armadilhas de imutabilidade.',
+  },
   resumo: [
     '<code>List.of</code>, <code>Set.of</code> e <code>Map.of</code> criam coleções <b>imutáveis</b> e rejeitam <code>null</code>',
     'Lista mutável: <code>new ArrayList&lt;&gt;(...)</code>. Mapa mutável: <code>new HashMap&lt;&gt;()</code>',
@@ -539,6 +581,21 @@ MODULOS.push({
   icone: '🧯',
   aprende: 'checked vs unchecked, try-with-resources, exceção de domínio e Optional',
   porque: 'Tratamento de erro bem feito é o que separa uma API que devolve 404 claro de uma que devolve 500 com stack trace.',
+  gancho: {
+    titulo: 'Um compila, outro não',
+    pergunta: 'Qual destes métodos compila?',
+    linguagem: 'java',
+    codigo: `void validarPrazo() {
+    throw new IllegalStateException("prazo vencido");
+}
+
+void lerPeticao() {
+    throw new IOException("arquivo ilegível");
+}`,
+    opcoes: ['Os dois', 'Só validarPrazo', 'Só lerPeticao', 'Nenhum'],
+    certa: 1,
+    revelacao: '<code>IOException</code> é <b>checked</b>: o compilador exige <code>try/catch</code> ou <code>throws IOException</code> na assinatura. <code>IllegalStateException</code> é unchecked e passa livre. Nesta lição você vai ver essa divisão, como criar exceção de domínio e onde o <code>Optional</code> entra.',
+  },
   resumo: [
     '<b>Checked</b> (filhas de <code>Exception</code>) o compilador obriga a tratar ou declarar; <b>unchecked</b> (filhas de <code>RuntimeException</code>) não',
     '<code>finally</code> sempre roda; <b>try-with-resources</b> fecha o recurso sozinho',
@@ -719,6 +776,18 @@ MODULOS.push({
   icone: '🏗️',
   aprende: 'start.spring.io, Maven, starters, @SpringBootApplication e application.yml',
   porque: 'No primeiro dia num time Spring você clona um projeto e precisa saber onde estão as dependências, a configuração e o ponto de entrada.',
+  gancho: {
+    titulo: 'Os endpoints sumiram',
+    pergunta: 'Você moveu só a classe principal de pacote. A aplicação sobe sem erro, mas <b>todo</b> endpoint passa a dar 404. Por quê?',
+    linguagem: 'texto',
+    codigo: `antes:  br.gov.defensoria.atendimento.AtendimentoApplication
+depois: br.gov.defensoria.atendimento.app.AtendimentoApplication
+
+controllers: br.gov.defensoria.atendimento.web.*`,
+    opcoes: ['Os controllers saíram do component scan', 'Precisa rodar mvn clean', 'A porta mudou', 'Falta registrar os controllers num módulo'],
+    certa: 0,
+    revelacao: '<code>@SpringBootApplication</code> procura beans a partir do <b>pacote dela para baixo</b>. <code>...atendimento.web</code> não está dentro de <code>...atendimento.app</code>, então nenhum controller é registrado. Nesta lição você vai ver o pom.xml, os starters, a auto-configuração e o application.yml.',
+  },
   resumo: [
     '<b>start.spring.io</b> gera o projeto: escolha Maven, Java 21 e os starters',
     '<code>pom.xml</code> é o <code>package.json</code>; o parent do Spring Boot define as versões',
@@ -912,6 +981,22 @@ MODULOS.push({
   icone: '🔌',
   aprende: 'container IoC, estereótipos, injeção por construtor, @Bean e @Qualifier',
   porque: 'Injeção de dependência é a pergunta número um em entrevista de Spring, e é onde a sua experiência com providers do NestJS vira vantagem.',
+  gancho: {
+    titulo: 'O teste que deu NPE',
+    pergunta: 'Na aplicação o serviço funciona. O que acontece neste teste de unidade, sem Spring?',
+    linguagem: 'java',
+    codigo: `@Service
+public class PrazoService {
+    @Autowired private FeriadoRepository feriados;
+    public int feriadosNoMes(int mes) { return feriados.contarNoMes(mes); }
+}
+
+// no teste:
+new PrazoService().feriadosNoMes(12);`,
+    opcoes: ['Funciona: o @Autowired injeta', 'NullPointerException', 'Não compila', 'Lança NoSuchBeanDefinitionException'],
+    certa: 1,
+    revelacao: 'Quem preenche o campo é o <b>container</b> do Spring; com <code>new</code>, ninguém injeta e <code>feriados</code> fica <code>null</code>. Pior: não há como passar um mock. Nesta lição você vai ver beans, injeção pelo construtor e por que ela é a resposta certa na entrevista.',
+  },
   resumo: [
     'O <b>ApplicationContext</b> cria e liga os <b>beans</b>; você só declara dependências',
     '<code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@RestController</code> marcam beans achados pelo scan',
@@ -1122,6 +1207,18 @@ MODULOS.push({
   icone: '🌐',
   aprende: '@RestController, mapeamentos, parâmetros, DTOs, ResponseEntity e Jackson',
   porque: 'O controller é a cara da sua API: status errado ou contrato mal definido quebra o front e o sistema do órgão parceiro que consome você.',
+  gancho: {
+    titulo: 'Criou, mas 201?',
+    pergunta: 'No NestJS, <code>@Post()</code> responde 201. Que status este endpoint devolve ao criar um atendimento?',
+    linguagem: 'java',
+    codigo: `@PostMapping("/atendimentos")
+public AtendimentoResponse criar(@RequestBody NovoAtendimento req) {
+    return service.criar(req);
+}`,
+    opcoes: ['201 Created', '200 OK', '204 No Content'],
+    certa: 1,
+    revelacao: 'No Spring, todo método com retorno responde <b>200</b> por padrão, inclusive o POST. Para 201 com <code>Location</code>, você devolve <code>ResponseEntity.created(uri)</code>. Nesta lição você vai ver mapeamentos, parâmetros, DTOs e os status certos.',
+  },
   resumo: [
     '<code>@RestController</code> = <code>@Controller</code> + <code>@ResponseBody</code>: o retorno vira JSON',
     '<code>@GetMapping("/{id}")</code> + <code>@PathVariable</code>; filtros com <code>@RequestParam</code>; JSON com <code>@RequestBody</code>',
@@ -1292,6 +1389,20 @@ MODULOS.push({
   icone: '🛡️',
   aprende: 'Bean Validation, @Valid, @RestControllerAdvice e ProblemDetail',
   porque: 'Uma API pública vive de rejeitar entrada ruim com uma resposta clara e sempre no mesmo formato.',
+  gancho: {
+    titulo: 'O @NotBlank que não barrou',
+    pergunta: 'O starter de validação está no pom. O cliente manda <code>POST /assistidos</code> com corpo <code>{}</code>. O que acontece?',
+    linguagem: 'java',
+    codigo: `public record NovoAssistido(@NotBlank String nome) {}
+
+@PostMapping("/assistidos")
+public AssistidoResponse criar(@RequestBody NovoAssistido req) {
+    return service.criar(req);
+}`,
+    opcoes: ['400 Bad Request', 'Chega ao service com nome null', '422 Unprocessable Entity', 'Não compila'],
+    certa: 1,
+    revelacao: 'Sem <code>@Valid</code> no parâmetro, as anotações do DTO são só metadado: ninguém valida, e o erro aparece lá no banco como <i>not-null constraint</i>. Nesta lição você vai ver como ligar a validação e devolver erros num formato único com <code>ProblemDetail</code>.',
+  },
   resumo: [
     'Anotações como <code>@NotBlank</code>, <code>@Size</code> e <code>@Email</code> vêm do <b>Bean Validation</b> (<code>jakarta.validation</code>) e exigem o <code>spring-boot-starter-validation</code>',
     'Sem <code>@Valid</code> no parâmetro <code>@RequestBody</code>, as anotações do DTO são <b>ignoradas</b>',
@@ -1450,6 +1561,19 @@ MODULOS.push({
   icone: '🗄️',
   aprende: '@Entity, JpaRepository, derived queries, @Query e paginação',
   porque: 'Quase toda API Spring de órgão público grava em Postgres ou Oracle via JPA, e é aí que moram os bugs de desempenho.',
+  gancho: {
+    titulo: 'Um erro de digitação',
+    pergunta: 'A entidade tem o atributo <code>nomeAssistido</code>. Ninguém chama este método ainda. O que acontece?',
+    linguagem: 'java',
+    codigo: `public interface AssistidoRepository
+        extends JpaRepository<Assistido, Long> {
+
+    List<Assistido> findByNomeAssistdo(String nome);
+}`,
+    opcoes: ['Nada, até alguém chamar', 'Não compila', 'A aplicação nem sobe', 'Devolve lista vazia'],
+    certa: 2,
+    revelacao: 'O Spring Data monta a consulta a partir do <b>nome do método</b> na subida e não acha o atributo <code>nomeAssistdo</code>: a aplicação falha com <code>PropertyReferenceException</code>. Nesta lição você vai ver entidades, repositórios, derived queries, <code>@Query</code> e paginação.',
+  },
   resumo: [
     '<code>@Entity</code> mapeia uma classe para uma tabela; precisa de <code>@Id</code> e de um construtor sem argumentos',
     '<code>@GeneratedValue(strategy = GenerationType.IDENTITY)</code> usa a coluna identity/serial do Postgres',
@@ -1611,6 +1735,22 @@ MODULOS.push({
   icone: '🔗',
   aprende: '@ManyToOne/@OneToMany, N+1, @Transactional e Flyway',
   porque: 'N+1, LazyInitializationException e transação mal colocada são as perguntas de JPA que mais aparecem em entrevista e em incidente.',
+  gancho: {
+    titulo: 'O rollback que não veio',
+    pergunta: 'O controller chama <code>service.importar(lote)</code> com 5 atendimentos; o 3º viola uma constraint (o id é IDENTITY, então o insert sai no <code>save</code>). Quantos ficam gravados?',
+    linguagem: 'java',
+    codigo: `public void importar(List<Atendimento> lote) {
+    gravar(lote);   // chamada interna
+}
+
+@Transactional
+public void gravar(List<Atendimento> lote) {
+    lote.forEach(repo::save);
+}`,
+    opcoes: ['Nenhum: rollback', '2', '4', 'Todos os 5'],
+    certa: 1,
+    revelacao: '<code>@Transactional</code> funciona por <b>proxy</b>, e a chamada interna (<code>this.gravar</code>) passa por fora dele. Sem transação, cada <code>save</code> confirma sozinho: os 2 primeiros ficam. Nesta lição você vai ver relações, N+1, <code>LazyInitializationException</code> e onde pôr a transação.',
+  },
   resumo: [
     'O lado <code>@ManyToOne</code> é o <b>dono</b> da relação (tem a FK); o <code>@OneToMany(mappedBy = "...")</code> só espelha',
     '<code>@ManyToOne</code> é <b>EAGER</b> por padrão: declare <code>fetch = FetchType.LAZY</code>',
@@ -1795,6 +1935,22 @@ MODULOS.push({
   icone: '🧪',
   aprende: 'JUnit 5, AssertJ, Mockito, @WebMvcTest, @DataJpaTest e Testcontainers',
   porque: 'Em Spring, escolher a fatia certa de teste é o que separa uma suíte de 30 segundos de uma de 10 minutos.',
+  gancho: {
+    titulo: 'Falhou antes de testar',
+    pergunta: 'O controller recebe <code>AssistidoService</code> no construtor. Este teste falha ao carregar o contexto, antes de qualquer requisição. Por quê?',
+    linguagem: 'java',
+    codigo: `@WebMvcTest(AssistidoController.class)
+class AssistidoControllerTest {
+    @Autowired MockMvc mvc;
+
+    @Test void lista() throws Exception {
+        mvc.perform(get("/assistidos")).andExpect(status().isOk());
+    }
+}`,
+    opcoes: ['Falta o banco de teste', 'O @WebMvcTest não carrega o service', 'MockMvc precisa de servidor real', 'Falta @SpringBootTest junto'],
+    certa: 1,
+    revelacao: '<code>@WebMvcTest</code> sobe só a camada web (controllers, advices, conversores): <code>@Service</code> fica de fora e o construtor do controller não é satisfeito. A saída é um <code>@MockitoBean AssistidoService</code>. Nesta lição você vai ver cada fatia de teste e quando usar cada uma.',
+  },
   resumo: [
     'JUnit 5 (<code>org.junit.jupiter</code>): <code>@Test</code>, <code>@BeforeEach</code>, <code>assertThrows</code>',
     'AssertJ deixa a asserção legível: <code>assertThat(x).isEqualTo(y)</code>, <code>assertThatThrownBy(...)</code>',
@@ -1989,6 +2145,19 @@ MODULOS.push({
   icone: '🔐',
   aprende: 'SecurityFilterChain, JWT com Resource Server, @PreAuthorize, CSRF, CORS e BCrypt',
   porque: 'Sistema com dado de assistido exige autenticação e autorização corretas, e Spring Security é onde o iniciante mais copia código sem entender.',
+  gancho: {
+    titulo: 'Token válido, 403 em tudo',
+    pergunta: 'O login no Keycloak funciona, o token é válido e o usuário tem o papel <code>defensor</code> no realm. Mesmo assim, toda rota com <code>hasRole("DEFENSOR")</code>, até GET, devolve 403. Por quê?',
+    linguagem: 'json',
+    codigo: `{
+  "sub": "a1b2c3",
+  "scope": "openid email",
+  "realm_access": { "roles": ["defensor"] }
+}`,
+    opcoes: ['O token expirou', 'O Spring não lê realm_access sozinho', 'Faltou desligar o CSRF', 'hasRole exige minúsculas'],
+    certa: 1,
+    revelacao: 'Por padrão o resource server só transforma a claim <code>scope</code> em autoridades (<code>SCOPE_openid</code>...). Os papéis do Keycloak ficam invisíveis até você mapear com um <code>JwtAuthenticationConverter</code>. Nesta lição você vai ver a cadeia de filtros, JWT, 401 vs 403, CSRF e CORS.',
+  },
   resumo: [
     '<b>Autenticação</b> = quem é você (falhou: 401). <b>Autorização</b> = o que você pode (falhou: 403)',
     'Toda requisição passa por uma <b>cadeia de filtros</b> antes de chegar ao controller',
@@ -2160,6 +2329,21 @@ MODULOS.push({
   icone: '🚀',
   aprende: 'perfis, configuração externa, Actuator, logs, Docker e virtual threads',
   porque: 'A mesma imagem precisa rodar em homologação e produção mudando só a configuração, e com saúde e métricas visíveis para quem opera.',
+  gancho: {
+    titulo: 'Homologação no banco errado',
+    pergunta: 'O perfil <code>hml</code> está ativo, mas o container foi copiado do de produção. Em qual banco a aplicação conecta?',
+    linguagem: 'yaml',
+    codigo: `# application-hml.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://db-hml/atendimentos
+
+# variável no container:
+# SPRING_DATASOURCE_URL=jdbc:postgresql://db-prod/atendimentos`,
+    opcoes: ['db-hml: o perfil vence', 'db-prod: a variável vence', 'Nenhum: falha por conflito'],
+    certa: 1,
+    revelacao: 'Variável de ambiente tem <b>precedência</b> sobre os arquivos <code>application*.yml</code>, inclusive os de perfil: <code>SPRING_DATASOURCE_URL</code> vira <code>spring.datasource.url</code>. Nesta lição você vai ver perfis, configuração externa, Actuator, logs, Docker e virtual threads.',
+  },
   resumo: [
     '<code>application-prod.yml</code> sobrescreve o <code>application.yml</code> quando o perfil <code>prod</code> está ativo (<code>SPRING_PROFILES_ACTIVE=prod</code>)',
     'Variável de ambiente sobrescreve propriedade: <code>SPRING_DATASOURCE_URL</code> vira <code>spring.datasource.url</code>',

@@ -4,6 +4,19 @@ MODULOS.push({
   icone: '🗃️',
   aprende: 'models.Model, campos, ForeignKey, ManyToMany, migrations, __str__ e Meta',
   porque: 'O model é a fonte da verdade do banco: errar um on_delete ou um campo obrigatório vira dado perdido ou migration dolorosa em produção.',
+  gancho: {
+    titulo: 'Obrigatório, mas nem tanto',
+    pergunta: '<code>nome</code> não tem <code>blank</code> nem <code>null</code>. O que acontece aqui?',
+    linguagem: 'django',
+    codigo: `class Assistido(models.Model):
+    nome = models.CharField(max_length=120)
+    cpf = models.CharField(max_length=11)
+
+Assistido.objects.create()`,
+    opcoes: ['IntegrityError: NOT NULL', 'ValidationError: campo obrigatório', 'Salva com nome e cpf vazios ("")', 'TypeError: faltam argumentos'],
+    certa: 2,
+    revelacao: 'O <code>CharField</code> tem padrão <code>""</code>, e <code>blank=False</code> só é checado por forms e <code>full_clean()</code>, nunca no <code>save()</code>: é como um DTO com class-validator que ninguém passou pelo pipe. Nesta lição você vai ver o que cada opção de campo garante de verdade e onde.',
+  },
   resumo: [
     'Um model é uma classe que herda de <code>models.Model</code>: cada classe vira uma tabela, cada campo uma coluna',
     '<code>CharField</code> pede <code>max_length</code>; textos longos vão em <code>TextField</code>',

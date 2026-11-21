@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '📝',
   aprende: 'inputs controlados, onSubmit com preventDefault, validação, erros acessíveis, select e checkbox',
   porque: 'Quase toda tela de sistema interno é um formulário, e é onde o usuário mais sente bugs e falta de acessibilidade.',
+  gancho: {
+    titulo: 'O campo que não digita',
+    pergunta: 'A pessoa clica no campo e digita "Maria". O que acontece?',
+    linguagem: 'tsx',
+    codigo: `function BuscaAssistido() {
+  const [nome, setNome] = useState('')
+  return <input value={nome} />
+}`,
+    opcoes: ['Aparece "Maria" normalmente', 'Nada aparece: o campo fica travado', 'A tela quebra com erro'],
+    certa: 1,
+    revelacao: 'Com <code>value</code> vindo do estado, o React redesenha sempre o valor do estado, e sem <code>onChange</code> o estado nunca muda (o console só avisa). Nesta lição você vai ver inputs controlados, submit sem recarregar a página e erros de validação acessíveis.',
+  },
   resumo: [
     `Input <b>controlado</b>: <code>value</code> vem do estado e <code>onChange</code> atualiza o estado`,
     `Checkbox usa <code>checked</code> e <code>e.target.checked</code>, não <code>value</code>`,

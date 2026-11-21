@@ -4,6 +4,19 @@ MODULOS.push({
   icone: '🪟',
   aprende: 'subconsultas, EXISTS, CTE com WITH, window functions (ROW_NUMBER, RANK, SUM OVER) e EXPLAIN',
   porque: 'Ranking, top-N por grupo e totais acumulados viram uma query só, em vez de loops no Node e N consultas ao banco.',
+  gancho: {
+    titulo: 'Top 3 por categoria',
+    pergunta: 'Você quer os 3 produtos mais caros de cada categoria. O que acontece?',
+    linguagem: 'sql',
+    codigo: `SELECT categoria, nome, preco
+FROM produtos
+WHERE ROW_NUMBER() OVER (
+  PARTITION BY categoria ORDER BY preco DESC
+) <= 3;`,
+    opcoes: ['Os 3 mais caros de cada categoria', 'Os 3 mais caros no geral', 'Erro: window functions are not allowed in WHERE'],
+    certa: 2,
+    revelacao: 'Window functions são calculadas na fase do <code>SELECT</code>, depois do <code>WHERE</code>; é preciso calcular numa CTE e filtrar por fora. Nesta lição você vai ver subconsultas, <code>EXISTS</code>, CTEs, ranking com window functions e como ler o <code>EXPLAIN</code>.',
+  },
   resumo: [
     'Subconsulta escalar devolve <b>um</b> valor; em <code>FROM</code>, vira uma tabela temporária',
     '<code>EXISTS</code> para no primeiro resultado e não sofre com NULL',

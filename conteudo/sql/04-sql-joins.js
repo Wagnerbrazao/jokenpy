@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '🔗',
   aprende: 'INNER e LEFT JOIN, filtro no ON vs WHERE, anti-join, auto-join e duplicação em 1:N',
   porque: 'Quase toda tela junta tabelas, e um JOIN errado infla totais ou some com registros sem dar erro nenhum.',
+  gancho: {
+    titulo: 'O LEFT JOIN que encolheu',
+    pergunta: 'O relatório deveria listar <b>todos</b> os clientes, com o pedido pago se houver. Quem nunca pagou nada aparece?',
+    linguagem: 'sql',
+    codigo: `SELECT c.nome, p.id AS pedido_pago
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+WHERE p.status = 'pago';`,
+    opcoes: ['Sim, com pedido_pago NULL', 'Não, some do resultado', 'Aparece uma vez por pedido não pago'],
+    certa: 1,
+    revelacao: 'Sem par, <code>p.status</code> vem nulo, <code>NULL = \'pago\'</code> não é verdadeiro e o <code>WHERE</code> descarta a linha: o LEFT virou INNER. Nesta lição você vai ver onde o filtro deve ficar (no <code>ON</code>), anti-joins e o JOIN que multiplica totais.',
+  },
   resumo: [
     '<code>INNER JOIN</code> só mantém pares que casam; <code>LEFT JOIN</code> mantém todas as linhas da esquerda',
     'No LEFT JOIN, sem par, as colunas da direita vêm <code>NULL</code>',

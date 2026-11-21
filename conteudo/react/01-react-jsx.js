@@ -4,6 +4,19 @@ MODULOS.push({
   icone: '🧩',
   aprende: 'JSX, componentes como funções, expressões entre chaves, className, fragmentos e renderização condicional',
   porque: 'Toda tela React é uma árvore de componentes escritos em JSX; sem esse modelo mental, o resto não encaixa.',
+  gancho: {
+    titulo: 'O zero intruso',
+    pergunta: 'Não há nenhuma pendência. O que aparece na tela?',
+    linguagem: 'tsx',
+    codigo: `const pendentes = 0
+
+return (
+  <p>{pendentes && <b>Há pendências!</b>}</p>
+)`,
+    opcoes: ['Nada', '0', 'false', 'Há pendências!'],
+    certa: 1,
+    revelacao: '<code>0 &amp;&amp; x</code> devolve <code>0</code>, e o React desenha números (só ignora <code>false</code>, <code>null</code> e <code>undefined</code>). Nesta lição você vai ver que JSX é JavaScript puro, com as regras de expressão do JS, e como escrever condicionais sem esse susto.',
+  },
   resumo: [
     `JSX é <b>açúcar sintático</b> para chamadas de função: vira <code>jsx('div', props)</code>, não HTML`,
     `Componente é uma <b>função</b> que recebe props e devolve JSX; o nome começa com <b>maiúscula</b>`,

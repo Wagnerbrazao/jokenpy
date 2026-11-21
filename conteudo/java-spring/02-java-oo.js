@@ -4,6 +4,21 @@ MODULOS.push({
   icone: '🧱',
   aprende: 'classes, construtores, records, interfaces, enums e generics',
   porque: 'Entidade, DTO, serviço e repositório do Spring são, respectivamente, classe, record, classe e interface: é a gramática de todo projeto.',
+  gancho: {
+    titulo: 'Mesma forma, outro tipo',
+    pergunta: 'A classe tem exatamente o método da interface. O que acontece na última linha?',
+    linguagem: 'java',
+    codigo: `interface Notificador { void enviar(String msg); }
+
+class EmailService {
+    public void enviar(String msg) { /* ... */ }
+}
+
+Notificador n = new EmailService();`,
+    opcoes: ['Compila: a forma bate', 'Erro de compilação', 'ClassCastException ao rodar'],
+    certa: 1,
+    revelacao: 'No TypeScript a tipagem é estrutural; no Java ela é <b>nominal</b>: sem <code>implements Notificador</code>, o compilador recusa (<i>incompatible types</i>). Nesta lição você vai ver classes, records, interfaces, enums e generics do jeito que o Spring usa.',
+  },
   resumo: [
     'Sem modificador, o membro é visível só no <b>pacote</b>. Campos são <code>private</code> e saem por métodos',
     'Declarou um construtor? O construtor vazio padrão <b>some</b>',

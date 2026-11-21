@@ -4,6 +4,21 @@ MODULOS.push({
   icone: '📦',
   aprende: 'props, children, desestruturação, listas com map e key, composição e props tipadas com TypeScript',
   porque: 'Props são o contrato entre componentes: telas grandes só ficam manuteníveis quando cada peça recebe exatamente o que precisa.',
+  gancho: {
+    titulo: 'A anotação que pulou',
+    pergunta: 'Você digita "urgente" no campo da <b>primeira</b> tarefa e depois a exclui da lista. O que acontece?',
+    linguagem: 'tsx',
+    codigo: `<ul>
+  {tarefas.map((t, i) => (
+    <li key={i}>
+      {t.titulo} <input placeholder="nota" />
+    </li>
+  ))}
+</ul>`,
+    opcoes: ['O campo some junto com a tarefa', '"urgente" aparece na tarefa que era a segunda', 'O React avisa no console e recria a lista'],
+    certa: 1,
+    revelacao: 'Com <code>key={i}</code>, a nova primeira tarefa herda a key <code>0</code>, e o React reaproveita o <code>&lt;li&gt;</code> e o input que já existiam ali, com o texto digitado. Nesta lição você vai ver como props e keys identificam cada item e por que o índice quebra listas que mudam.',
+  },
   resumo: [
     `Props são os <b>argumentos</b> do componente: um objeto só de leitura, passado de pai para filho`,
     `Desestruture na assinatura: <code>function Cartao({ titulo, prioridade = 'media' })</code>`,

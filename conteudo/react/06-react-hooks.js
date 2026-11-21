@@ -4,6 +4,22 @@ MODULOS.push({
   icone: '🪝',
   aprende: 'hooks customizados, regras dos hooks, useContext com Provider, useMemo/useCallback e useRef',
   porque: 'Hooks próprios e Context são como você reaproveita lógica e evita passar a mesma prop por dez níveis.',
+  gancho: {
+    titulo: 'O hook compartilhado?',
+    pergunta: 'O usuário clica em "+1" na <code>&lt;Fila /&gt;</code>. Quanto mostra o <code>&lt;Resumo /&gt;</code>?',
+    linguagem: 'tsx',
+    codigo: `function useContador() {
+  const [n, setN] = useState(0)
+  return { n, somar: () => setN(n + 1) }
+}
+function Fila() { const c = useContador()
+  return <button onClick={c.somar}>+1 ({c.n})</button> }
+function Resumo() { const c = useContador()
+  return <p>Total: {c.n}</p> }`,
+    opcoes: ['Total: 1', 'Total: 0', 'Erro: hook usado em dois lugares'],
+    certa: 1,
+    revelacao: 'Cada componente que chama um hook ganha o <b>seu próprio</b> estado: hook customizado compartilha lógica, não dados. Nesta lição você vai ver como extrair hooks, as regras que eles seguem e quando usar Context para compartilhar dados de verdade.',
+  },
   resumo: [
     `Hook customizado é uma função <code>useAlgo</code> que chama outros hooks; compartilha <b>lógica</b>, não estado`,
     `Regras: chame hooks só no <b>topo</b> de componentes ou hooks, nunca dentro de if, laço ou callback`,

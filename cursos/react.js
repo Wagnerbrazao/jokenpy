@@ -28,6 +28,19 @@ MODULOS.push({
   icone: '🧩',
   aprende: 'JSX, componentes como funções, expressões entre chaves, className, fragmentos e renderização condicional',
   porque: 'Toda tela React é uma árvore de componentes escritos em JSX; sem esse modelo mental, o resto não encaixa.',
+  gancho: {
+    titulo: 'O zero intruso',
+    pergunta: 'Não há nenhuma pendência. O que aparece na tela?',
+    linguagem: 'tsx',
+    codigo: `const pendentes = 0
+
+return (
+  <p>{pendentes && <b>Há pendências!</b>}</p>
+)`,
+    opcoes: ['Nada', '0', 'false', 'Há pendências!'],
+    certa: 1,
+    revelacao: '<code>0 &amp;&amp; x</code> devolve <code>0</code>, e o React desenha números (só ignora <code>false</code>, <code>null</code> e <code>undefined</code>). Nesta lição você vai ver que JSX é JavaScript puro, com as regras de expressão do JS, e como escrever condicionais sem esse susto.',
+  },
   resumo: [
     `JSX é <b>açúcar sintático</b> para chamadas de função: vira <code>jsx('div', props)</code>, não HTML`,
     `Componente é uma <b>função</b> que recebe props e devolve JSX; o nome começa com <b>maiúscula</b>`,
@@ -196,6 +209,21 @@ MODULOS.push({
   icone: '📦',
   aprende: 'props, children, desestruturação, listas com map e key, composição e props tipadas com TypeScript',
   porque: 'Props são o contrato entre componentes: telas grandes só ficam manuteníveis quando cada peça recebe exatamente o que precisa.',
+  gancho: {
+    titulo: 'A anotação que pulou',
+    pergunta: 'Você digita "urgente" no campo da <b>primeira</b> tarefa e depois a exclui da lista. O que acontece?',
+    linguagem: 'tsx',
+    codigo: `<ul>
+  {tarefas.map((t, i) => (
+    <li key={i}>
+      {t.titulo} <input placeholder="nota" />
+    </li>
+  ))}
+</ul>`,
+    opcoes: ['O campo some junto com a tarefa', '"urgente" aparece na tarefa que era a segunda', 'O React avisa no console e recria a lista'],
+    certa: 1,
+    revelacao: 'Com <code>key={i}</code>, a nova primeira tarefa herda a key <code>0</code>, e o React reaproveita o <code>&lt;li&gt;</code> e o input que já existiam ali, com o texto digitado. Nesta lição você vai ver como props e keys identificam cada item e por que o índice quebra listas que mudam.',
+  },
   resumo: [
     `Props são os <b>argumentos</b> do componente: um objeto só de leitura, passado de pai para filho`,
     `Desestruture na assinatura: <code>function Cartao({ titulo, prioridade = 'media' })</code>`,
@@ -375,6 +403,22 @@ MODULOS.push({
   icone: '🔁',
   aprende: 'useState, eventos, atualização funcional, imutabilidade, estado derivado e levantar estado',
   porque: 'A maioria dos bugs de React em produção é estado mutado, duplicado ou no componente errado.',
+  gancho: {
+    titulo: 'Três cliques em um',
+    pergunta: 'Começando em 0, quanto vale <code>atendidos</code> depois de um clique?',
+    linguagem: 'tsx',
+    codigo: `const [atendidos, setAtendidos] = useState(0)
+
+function registrarTres() {
+  setAtendidos(atendidos + 1)
+  setAtendidos(atendidos + 1)
+  setAtendidos(atendidos + 1)
+}`,
+    opcoes: ['3', '1', '0'],
+    certa: 1,
+    opcoesCodigo: true,
+    revelacao: 'Naquela renderização <code>atendidos</code> vale 0 nas três linhas, então as três pedem "mude para 1". Nesta lição você vai ver por que o estado é um retrato de cada render, quando usar <code>setAtendidos(a =&gt; a + 1)</code> e por que nunca mutar o estado.',
+  },
   resumo: [
     `<code>const [x, setX] = useState(inicial)</code>: chamar <code>setX</code> agenda uma <b>nova renderização</b>`,
     `O estado é um <b>retrato</b> daquela renderização: depois de <code>setX</code>, <code>x</code> ainda vale o valor antigo`,
@@ -557,6 +601,18 @@ MODULOS.push({
   icone: '⚡',
   aprende: 'useEffect para sincronizar com sistemas externos, dependências, limpeza, StrictMode e fetch com AbortController',
   porque: 'useEffect mal usado é a fonte nº 1 de loops, requisições duplicadas e vazamentos em apps React.',
+  gancho: {
+    titulo: 'A requisição em dobro',
+    pergunta: 'App em dev com <code>&lt;StrictMode&gt;</code>. Quantas vezes o log aparece ao abrir a tela?',
+    linguagem: 'tsx',
+    codigo: `useEffect(() => {
+  console.log('buscando assistidos')
+  fetch('/api/assistidos')
+}, [])`,
+    opcoes: ['1: o array vazio garante', '2', 'Uma por render, sem parar'],
+    certa: 1,
+    revelacao: 'Em desenvolvimento, o StrictMode monta, desmonta e monta de novo o componente de propósito, para expor efeitos sem limpeza; em produção roda uma vez. Nesta lição você vai ver o que é um efeito de verdade, como escrever a limpeza (com <code>AbortController</code> no fetch) e quando você nem precisa de efeito.',
+  },
   resumo: [
     `<code>useEffect</code> roda <b>depois</b> que a tela é pintada, para <b>sincronizar</b> com algo fora do React`,
     `O array de dependências diz quando ressincronizar: <code>[]</code> só ao montar; <code>[id]</code> quando <code>id</code> muda; sem array, a cada render`,
@@ -740,6 +796,18 @@ MODULOS.push({
   icone: '📝',
   aprende: 'inputs controlados, onSubmit com preventDefault, validação, erros acessíveis, select e checkbox',
   porque: 'Quase toda tela de sistema interno é um formulário, e é onde o usuário mais sente bugs e falta de acessibilidade.',
+  gancho: {
+    titulo: 'O campo que não digita',
+    pergunta: 'A pessoa clica no campo e digita "Maria". O que acontece?',
+    linguagem: 'tsx',
+    codigo: `function BuscaAssistido() {
+  const [nome, setNome] = useState('')
+  return <input value={nome} />
+}`,
+    opcoes: ['Aparece "Maria" normalmente', 'Nada aparece: o campo fica travado', 'A tela quebra com erro'],
+    certa: 1,
+    revelacao: 'Com <code>value</code> vindo do estado, o React redesenha sempre o valor do estado, e sem <code>onChange</code> o estado nunca muda (o console só avisa). Nesta lição você vai ver inputs controlados, submit sem recarregar a página e erros de validação acessíveis.',
+  },
   resumo: [
     `Input <b>controlado</b>: <code>value</code> vem do estado e <code>onChange</code> atualiza o estado`,
     `Checkbox usa <code>checked</code> e <code>e.target.checked</code>, não <code>value</code>`,
@@ -925,6 +993,22 @@ MODULOS.push({
   icone: '🪝',
   aprende: 'hooks customizados, regras dos hooks, useContext com Provider, useMemo/useCallback e useRef',
   porque: 'Hooks próprios e Context são como você reaproveita lógica e evita passar a mesma prop por dez níveis.',
+  gancho: {
+    titulo: 'O hook compartilhado?',
+    pergunta: 'O usuário clica em "+1" na <code>&lt;Fila /&gt;</code>. Quanto mostra o <code>&lt;Resumo /&gt;</code>?',
+    linguagem: 'tsx',
+    codigo: `function useContador() {
+  const [n, setN] = useState(0)
+  return { n, somar: () => setN(n + 1) }
+}
+function Fila() { const c = useContador()
+  return <button onClick={c.somar}>+1 ({c.n})</button> }
+function Resumo() { const c = useContador()
+  return <p>Total: {c.n}</p> }`,
+    opcoes: ['Total: 1', 'Total: 0', 'Erro: hook usado em dois lugares'],
+    certa: 1,
+    revelacao: 'Cada componente que chama um hook ganha o <b>seu próprio</b> estado: hook customizado compartilha lógica, não dados. Nesta lição você vai ver como extrair hooks, as regras que eles seguem e quando usar Context para compartilhar dados de verdade.',
+  },
   resumo: [
     `Hook customizado é uma função <code>useAlgo</code> que chama outros hooks; compartilha <b>lógica</b>, não estado`,
     `Regras: chame hooks só no <b>topo</b> de componentes ou hooks, nunca dentro de if, laço ou callback`,
@@ -1124,6 +1208,20 @@ MODULOS.push({
   icone: '🌐',
   aprende: 'loading, erro e vazio, TanStack Query (useQuery, useMutation, invalidateQueries), atualização otimista e onde guardar cada estado',
   porque: 'O painel só é útil com dados reais, e é aqui que cache, carregamento e erro separam um app amador de um profissional.',
+  gancho: {
+    titulo: 'O filtro ignorado',
+    pergunta: 'A pessoa troca o filtro de "abertas" para "concluídas". O que a lista mostra?',
+    linguagem: 'tsx',
+    codigo: `const [status, setStatus] = useState('abertas')
+
+const { data } = useQuery({
+  queryKey: ['tarefas'],
+  queryFn: () => buscarTarefas(status),
+})`,
+    opcoes: ['As concluídas, buscadas de novo', 'Continua mostrando as abertas', 'Entra em loop de requisições'],
+    certa: 1,
+    revelacao: 'O TanStack Query identifica o dado pela <code>queryKey</code>; como ela não mudou, ele entrega o cache das abertas e não busca de novo. Nesta lição você vai ver como montar a key com todos os parâmetros e tratar carregando, erro, vazio e mutações.',
+  },
   resumo: [
     `Toda tela com dados tem <b>quatro estados</b>: carregando, erro, vazio e com dados; trate todos`,
     `Estado do <b>servidor</b> (tarefas da API) é cache de algo que mora em outro lugar; estado da <b>UI</b> (filtro, modal aberto) é seu`,

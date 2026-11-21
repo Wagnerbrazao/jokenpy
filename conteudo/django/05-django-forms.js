@@ -4,6 +4,16 @@ MODULOS.push({
   icone: '📝',
   aprende: 'Form e ModelForm, is_valid, cleaned_data, clean_campo, CSRF e o admin',
   porque: 'Toda entrada do usuário é suspeita: forms validam antes de salvar, e o admin entrega um painel de gestão de graça.',
+  gancho: {
+    titulo: 'Dados limpos cedo demais',
+    pergunta: 'O que este código faz?',
+    linguagem: 'django',
+    codigo: `form = AssistidoForm(data={"nome": "Ana", "cpf": "12345678901"})
+print(form.cleaned_data["nome"])`,
+    opcoes: ['Imprime Ana', 'Imprime None', 'KeyError: nome', 'AttributeError: sem cleaned_data'],
+    certa: 3,
+    revelacao: '<code>cleaned_data</code> só passa a existir depois que <code>is_valid()</code> roda a validação; antes disso o atributo nem existe. Nesta lição você vai ver o ciclo do form, onde colocar suas regras e o admin que vem de graça.',
+  },
   resumo: [
     '<code>forms.Form</code> declara campos à mão; <code>forms.ModelForm</code> gera os campos a partir do model',
     'Só depois de <code>form.is_valid()</code> existe <code>form.cleaned_data</code>, com valores limpos e convertidos',

@@ -4,6 +4,21 @@ MODULOS.push({
   icone: '🧪',
   aprende: 'TestCase, Client, testes de model, view e API, fixtures, factories e pytest-django',
   porque: 'Teste é o que deixa você mexer em model, query ou permissão sem medo, e é o diferencial que aparece no code review e na entrevista.',
+  gancho: {
+    titulo: 'O banco que sumiu',
+    pergunta: 'Seu banco de desenvolvimento tem 3.000 assistidos. O que acontece ao rodar os testes?',
+    linguagem: 'django',
+    codigo: `class AssistidoTests(TestCase):
+    def test_cria(self):
+        Assistido.objects.create(nome="Ana")
+        self.assertEqual(Assistido.objects.count(), 1)
+
+    def test_vazio(self):
+        self.assertEqual(Assistido.objects.count(), 0)`,
+    opcoes: ['Os dois passam', 'Os dois falham: há 3.000 registros', 'test_vazio falha se rodar depois de test_cria'],
+    certa: 0,
+    revelacao: 'O Django cria um <b>banco de teste vazio</b> e desfaz cada teste com uma transação, então a ordem não importa e seus dados de dev ficam intactos. Nesta lição você vai ver como testar model, view e API com esse isolamento.',
+  },
   resumo: [
     '<code>django.test.TestCase</code> cria um banco de teste e desfaz cada teste com uma transação',
     '<code>setUpTestData</code> cria os dados <b>uma vez</b> por classe; <code>setUp</code> roda antes de <b>cada</b> teste',

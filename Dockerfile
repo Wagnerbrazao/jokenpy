@@ -6,7 +6,6 @@ COPY *.py *.js *.html ./
 COPY manifest.webmanifest ./
 COPY icones/ ./icones/
 COPY cursos/ ./cursos/
-COPY trilhas/ ./trilhas/
 RUN useradd -u 10001 -M aluno
 USER aluno
 ENV JOKENPY_PUBLICO=1 PYTHONDONTWRITEBYTECODE=1

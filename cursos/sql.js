@@ -27,6 +27,17 @@ MODULOS.push({
   icone: '🔎',
   aprende: 'SELECT, aliases, DISTINCT, ORDER BY, LIMIT/OFFSET e a ordem em que o banco executa a consulta',
   porque: 'Todo find() do seu ORM vira um SELECT, e saber ler e escrever um na mão é o que separa adivinhar de entender a query lenta.',
+  gancho: {
+    titulo: 'O alias que sumiu',
+    pergunta: 'O que esta consulta devolve?',
+    linguagem: 'sql',
+    codigo: `SELECT nome, preco * 0.9 AS com_desconto
+FROM produtos
+WHERE com_desconto > 100;`,
+    opcoes: ['Os produtos com desconto acima de 100', 'Erro: column "com_desconto" does not exist', 'Zero linhas, sem erro'],
+    certa: 1,
+    revelacao: 'O banco avalia o <code>WHERE</code> <b>antes</b> do <code>SELECT</code>, então o alias ainda não existe ali (no <code>ORDER BY</code>, que vem depois, ele funciona). Nesta lição você vai ver a ordem em que o banco pensa a consulta, além de DISTINCT, ordenação e paginação estável.',
+  },
   resumo: [
     'A loja: <code>clientes</code>, <code>produtos</code>, <code>pedidos</code> e <code>itens_pedido</code>',
     '<code>SELECT nome AS cliente</code> renomeia a coluna no resultado',
@@ -173,6 +184,18 @@ MODULOS.push({
   icone: '🧹',
   aprende: 'WHERE, AND/OR, IN, BETWEEN, LIKE/ILIKE, NULL, COALESCE e CASE',
   porque: 'Filtro errado não dá erro: devolve dados errados em silêncio, e NULL é o culpado mais comum.',
+  gancho: {
+    titulo: 'O relatório vazio',
+    pergunta: 'Há 50 clientes sem nenhum pedido e <b>um</b> pedido antigo com <code>cliente_id</code> nulo. Quantas linhas voltam?',
+    linguagem: 'sql',
+    codigo: `SELECT nome FROM clientes
+WHERE id NOT IN (
+  SELECT cliente_id FROM pedidos
+);`,
+    opcoes: ['50', '0', '51', 'Erro'],
+    certa: 1,
+    revelacao: '<code>NOT IN</code> vira uma cadeia de <code>&lt;&gt;</code> com <code>AND</code>, e <code>id &lt;&gt; NULL</code> nunca é verdadeiro: um único nulo zera o resultado, sem erro. Nesta lição você vai ver por que NULL é "desconhecido", como filtrar com <code>IS NULL</code> e as armadilhas de AND/OR e LIKE.',
+  },
   resumo: [
     '<code>AND</code> tem precedência sobre <code>OR</code>: use <b>parênteses</b> sempre que misturar',
     '<code>BETWEEN a AND b</code> inclui as duas pontas',
@@ -330,6 +353,16 @@ MODULOS.push({
   icone: '🧮',
   aprende: 'COUNT, SUM, AVG, MIN, MAX, GROUP BY, HAVING e FILTER',
   porque: 'Dashboards, relatórios e métricas são agregações, e calcular no banco é muito mais barato do que trazer tudo para o Node.',
+  gancho: {
+    titulo: 'Dois COUNTs diferentes',
+    pergunta: 'A tabela tem 10 clientes; 4 estão com <code>cidade</code> nula. O que volta?',
+    linguagem: 'sql',
+    codigo: `SELECT COUNT(*), COUNT(cidade)
+FROM clientes;`,
+    opcoes: ['10 e 10', '10 e 6', '6 e 6'],
+    certa: 1,
+    revelacao: '<code>COUNT(*)</code> conta linhas; <code>COUNT(cidade)</code> conta só os valores não nulos, e <code>SUM</code>/<code>AVG</code> também ignoram nulos. Nesta lição você vai ver como agregar, agrupar, filtrar grupos com <code>HAVING</code> e contar várias coisas numa passada com <code>FILTER</code>.',
+  },
   resumo: [
     '<code>COUNT(*)</code> conta linhas; <code>COUNT(coluna)</code> conta valores <b>não nulos</b>',
     '<code>SUM</code>, <code>AVG</code>, <code>MIN</code>, <code>MAX</code> ignoram nulos; <code>SUM</code> de nada é <code>NULL</code>',
@@ -468,6 +501,18 @@ MODULOS.push({
   icone: '🔗',
   aprende: 'INNER e LEFT JOIN, filtro no ON vs WHERE, anti-join, auto-join e duplicação em 1:N',
   porque: 'Quase toda tela junta tabelas, e um JOIN errado infla totais ou some com registros sem dar erro nenhum.',
+  gancho: {
+    titulo: 'O LEFT JOIN que encolheu',
+    pergunta: 'O relatório deveria listar <b>todos</b> os clientes, com o pedido pago se houver. Quem nunca pagou nada aparece?',
+    linguagem: 'sql',
+    codigo: `SELECT c.nome, p.id AS pedido_pago
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+WHERE p.status = 'pago';`,
+    opcoes: ['Sim, com pedido_pago NULL', 'Não, some do resultado', 'Aparece uma vez por pedido não pago'],
+    certa: 1,
+    revelacao: 'Sem par, <code>p.status</code> vem nulo, <code>NULL = \'pago\'</code> não é verdadeiro e o <code>WHERE</code> descarta a linha: o LEFT virou INNER. Nesta lição você vai ver onde o filtro deve ficar (no <code>ON</code>), anti-joins e o JOIN que multiplica totais.',
+  },
   resumo: [
     '<code>INNER JOIN</code> só mantém pares que casam; <code>LEFT JOIN</code> mantém todas as linhas da esquerda',
     'No LEFT JOIN, sem par, as colunas da direita vêm <code>NULL</code>',
@@ -634,6 +679,19 @@ MODULOS.push({
   icone: '🪟',
   aprende: 'subconsultas, EXISTS, CTE com WITH, window functions (ROW_NUMBER, RANK, SUM OVER) e EXPLAIN',
   porque: 'Ranking, top-N por grupo e totais acumulados viram uma query só, em vez de loops no Node e N consultas ao banco.',
+  gancho: {
+    titulo: 'Top 3 por categoria',
+    pergunta: 'Você quer os 3 produtos mais caros de cada categoria. O que acontece?',
+    linguagem: 'sql',
+    codigo: `SELECT categoria, nome, preco
+FROM produtos
+WHERE ROW_NUMBER() OVER (
+  PARTITION BY categoria ORDER BY preco DESC
+) <= 3;`,
+    opcoes: ['Os 3 mais caros de cada categoria', 'Os 3 mais caros no geral', 'Erro: window functions are not allowed in WHERE'],
+    certa: 2,
+    revelacao: 'Window functions são calculadas na fase do <code>SELECT</code>, depois do <code>WHERE</code>; é preciso calcular numa CTE e filtrar por fora. Nesta lição você vai ver subconsultas, <code>EXISTS</code>, CTEs, ranking com window functions e como ler o <code>EXPLAIN</code>.',
+  },
   resumo: [
     'Subconsulta escalar devolve <b>um</b> valor; em <code>FROM</code>, vira uma tabela temporária',
     '<code>EXISTS</code> para no primeiro resultado e não sofre com NULL',
@@ -809,6 +867,20 @@ MODULOS.push({
   icone: '🏗️',
   aprende: 'CREATE TABLE, tipos, chaves, restrições, índices (inclusive compostos) e transações',
   porque: 'Restrições no banco seguram dados ruins que escapam da validação da API, e o índice certo transforma segundos em milissegundos.',
+  gancho: {
+    titulo: 'O DELETE de 30 segundos',
+    pergunta: '<code>pedidos</code> tem 5 milhões de linhas. Apagar <b>um</b> cliente leva 30 s. Qual a causa mais provável?',
+    linguagem: 'sql',
+    codigo: `CREATE TABLE pedidos (
+  id         bigint PRIMARY KEY,
+  cliente_id bigint REFERENCES clientes (id)
+);
+
+DELETE FROM clientes WHERE id = 42;  -- 30 s`,
+    opcoes: ['Falta índice em clientes.id', 'Falta índice em pedidos.cliente_id', 'A FK deveria ser ON DELETE CASCADE'],
+    certa: 1,
+    revelacao: 'Para checar a FK, o banco procura pedidos com <code>cliente_id = 42</code>, e o PostgreSQL <b>não</b> cria índice nessa coluna sozinho: vira Seq Scan em 5 milhões de linhas (<code>clientes.id</code> já tem índice pela PK). Nesta lição você vai ver tipos, chaves, índices (inclusive compostos) e transações.',
+  },
   resumo: [
     'Dinheiro é <code>numeric(10,2)</code>, nunca <code>float</code>; data e hora é <code>timestamptz</code>',
     '<code>PRIMARY KEY</code> = único + não nulo; <code>FOREIGN KEY</code> garante que a referência existe',

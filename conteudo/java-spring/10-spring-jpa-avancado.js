@@ -4,6 +4,22 @@ MODULOS.push({
   icone: '🔗',
   aprende: '@ManyToOne/@OneToMany, N+1, @Transactional e Flyway',
   porque: 'N+1, LazyInitializationException e transação mal colocada são as perguntas de JPA que mais aparecem em entrevista e em incidente.',
+  gancho: {
+    titulo: 'O rollback que não veio',
+    pergunta: 'O controller chama <code>service.importar(lote)</code> com 5 atendimentos; o 3º viola uma constraint (o id é IDENTITY, então o insert sai no <code>save</code>). Quantos ficam gravados?',
+    linguagem: 'java',
+    codigo: `public void importar(List<Atendimento> lote) {
+    gravar(lote);   // chamada interna
+}
+
+@Transactional
+public void gravar(List<Atendimento> lote) {
+    lote.forEach(repo::save);
+}`,
+    opcoes: ['Nenhum: rollback', '2', '4', 'Todos os 5'],
+    certa: 1,
+    revelacao: '<code>@Transactional</code> funciona por <b>proxy</b>, e a chamada interna (<code>this.gravar</code>) passa por fora dele. Sem transação, cada <code>save</code> confirma sozinho: os 2 primeiros ficam. Nesta lição você vai ver relações, N+1, <code>LazyInitializationException</code> e onde pôr a transação.',
+  },
   resumo: [
     'O lado <code>@ManyToOne</code> é o <b>dono</b> da relação (tem a FK); o <code>@OneToMany(mappedBy = "...")</code> só espelha',
     '<code>@ManyToOne</code> é <b>EAGER</b> por padrão: declare <code>fetch = FetchType.LAZY</code>',

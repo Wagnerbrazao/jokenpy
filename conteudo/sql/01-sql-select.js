@@ -4,6 +4,17 @@ MODULOS.push({
   icone: '🔎',
   aprende: 'SELECT, aliases, DISTINCT, ORDER BY, LIMIT/OFFSET e a ordem em que o banco executa a consulta',
   porque: 'Todo find() do seu ORM vira um SELECT, e saber ler e escrever um na mão é o que separa adivinhar de entender a query lenta.',
+  gancho: {
+    titulo: 'O alias que sumiu',
+    pergunta: 'O que esta consulta devolve?',
+    linguagem: 'sql',
+    codigo: `SELECT nome, preco * 0.9 AS com_desconto
+FROM produtos
+WHERE com_desconto > 100;`,
+    opcoes: ['Os produtos com desconto acima de 100', 'Erro: column "com_desconto" does not exist', 'Zero linhas, sem erro'],
+    certa: 1,
+    revelacao: 'O banco avalia o <code>WHERE</code> <b>antes</b> do <code>SELECT</code>, então o alias ainda não existe ali (no <code>ORDER BY</code>, que vem depois, ele funciona). Nesta lição você vai ver a ordem em que o banco pensa a consulta, além de DISTINCT, ordenação e paginação estável.',
+  },
   resumo: [
     'A loja: <code>clientes</code>, <code>produtos</code>, <code>pedidos</code> e <code>itens_pedido</code>',
     '<code>SELECT nome AS cliente</code> renomeia a coluna no resultado',

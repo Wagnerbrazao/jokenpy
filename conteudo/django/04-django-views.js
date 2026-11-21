@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '🧭',
   aprende: 'urls.py e path, views em função e em classe, templates, get_object_or_404 e redirect',
   porque: 'É o caminho de toda requisição: saber ligar URL, view e template é o que permite entregar uma tela nova sem se perder no projeto.',
+  gancho: {
+    titulo: 'A rota sequestrada',
+    pergunta: 'Qual view atende <code>GET /processos/novo/</code>?',
+    linguagem: 'django',
+    codigo: `urlpatterns = [
+    path("processos/<str:numero>/", views.detalhe),
+    path("processos/novo/", views.novo),
+]`,
+    opcoes: ['views.novo', 'views.detalhe, com numero="novo"', '404: rota ambígua', 'Erro ao subir: rotas em conflito'],
+    certa: 1,
+    revelacao: 'O Django testa as rotas <b>na ordem</b> e para na primeira que casa; <code>novo</code> é uma <code>str</code> válida. Nesta lição você vai ver como URL, view e template se ligam e como ordenar e nomear rotas sem surpresas.',
+  },
   resumo: [
     '<code>path("decks/&lt;int:pk&gt;/", views.detalhe, name="deck-detalhe")</code> liga a URL à view e dá um nome a ela',
     'Uma view recebe <code>request</code> e devolve um <code>HttpResponse</code>; <code>render()</code> monta a resposta com um template',

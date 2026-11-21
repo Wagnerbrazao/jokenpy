@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '🧹',
   aprende: 'WHERE, AND/OR, IN, BETWEEN, LIKE/ILIKE, NULL, COALESCE e CASE',
   porque: 'Filtro errado não dá erro: devolve dados errados em silêncio, e NULL é o culpado mais comum.',
+  gancho: {
+    titulo: 'O relatório vazio',
+    pergunta: 'Há 50 clientes sem nenhum pedido e <b>um</b> pedido antigo com <code>cliente_id</code> nulo. Quantas linhas voltam?',
+    linguagem: 'sql',
+    codigo: `SELECT nome FROM clientes
+WHERE id NOT IN (
+  SELECT cliente_id FROM pedidos
+);`,
+    opcoes: ['50', '0', '51', 'Erro'],
+    certa: 1,
+    revelacao: '<code>NOT IN</code> vira uma cadeia de <code>&lt;&gt;</code> com <code>AND</code>, e <code>id &lt;&gt; NULL</code> nunca é verdadeiro: um único nulo zera o resultado, sem erro. Nesta lição você vai ver por que NULL é "desconhecido", como filtrar com <code>IS NULL</code> e as armadilhas de AND/OR e LIKE.',
+  },
   resumo: [
     '<code>AND</code> tem precedência sobre <code>OR</code>: use <b>parênteses</b> sempre que misturar',
     '<code>BETWEEN a AND b</code> inclui as duas pontas',

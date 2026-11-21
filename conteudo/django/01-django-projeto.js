@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '🏗️',
   aprende: 'venv/uv, startproject, startapp, manage.py e settings.py',
   porque: 'Todo projeto Django começa igual, e entender essa estrutura é o que permite achar qualquer coisa num código que você não escreveu.',
+  gancho: {
+    titulo: 'Migration que não vem',
+    pergunta: 'Você criou o app com <code>startapp assistidos</code>, escreveu o model e rodou o comando. Por que nada aconteceu?',
+    linguagem: 'bash',
+    codigo: `$ python manage.py startapp assistidos
+# ...escreve class Assistido(models.Model) em assistidos/models.py
+$ python manage.py makemigrations
+No changes detected`,
+    opcoes: ['Faltou rodar migrate antes', 'O app não está em INSTALLED_APPS', 'O model precisa de class Meta', 'O runserver precisa reiniciar'],
+    certa: 1,
+    revelacao: 'O Django só enxerga apps listados em <code>INSTALLED_APPS</code>, como um módulo do NestJS que ninguém colocou nos <code>imports</code> do <code>AppModule</code>. Nesta lição você vai ver como projeto e apps se encaixam e onde o Django procura cada coisa.',
+  },
   resumo: [
     'Cada projeto tem seu <b>ambiente virtual</b> (<code>.venv</code>), criado com <code>uv venv</code> ou <code>python -m venv</code>',
     '<code>django-admin startproject config .</code> cria o <b>projeto</b>: settings, urls e o <code>manage.py</code>',

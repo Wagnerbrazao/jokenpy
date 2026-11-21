@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '🏗️',
   aprende: 'start.spring.io, Maven, starters, @SpringBootApplication e application.yml',
   porque: 'No primeiro dia num time Spring você clona um projeto e precisa saber onde estão as dependências, a configuração e o ponto de entrada.',
+  gancho: {
+    titulo: 'Os endpoints sumiram',
+    pergunta: 'Você moveu só a classe principal de pacote. A aplicação sobe sem erro, mas <b>todo</b> endpoint passa a dar 404. Por quê?',
+    linguagem: 'texto',
+    codigo: `antes:  br.gov.defensoria.atendimento.AtendimentoApplication
+depois: br.gov.defensoria.atendimento.app.AtendimentoApplication
+
+controllers: br.gov.defensoria.atendimento.web.*`,
+    opcoes: ['Os controllers saíram do component scan', 'Precisa rodar mvn clean', 'A porta mudou', 'Falta registrar os controllers num módulo'],
+    certa: 0,
+    revelacao: '<code>@SpringBootApplication</code> procura beans a partir do <b>pacote dela para baixo</b>. <code>...atendimento.web</code> não está dentro de <code>...atendimento.app</code>, então nenhum controller é registrado. Nesta lição você vai ver o pom.xml, os starters, a auto-configuração e o application.yml.',
+  },
   resumo: [
     '<b>start.spring.io</b> gera o projeto: escolha Maven, Java 21 e os starters',
     '<code>pom.xml</code> é o <code>package.json</code>; o parent do Spring Boot define as versões',

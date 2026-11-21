@@ -9,7 +9,7 @@
    "sql-modelagem"
   ],
   "exercicios": 49,
-  "versao": "0a2fcda9c1"
+  "versao": "073dff16f4"
  },
  "react": {
   "modulos": [
@@ -22,7 +22,7 @@
    "react-dados"
   ],
   "exercicios": 57,
-  "versao": "df98ce3c42"
+  "versao": "e253d612c8"
  },
  "django": {
   "modulos": [
@@ -35,7 +35,7 @@
    "django-testes"
   ],
   "exercicios": 58,
-  "versao": "bcc97965b1"
+  "versao": "5410af0ff8"
  },
  "java-spring": {
   "modulos": [
@@ -54,6 +54,6 @@
    "spring-producao"
   ],
   "exercicios": 106,
-  "versao": "eb00276e1b"
+  "versao": "8da4a0c839"
  }
 }

@@ -4,6 +4,19 @@ MODULOS.push({
   icone: '🗄️',
   aprende: '@Entity, JpaRepository, derived queries, @Query e paginação',
   porque: 'Quase toda API Spring de órgão público grava em Postgres ou Oracle via JPA, e é aí que moram os bugs de desempenho.',
+  gancho: {
+    titulo: 'Um erro de digitação',
+    pergunta: 'A entidade tem o atributo <code>nomeAssistido</code>. Ninguém chama este método ainda. O que acontece?',
+    linguagem: 'java',
+    codigo: `public interface AssistidoRepository
+        extends JpaRepository<Assistido, Long> {
+
+    List<Assistido> findByNomeAssistdo(String nome);
+}`,
+    opcoes: ['Nada, até alguém chamar', 'Não compila', 'A aplicação nem sobe', 'Devolve lista vazia'],
+    certa: 2,
+    revelacao: 'O Spring Data monta a consulta a partir do <b>nome do método</b> na subida e não acha o atributo <code>nomeAssistdo</code>: a aplicação falha com <code>PropertyReferenceException</code>. Nesta lição você vai ver entidades, repositórios, derived queries, <code>@Query</code> e paginação.',
+  },
   resumo: [
     '<code>@Entity</code> mapeia uma classe para uma tabela; precisa de <code>@Id</code> e de um construtor sem argumentos',
     '<code>@GeneratedValue(strategy = GenerationType.IDENTITY)</code> usa a coluna identity/serial do Postgres',

@@ -63,7 +63,6 @@ const TRILHAS = [
   { id: 'react', titulo: 'React', sub: 'Componentes, estado e dados de uma API', icone: '⚛️', cor: '#0891B2', nivel: 'Intermediário', arquivo: '/cursos/react.js' },
   { id: 'django', titulo: 'Django', sub: 'Back-end e API em Python', icone: '🌿', cor: '#0E9F6E', nivel: 'Depois do Python', arquivo: '/cursos/django.js' },
   { id: 'sql', titulo: 'SQL', sub: 'Consultas de verdade no PostgreSQL', icone: '🗄️', cor: '#C026D3', nivel: 'Todos os níveis', arquivo: '/cursos/sql.js' },
-  { id: 'entrevista', titulo: 'Entrevista Radix', sub: 'Trilha privada, com senha', icone: '🔒', cor: '#475569', nivel: 'Privada', privada: true, arquivo: '/trilhas/entrevista.js' },
 ]
 let INDICE = {}   // /cursos/indice.json: { id: { modulos: [...], exercicios } }
 const trilhaDe = id => TRILHAS.find(t => t.id === id)
@@ -270,6 +269,8 @@ function tocar(notas, dur = 0.11, tipo = 'sine') {
     })
   } catch {}
 }
+// vibração curta só nos momentos que importam (acerto, erro, fim): se tudo vibra, nada significa
+const vibrar = p => { if (HAB.vibrar !== false) try { navigator.vibrate?.(p) } catch {} }
 const somCerto = () => tocar([660, 990])
 const somErro = () => tocar([240, 180], 0.16, 'triangle')
 const somFim = () => tocar([523, 659, 784, 1047], 0.12)
@@ -489,66 +490,81 @@ function semana() {
 }
 const contarFracos = () => LISTA.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios).filter(it => (prog.fracos || {})[it.id]).length
 
-// ---------- tela Hoje: o que fazer agora ----------
+// ---------- tela Hoje: uma coisa para fazer agora, e o seu dia ----------
+function anelSvg(pct, tam, traco, classe = '') {
+  const r = (tam - traco) / 2, c = 2 * Math.PI * r
+  return `<svg class="anel-svg ${classe}" viewBox="0 0 ${tam} ${tam}" width="${tam}" height="${tam}" aria-hidden="true">
+    <circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke-width="${traco}" class="anel-fundo"/>
+    <circle cx="${tam / 2}" cy="${tam / 2}" r="${r}" fill="none" stroke-width="${traco}" class="anel-cheio" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${c}" style="--alvo:${c * (1 - Math.min(100, pct) / 100)}" transform="rotate(-90 ${tam / 2} ${tam / 2})"/></svg>`
+}
 function renderHoje() {
   const t = trilhaDe(CURSO.id), alvo = proximaLicao()
   const seq = sequencia(), hoje = xpDeHoje(), meta = metaDiaria(), pct = Math.min(100, Math.round(100 * hoje / meta)), bateu = hoje >= meta
   const r = resumoTrilha(CURSO.id)
-  const feitas = LISTA.filter(l => prog.feitas[l.id]).length, fracos = contarFracos()
+  const feitas = LISTA.filter(l => prog.feitas[l.id]).length, nDevidos = devidos().length
   const outras = TRILHAS.filter(x => x.id !== CURSO.id && disponivel(x) && resumoTrilha(x.id).mexeu)
   const java = trilhaDe('java-spring')
   const sugerirJava = CURSO.id !== 'java-spring' && disponivel(java) && !resumoTrilha('java-spring').mexeu
-  const frase = bateu ? 'Meta de hoje batida. Amanhã tem mais.'
-    : estudouHoje() ? `Faltam ${meta - hoje} XP para a meta de hoje.`
-    : seq ? `Sua ofensiva de ${seq} ${seq === 1 ? 'dia' : 'dias'} continua se você estudar hoje.`
-    : 'Cinco minutos hoje já contam.'
+  const frase = bateu ? 'Meta de hoje batida. 🎉'
+    : estudouHoje() ? `Faltam ${meta - hoje} XP para a meta.`
+    : seq ? `${seq} ${seq === 1 ? 'dia' : 'dias'} seguidos. Não quebre hoje.`
+    : 'Cinco minutos já contam.'
   app.innerHTML = casca('hoje', `
     <section class="saudacao">
       <span class="kicker">${saudacao()}</span>
       <h1>${frase}</h1>
     </section>
-    <section class="painel-dia ${bateu ? 'bateu' : ''}">
-      <div class="anel" style="--p:${pct}" role="img" aria-label="Meta do dia: ${Math.min(hoje, meta)} de ${meta} XP"><span><b>${Math.min(hoje, meta)}</b><small>/${meta} XP</small></span></div>
-      <div class="painel-dia-txt">
-        <div class="painel-linha"><b class="fogo-txt ${estudouHoje() ? 'aceso' : ''}">${ICONE.fogo}${seq} ${seq === 1 ? 'dia seguido' : 'dias seguidos'}</b>
-          <span class="protetor" title="Um protetor cobre um dia sem estudo. Você ganha um a cada 7 dias seguidos.">${ICONE.escudo}${HAB.protetores || 0}</span></div>
+    ${alvo ? htmlFoco(t, alvo, r) : `<section class="foco"><span class="foco-trilha">${t.icone} ${esc(t.titulo)}</span>
+      <h2>Trilha concluída 🏆</h2><p>Revise de vez em quando para não esquecer, ou comece outra trilha.</p>
+      <button class="btn largo" data-ir="trilhas">Escolher outra trilha ${ICONE.seta}</button></section>`}
+    <section class="dia ${bateu ? 'bateu' : ''}">
+      <div class="dia-meta" role="img" aria-label="Meta do dia: ${Math.min(hoje, meta)} de ${meta} XP">${anelSvg(pct, 64, 7, 'sol')}<span><b>${Math.min(hoje, meta)}</b><small>/${meta}</small></span></div>
+      <div class="dia-semana">
+        <div class="dia-linha"><b class="fogo-txt ${estudouHoje() ? 'aceso' : ''}">${ICONE.fogo}${seq} ${seq === 1 ? 'dia' : 'dias'}</b>
+          <span class="protetor" title="Protetores: cada um cobre um dia sem estudo. Ganhe um a cada 7 dias seguidos.">${ICONE.escudo}${HAB.protetores || 0}</span></div>
         ${semana()}
       </div>
     </section>
-    ${alvo ? htmlHeroi(t, alvo, r) : `<section class="heroi" style="--cor-t:${t.cor}"><small>${esc(t.titulo)}</small><h2>Trilha concluída! 🏆</h2>
-      <p>Revise de vez em quando para não esquecer, ou comece outra trilha.</p>
-      <button class="btn grande largo" data-ir="trilhas">Escolher outra trilha ${ICONE.seta}</button></section>`}
-    <div class="grade-cartoes">
-      ${feitas ? `<button class="cartao-acao" id="revisar">
-        <span class="ca-ico azul">${ICONE.revisar}</span>
-        <span><b>Revisão rápida</b><small>${fracos ? `${Math.min(fracos, TAM_REVISAO)} do que você mais errou` : `${TAM_REVISAO} perguntas · ~2 min`}</small></span>${ICONE.seta}</button>` : ''}
+    <div class="linhas">
+      ${feitas ? `<button class="linha" id="revisar">
+        <span class="li-ico azul">${ICONE.revisar}</span>
+        <span class="li-txt"><b>${nDevidos ? 'Revisão do dia' : 'Treino extra'}</b><small>${nDevidos ? `${Math.min(nDevidos, 8)} ${nDevidos === 1 ? 'pergunta pronta' : 'perguntas prontas'} para lembrar · ~2 min` : 'Nada vencendo hoje. Treine o que você mais errou.'}</small></span>
+        ${nDevidos ? `<span class="selo">${Math.min(nDevidos, 8)}</span>` : ICONE.seta}</button>` : ''}
       ${htmlConviteLembrete()}
+      ${sugerirJava ? `<button class="linha" data-trilha="java-spring">
+        <span class="li-ico" style="background:color-mix(in srgb,${java.cor} 14%,var(--card))">${java.icone}</span>
+        <span class="li-txt"><b>${java.titulo}</b><small>Nova trilha: cada conceito comparado com o NestJS</small></span>${ICONE.seta}</button>` : ''}
       ${htmlConviteInstalar()}
     </div>
-    ${sugerirJava ? `<button class="sugestao-trilha" data-trilha="java-spring" style="--cor-t:${java.cor}">
-      <span class="st-ico">${java.icone}</span><span><small>Nova trilha para você</small><b>${java.titulo}</b><span>${java.sub}. Cada conceito comparado com o NestJS.</span></span>${ICONE.seta}</button>` : ''}
-    ${outras.length ? `<section class="bloco"><h3>Suas outras trilhas</h3><div class="mini-trilhas">${outras.map(x => {
+    ${outras.length ? `<section class="bloco"><h3 class="titulo-bloco">Outras trilhas</h3><div class="mini-trilhas">${outras.map(x => {
       const rx = resumoTrilha(x.id)
-      return `<button class="mini-trilha" data-trilha="${x.id}" style="--cor-t:${x.cor}"><span>${x.icone}</span><b>${esc(x.titulo)}</b>
-        <span class="mt-barra"><i style="width:${rx.pct}%"></i></span><small>${rx.feitos}/${rx.total}</small></button>`
+      return `<button class="mini-trilha" data-trilha="${x.id}" style="--cor-t:${x.cor}"><span class="mt-ico">${x.icone}</span><span class="mt-txt"><b>${esc(x.titulo)}</b>
+        <span class="barra-fina"><i style="width:${rx.pct}%"></i></span></span><small>${rx.pct}%</small></button>`
     }).join('')}</div></section>` : ''}
   `)
   const sg = $('#seguir'); if (sg) sg.onclick = () => alvo.andamento ? retomar() : iniciar(alvo.i)
   const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
   ligarConvites()
+  atualizarSelo(nDevidos)
 }
+// número no ícone do app instalado: quantas revisões estão esperando
+function atualizarSelo(n) { try { n ? navigator.setAppBadge?.(n).catch(() => {}) : navigator.clearAppBadge?.().catch(() => {}) } catch {} }
 
-function htmlHeroi(t, alvo, r) {
+function htmlFoco(t, alvo, r) {
   const l = LISTA[alvo.i], a = prog.emAndamento
-  const tipo = tipoDaLicao(alvo.i)
-  return `<section class="heroi" style="--cor-t:${t.cor}">
-    <div class="heroi-topo"><button class="heroi-trilha" data-ir="trilha">${t.icone} ${esc(t.titulo)}</button><span class="heroi-tempo">${ICONE.relogio}~${minutos(l)} min</span></div>
-    <small class="heroi-rotulo">${alvo.andamento ? `Você parou em ${a.feitos} de ${l.exercicios.length} exercícios` : 'Sua sessão de hoje'}</small>
-    <h2><span aria-hidden="true">${l.icone}</span> ${esc(l.titulo)}</h2>
-    <p>${esc(l.porque || `Você vai ver: ${l.aprende}.`)}</p>
-    <div class="heroi-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${CURSO.rotulo} ${alvo.i + 1} de ${LISTA.length} · ${r.pct}% da trilha</small></div>
-    <button class="btn grande largo branco-solido" id="seguir">${alvo.andamento ? 'Continuar' : 'Começar'} ${ICONE.seta}</button>
-    <div class="heroi-guia" aria-hidden="true">${personagem(tipo, 'feliz', 92, 'flutua')}</div>
+  return `<section class="foco" style="--cor-t:${t.cor}">
+    <div class="foco-topo"><button class="foco-trilha" data-ir="trilha">${t.icone} ${esc(t.titulo)}</button><span class="foco-tempo">${ICONE.relogio}${minutos(l)} min</span></div>
+    <div class="foco-meio">
+      <div class="foco-anel">${anelSvg(r.pct, 92, 6, 'trilha')}<span class="foco-ico">${l.icone}</span></div>
+      <div class="foco-txt">
+        <small>${alvo.andamento ? `Parou em ${a.feitos} de ${l.exercicios.length}` : `${CURSO.rotulo} ${alvo.i + 1} de ${LISTA.length}`}</small>
+        <h2>${esc(l.titulo)}</h2>
+      </div>
+    </div>
+    <p class="foco-porque">${esc(l.porque || `Você vai ver: ${l.aprende}.`)}</p>
+    ${!alvo.andamento && l.gancho ? `<p class="foco-gancho">${ICONE.raio}<span>Começa com um desafio: <b>${esc(l.gancho.titulo)}</b></span></p>` : ''}
+    <button class="btn grande largo" id="seguir">${alvo.andamento ? 'Continuar' : 'Começar'} ${ICONE.seta}</button>
   </section>`
 }
 
@@ -558,49 +574,53 @@ function renderTrilhas() {
     <section class="saudacao">
       <span class="kicker">Trilhas</span>
       <h1>O que você quer dominar?</h1>
-      <p>Cada trilha guarda o próprio progresso. A ofensiva e a meta do dia valem para todas.</p>
     </section>
-    <div class="grade-trilhas">${TRILHAS.filter(disponivel).map(t => {
+    <div class="lista-trilhas">${TRILHAS.filter(disponivel).map(t => {
       const r = resumoTrilha(t.id), atual = t.id === CURSO.id
-      const qtd = r.total ? `${r.total} ${t.id === 'python' ? 'lições' : 'módulos'}` : ''
       return `<button class="card-trilha ${atual ? 'atual' : ''}" data-trilha="${t.id}" style="--cor-t:${t.cor}">
-        <span class="ct-ico" aria-hidden="true">${t.privada && TRILHAS_CARREGADAS[t.id] ? '🔓' : t.icone}</span>
-        <span class="ct-txt"><small>${esc(t.nivel)}${qtd ? ` · ${qtd}` : ''}${atual ? ' · atual' : ''}</small><b>${esc(t.titulo)}</b><span>${esc(t.sub)}</span>
-          ${r.total ? `<span class="ct-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${r.pct ? `${r.pct}%` : 'Não iniciada'}</small></span>` : ''}</span>
+        <span class="ct-ico" aria-hidden="true">${t.icone}</span>
+        <span class="ct-txt"><b>${esc(t.titulo)}</b><span>${esc(t.sub)}</span>
+          <span class="ct-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${r.pct ? `${r.feitos}/${r.total}` : `${r.total} ${t.id === 'python' ? 'lições' : 'módulos'}`}</small></span></span>
+        ${atual ? '<span class="ct-atual">Atual</span>' : ''}
       </button>`
-    }).join('')}</div>`)
+    }).join('')}</div>
+    <p class="nota centro">Cada trilha guarda o próprio progresso. A ofensiva e a meta valem para todas.</p>`)
 }
 
-// ---------- uma trilha: o mapa das lições ----------
+// ---------- uma trilha: linha do tempo das lições ----------
 function renderTrilha() {
   const t = trilhaDe(CURSO.id), alvoP = proximaLicao()
   const andamento = alvoP?.andamento ? { ...prog.emAndamento, i: alvoP.i } : null
   const alvo = alvoP ? alvoP.i : -1
-  const feitas = LISTA.filter(l => prog.feitas[l.id]).length
-  let n = 0
+  const r = resumoTrilha(CURSO.id), feitas = r.feitos
   app.innerHTML = casca('trilha-tela', `<div class="home">
     <div class="caminho-col">
       <button class="voltar-trilhas" data-ir="trilhas">${ICONE.voltar} Trilhas</button>
-      <section class="boas-vindas">
-        <span class="kicker">${t.icone} ${esc(CURSO.kicker)}</span>
+      <section class="trilha-cabeca" style="--cor-t:${t.cor}">
+        <span class="ct-ico grande" aria-hidden="true">${t.icone}</span>
+        <span class="kicker">${esc(CURSO.kicker)}</span>
         <h1>${CURSO.titulo}</h1>
         <p>${CURSO.subtitulo}</p>
+        <div class="ct-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${r.feitos} de ${r.total}</small></div>
       </section>
-      ${atosDoCurso().map((ato, m) => `<section class="mundo cor-${ato.tipo}">
-        <div class="mundo-banner">
+      ${atosDoCurso().map((ato, m) => `<section class="parte cor-${ato.tipo}">
+        <div class="parte-cab">
+          ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 40)}
           <div><small>Parte ${m + 1} · ${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</small><h2>${esc(ato.titulo)}</h2></div>
-          ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 58)}
         </div>
-        <ol class="caminho">
+        <ol class="linha-tempo">
           ${ato.licoes.map(i => {
-            const l = LISTA[i], feita = !!prog.feitas[l.id], atual = i === alvo, x = ZIGUE[n++ % ZIGUE.length]
-            return `<li class="item ${atual ? 'atual' : ''}" style="--x:${x}px">
-              ${atual ? `<div class="balao">${andamento ? 'Continuar' : 'Começar'}</div>` : ''}
-              <button class="no cor-${tipoDaLicao(i)} ${feita ? 'feito' : ''} ${atual ? 'sugerida' : ''} ${l.bonus ? 'bonus' : ''}" data-i="${i}" aria-label="${esc(l.titulo)}${feita ? ' (concluída)' : ''}">
-                <span class="hex"><span class="ico" aria-hidden="true">${feita && !atual ? '✓' : l.icone}</span></span>
+            const l = LISTA[i], feita = !!prog.feitas[l.id], atual = i === alvo
+            return `<li class="etapa ${feita ? 'feita' : ''} ${atual ? 'atual' : ''}">
+              <button class="etapa-btn" data-i="${i}" aria-label="${esc(l.titulo)}${feita ? ' (concluída)' : ''}">
+                <span class="etapa-no" aria-hidden="true">${feita ? ICONE.check : l.icone}</span>
+                <span class="etapa-txt"><b>${esc(l.titulo)}</b><small>${CURSO.rotulo} ${i + 1} · ${minutos(l)} min${l.bonus ? ' · bônus' : ''}</small></span>
+                ${feita ? htmlEstrelas(prog.estrelas?.[l.id] || 1) : ''}
               </button>
-              <div class="rotulo-no"><b>${esc(l.titulo)}</b>${feita ? htmlEstrelas(prog.estrelas?.[l.id] || 1) : `<small>${CURSO.rotulo} ${i + 1}</small>`}</div>
-              ${atual ? `<div class="guia" aria-hidden="true">${personagem(ato.tipo, 'feliz', 64, 'flutua')}</div>` : ''}
+              ${atual ? `<div class="etapa-foco">
+                <p>${esc(l.porque || `Você vai ver: ${l.aprende}.`)}</p>
+                <button class="btn largo" id="seguir">${andamento ? `Continuar (${andamento.feitos}/${l.exercicios.length})` : 'Começar'} ${ICONE.seta}</button>
+              </div>` : ''}
             </li>`
           }).join('')}
         </ol>
@@ -608,21 +628,16 @@ function renderTrilha() {
       <button class="link" id="zerar">Apagar o progresso desta trilha</button>
     </div>
     <aside class="lateral">
-      ${alvo >= 0 ? `<section class="cartao-lado continuar cor-${tipoDaLicao(alvo)}">
-        <small>${andamento ? 'Você parou em' : feitas ? 'Próxima parada' : 'Comece por'}</small>
-        <b>${LISTA[alvo].icone} ${esc(LISTA[alvo].titulo)}</b>
-        <span>${andamento ? `${andamento.feitos} de ${LISTA[alvo].exercicios.length} exercícios` : `~${minutos(LISTA[alvo])} min · ${esc(LISTA[alvo].aprende)}`}</span>
-        <button class="btn largo" id="seguir">${andamento ? 'Continuar' : 'Começar'}</button>
-      </section>` : `<section class="cartao-lado continuar"><b>Tudo concluído! 🏆</b>
-        ${CURSO.painel === 'jogo' ? '<button class="btn largo" id="ver-fim">Ver o meu jogo</button>' : '<button class="btn largo" id="revisar-fim">Treinar de novo</button>'}</section>`}
-      ${feitas ? `<section class="cartao-lado revisao">${personagem('papel', 'pensando', 48)}<div><b>Revisão rápida</b>
-        <span>${TAM_REVISAO} perguntas do que você mais errou.</span></div>
-        <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
+      ${alvo < 0 ? `<section class="cartao-lado"><b>Tudo concluído! 🏆</b>
+        ${CURSO.painel === 'jogo' ? '<button class="btn largo" id="ver-fim">Ver o meu jogo</button>' : '<button class="btn largo" id="revisar-fim">Treinar de novo</button>'}</section>` : ''}
+      ${feitas ? `<section class="cartao-lado revisao"><div><b>Revisão</b>
+        <span>${devidos().length ? `${Math.min(devidos().length, 8)} perguntas prontas para revisar.` : 'Treine o que você mais errou.'}</span></div>
+        <button class="btn branco" id="revisar">${ICONE.revisar} Revisar</button></section>` : ''}
       ${htmlArquivo()}
       ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim">🏆 Ver o meu jogo</button>' : ''}
     </aside>
   </div>`)
-  $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
+  $$('.etapa-btn').forEach(b => b.onclick = () => +b.dataset.i === alvo ? null : alternarCartao(+b.dataset.i, b.parentElement))
   const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
   const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
   $('#zerar').onclick = () => {
@@ -631,7 +646,7 @@ function renderTrilha() {
   }
   const vf = $('#ver-fim'); if (vf) vf.onclick = renderFim
   const rf = $('#revisar-fim'); if (rf) rf.onclick = iniciarRevisao
-  $('.item.atual')?.scrollIntoView({ block: 'center' })
+  $('.etapa.atual')?.scrollIntoView({ block: 'center' })
 }
 
 // ---------- tela Você: constância, lembrete, meta e ajustes ----------
@@ -741,10 +756,10 @@ async function instalar() {
 }
 function htmlConviteInstalar() {
   if (INSTALADO || HAB.dispensouInstalar) return ''
-  return `<div class="cartao-acao" id="convite-instalar" role="group" aria-label="Instalar o app">
-    <span class="ca-ico verde">${ICONE.celular}</span>
-    <span><b>Instale no celular</b><small>Abre pelo ícone, em tela cheia, e funciona offline</small></span>
-    <span class="ca-botoes"><button class="btn mini" id="instalar-agora">Instalar</button><button class="dispensar" id="dispensar-instalar" aria-label="Agora não">✕</button></span></div>`
+  return `<div class="linha" id="convite-instalar" role="group" aria-label="Instalar o app">
+    <span class="li-ico verde">${ICONE.celular}</span>
+    <span class="li-txt"><b>Instale no celular</b><small>Abre pelo ícone e funciona offline</small></span>
+    <span class="li-botoes"><button class="btn mini" id="instalar-agora">Instalar</button><button class="dispensar" id="dispensar-instalar" aria-label="Agora não">✕</button></span></div>`
 }
 function ligarConvites() {
   const i = $('#instalar-agora'); if (i) i.onclick = instalar
@@ -802,9 +817,9 @@ async function desativarLembrete() {
 }
 function htmlConviteLembrete() {
   if (HAB.lembrete?.ativo) return ''
-  return `<button class="cartao-acao" id="convite-lembrete">
-    <span class="ca-ico sol">${ICONE.sino}</span>
-    <span><b>Escolha a hora de estudar</b><small>Quem marca um horário fixo estuda mais. A gente lembra você.</small></span>${ICONE.seta}</button>`
+  return `<button class="linha" id="convite-lembrete">
+    <span class="li-ico sol">${ICONE.sino}</span>
+    <span class="li-txt"><b>Escolha a hora de estudar</b><small>Com horário fixo você estuda mais. A gente lembra.</small></span>${ICONE.seta}</button>`
 }
 function htmlLembrete() {
   const l = HAB.lembrete, ativo = !!l?.ativo
@@ -863,7 +878,7 @@ async function restaurarBackup(arquivo) {
 }
 
 // detalhes que abrem ao clicar numa lição do mapa
-function fecharCartao() { $('.cartao-licao')?.remove(); $$('.item.aberta').forEach(n => n.classList.remove('aberta')) }
+function fecharCartao() { $('.cartao-licao')?.remove(); $$('.aberta').forEach(n => n.classList.remove('aberta')) }
 function alternarCartao(i, item) {
   const aberto = item.classList.contains('aberta')
   fecharCartao()
@@ -888,7 +903,7 @@ function alternarCartao(i, item) {
   c.querySelector('.btn')?.focus({ preventScroll: true })
   c.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 }
-document.addEventListener('click', e => { if (!e.target.closest('.cartao-licao, .no')) fecharCartao() })
+document.addEventListener('click', e => { if (!e.target.closest('.cartao-licao, .etapa-btn')) fecharCartao() })
 
 // As lições agrupadas em mundos; cada mundo tem um personagem-guia e uma cor
 function atosDoCurso() {
@@ -977,8 +992,6 @@ function htmlVaga() {
   </aside>`
 }
 
-// deslocamento horizontal das casas, em zigue-zague
-const ZIGUE = [0, 54, 84, 54, 0, -54, -84, -54]
 
 
 // ---------- lição ----------
@@ -992,7 +1005,8 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LISTA[i]) {
   const passo = salvo ? salvo.passo ?? null : pularEnsino ? null : 0
   L = {
     i, licao, fila, total: licao.exercicios.length,
-    fase: passo == null ? 'exercicios' : 'ensino', passo: passo ?? 0,
+    fase: passo == null ? 'exercicios' : !salvo && licao.gancho ? 'gancho' : 'ensino', passo: passo ?? 0,
+    combo: 0, primeiras: new Set(),
     feitos: salvo?.feitos || 0, erros: salvo?.erros || 0, dicas: salvo?.dicas || 0,
     inicio: Date.now() - (salvo?.decorrido || 0), codigoFinal: salvo?.codigoFinal || null, estado: 'responder',
   }
@@ -1002,7 +1016,7 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LISTA[i]) {
       <div class="licao-topo-in">
         <button class="fechar" id="fechar" aria-label="Voltar ao início (o progresso fica salvo)" title="Voltar ao início (o progresso fica salvo)">✕</button>
         <div class="licao-meio">
-          <div class="licao-nome"><small>${licao.revisao ? 'Revisão' : `${CURSO.rotulo} ${i + 1}`}</small><b>${esc(licao.titulo)}</b><span class="contador" id="contador"></span></div>
+          <div class="licao-nome"><small>${licao.revisao ? 'Revisão' : `${CURSO.rotulo} ${i + 1}`}</small><b>${esc(licao.titulo)}</b><span class="combo" id="combo" hidden title="Acertos seguidos"></span><span class="contador" id="contador"></span></div>
           <div class="barra" role="progressbar" aria-label="Progresso da lição"><div id="barra"></div></div>
         </div>
         <button class="topo-btn" id="teoria" title="Resumo e explicações desta lição">📖 <span>Resumo</span></button>
@@ -1020,13 +1034,31 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LISTA[i]) {
 
 const TAM_REVISAO = 6
 const licaoDe = it => LISTA.find(l => l.exercicios.includes(it))
+// ---------- revisão espaçada ----------
+// Cada exercício respondido entra numa caixa (1 a 5). Acertou na revisão: sobe de caixa e volta mais tarde;
+// errou: volta para a caixa 1 (amanhã). Revisar no dia certo, de memória e misturando módulos é o que fixa.
+const INTERVALOS = [1, 3, 7, 16, 35]
+const revisavel = it => !['codigo', 'entrevista'].includes(it.tipo)
+function agendar(it, certo, naRevisao) {
+  if (!revisavel(it)) return
+  const srs = prog.srs ||= {}
+  const atual = srs[it.id]
+  if (!naRevisao && atual && atual.c > 1 && certo) return      // refazer a lição não rebaixa o que já está firme
+  const c = naRevisao ? (certo ? Math.min(5, (atual?.c || 1) + 1) : 1) : (certo ? 2 : 1)
+  srs[it.id] = { c, d: dia(INTERVALOS[c - 1]) }
+}
+const devidos = () => LISTA.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios)
+  .filter(it => revisavel(it) && prog.srs?.[it.id] && prog.srs[it.id].d <= dia(0))
 function iniciarRevisao() {
   const fracos = prog.fracos || {}
-  const banco = LISTA.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios.filter(it => it.tipo !== 'codigo'))
+  const banco = LISTA.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios.filter(revisavel))
   if (!banco.length) { toast('Conclua um módulo para liberar a revisão.'); return }
-  const escolhidos = banco.map(it => ({ it, peso: (fracos[it.id] || 0) + Math.random() }))
+  let escolhidos = devidos().map(it => ({ it, peso: (5 - prog.srs[it.id].c) + Math.random() }))
+    .sort((a, b) => b.peso - a.peso).slice(0, 8).map(x => x.it)
+  const espacada = escolhidos.length > 0
+  if (!espacada) escolhidos = banco.map(it => ({ it, peso: (fracos[it.id] || 0) + Math.random() }))
     .sort((a, b) => b.peso - a.peso).slice(0, TAM_REVISAO).map(x => x.it)
-  iniciar(-1, null, true, { id: 'revisao', titulo: 'Revisão', icone: '🧠', aprende: 'revisar o que já viu', revisao: true, ensino: [], exercicios: embaralhar(escolhidos) })
+  iniciar(-1, null, true, { id: 'revisao', titulo: espacada ? 'Revisão do dia' : 'Treino extra', icone: '🧠', aprende: 'revisar o que já viu', revisao: true, ensino: [], exercicios: embaralhar(escolhidos) })
 }
 
 function retomar() { const i = indiceAndamento(); if (i >= 0) iniciar(i, prog.emAndamento) }
@@ -1039,7 +1071,7 @@ function salvarAndamento() {
   if (L.estado === 'feedback' && L.ultimoCerto === true) fila = fila.slice(1)
   else if (L.estado === 'feedback' && L.ultimoCerto === false && !['codigo', 'entrevista'].includes(fila[0].tipo)) fila = [...fila.slice(1), fila[0]]
   prog.emAndamento = {
-    i: L.i, id: L.licao.id, passo: L.fase === 'ensino' ? L.passo : null, fila: fila.map(it => it.k), feitos: L.feitos, erros: L.erros,
+    i: L.i, id: L.licao.id, passo: L.fase === 'exercicios' ? null : L.passo, fila: fila.map(it => it.k), feitos: L.feitos, erros: L.erros,
     dicas: L.dicas, decorrido: Date.now() - L.inicio, codigoFinal: L.codigoFinal,
   }
   salvarProgresso()
@@ -1047,8 +1079,46 @@ function salvarAndamento() {
 
 const casosDe = it => it.casos || [{ entrada: it.entrada || '', espera: it.espera, proibido: it.proibido }]
 function proximo() {
+  if (L.fase === 'gancho') return renderGancho()
   if (L.fase === 'ensino') return renderEnsino()
   L.fila.length ? renderItem() : concluir()
+}
+
+// ---------- desafio relâmpago: um palpite antes da explicação ----------
+// Tentar responder antes de aprender (efeito do pré-teste) deixa curioso e faz a explicação grudar. Não vale ponto.
+function renderGancho() {
+  const g = L.licao.gancho
+  L.estado = 'gancho'
+  $('#barra').parentElement.classList.add('azul')
+  $('#barra').style.width = '4%'
+  $('#contador').textContent = 'palpite'
+  const ordem = embaralhar(g.opcoes.map((_, k) => k))
+  $('#corpo').innerHTML = `<div class="corpo-in entrar gancho">
+    <div class="gancho-selo"><span class="raio-ico">${ICONE.raio}</span><span><b>Desafio relâmpago</b><small>Dê um palpite antes da explicação. Não vale ponto.</small></span></div>
+    <h2 class="gancho-titulo">${esc(g.titulo)}</h2>
+    <p class="gancho-pergunta">${g.pergunta}</p>
+    ${g.codigo ? `<pre class="cod">${realcar(g.codigo)}</pre>` : ''}
+    <div class="opcoes">${ordem.map((k, n) => `<button class="opcao" data-k="${k}"><span class="num">${n + 1}</span><span class="op-txt">${g.opcoesCodigo ? `<code>${esc(g.opcoes[k])}</code>` : escOpcao(g.opcoes[k])}</span></button>`).join('')}</div>
+    <div class="revelacao" id="revelacao" hidden></div>
+  </div>`
+  $('#corpo').scrollTop = 0
+  const r = $('#rodape'); r.className = 'rodape'
+  r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="pular-gancho">Pular</button></div>
+    <div class="rodape-dir"><span class="dica-rodape">Toque numa opção</span></div>`, 'uma-linha')
+  const seguir = () => { L.fase = 'ensino'; L.passo = 0; proximo() }
+  $('#pular-gancho').onclick = seguir
+  $$('.gancho .opcao').forEach(b => b.onclick = () => {
+    const k = +b.dataset.k, certo = k === g.certa
+    $$('.gancho .opcao').forEach(x => { const kk = +x.dataset.k; if (kk === g.certa) x.classList.add('ok'); else if (kk === k) x.classList.add('ruim') })
+    $('.gancho .opcoes').classList.add('travado')
+    certo ? (somCerto(), vibrar(12)) : vibrar(8)
+    prog.palpites = prog.palpites || {}; prog.palpites[L.licao.id] = certo
+    const rv = $('#revelacao'); rv.hidden = false
+    rv.innerHTML = `<b>${certo ? 'Na mosca! Agora entenda o porquê.' : 'Quase todo mundo erra esta. 😉'}</b><p>${g.revelacao}</p>`
+    rv.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    r.innerHTML = rodapeIn(`<div class="rodape-dir"><button class="btn" id="principal">Entender agora ${ICONE.seta}</button></div>`, 'uma-linha')
+    $('#principal').onclick = seguir; $('#principal').focus({ preventScroll: true })
+  })
 }
 
 // ---------- ensino: explicação antes dos exercícios ----------
@@ -1452,6 +1522,8 @@ const ELOGIOS = ['Mandou bem!', 'Isso aí!', 'Na mosca!', 'Perfeito!', 'Boa joga
 const elogio = () => ELOGIOS[Math.floor(Math.random() * ELOGIOS.length)]
 function atualizarBarra() {
   const b = $('#barra'); if (b) b.style.width = (100 * L.feitos / L.total) + '%'
+  const cb = $('#combo')
+  if (cb) { cb.hidden = L.combo < 3; cb.textContent = `🔥 ${L.combo}`; if (L.combo >= 3) { cb.classList.remove('pop'); void cb.offsetWidth; cb.classList.add('pop') } }
   const c = $('#contador'); if (c && L.fase === 'exercicios') c.textContent = `${L.feitos}/${L.total}`
 }
 
@@ -1499,12 +1571,13 @@ function verificar() {
   prog.fracos = prog.fracos || {}
   prog.fracos[it.id] = Math.max(0, (prog.fracos[it.id] || 0) + (certo ? -1 : 2))
   if (!prog.fracos[it.id]) delete prog.fracos[it.id]
+  if (!L.primeiras.has(it.id)) { L.primeiras.add(it.id); agendar(it, certo, !!L.licao.revisao) }
   if (certo) {
-    somCerto(); L.feitos++; atualizarBarra()
-    rodapeFeedback(true, elogio(), it.explica || '')
+    somCerto(); vibrar(12); L.feitos++; L.combo++; atualizarBarra()
+    rodapeFeedback(true, L.combo >= 3 ? `${L.combo} seguidas!` : elogio(), it.explica || '')
     $('#principal').onclick = () => { L.fila.shift(); proximo() }
   } else {
-    somErro(); L.erros++
+    somErro(); vibrar([18, 50, 18]); L.erros++; L.combo = 0; atualizarBarra()
     rodapeFeedback(false, 'Não foi dessa vez', `A resposta é ${correta}.` + (it.explica ? `<br>${it.explica}` : '') + '<br><small>Ele volta no fim da lição para você tentar de novo.</small>',
       (IA_ATIVA ? '<button class="btn branco" id="explicar">💬 Explicar</button>' : '') +
       '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">↻ Refazer</button>')
@@ -1574,7 +1647,7 @@ async function verificarCodigo(it) {
 
   L.estado = 'feedback'; L.ultimoCerto = !falha
   if (!falha) {
-    somCerto(); L.feitos++; atualizarBarra()
+    somCerto(); vibrar(12); L.feitos++; atualizarBarra()
     $('#editor').readOnly = true
     if (it.final) { L.codigoFinal = codigo; prog.meuJogo = codigo }
     descartarSugestao()
@@ -1735,7 +1808,7 @@ async function concluir() {
   const primeira = Math.round(100 * L.total / (L.total + L.erros))
   const i = L.i, revisao = l.revisao
   const seguinte = revisao ? -1 : LISTA.findIndex((x, k) => k > i && !prog.feitas[x.id])
-  somFim()
+  somFim(); vibrar([12, 40, 12, 40, 24])
   app.innerHTML = `${confete()}
   <main class="resultado">
     <div class="resultado-topo">
@@ -1747,7 +1820,7 @@ async function concluir() {
     </div>
     ${revisao ? '' : `<div class="estrelas-grandes">${htmlEstrelas(estrelas)}</div>`}
     <div class="cartoes">
-      <div class="cartao c-xp"><small>XP</small><b>⚡ +${xp}</b></div>
+      <div class="cartao c-xp"><small>XP</small><b>⚡ +<span class="contar" data-n="${xp}">0</span></b></div>
       <div class="cartao c-acerto"><small>De primeira</small><b>🎯 ${primeira}%</b></div>
       <div class="cartao c-tempo"><small>Tempo</small><b>⏱ ${tempo}</b></div>
     </div>
@@ -1766,6 +1839,10 @@ async function concluir() {
       <button class="btn branco largo" id="denovo">↻ Fazer de novo</button>
     </div>
   </main>`
+  // o XP sobe contando, como um placar
+  $$('.contar').forEach(el => { const n = +el.dataset.n, t0 = performance.now()
+    const passo = t => { const k = Math.min(1, (t - t0) / 700); el.textContent = Math.round(n * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(passo) }
+    requestAnimationFrame(passo) })
   $('#cont').onclick = renderHome
   $('#denovo').onclick = () => revisao ? iniciarRevisao() : iniciar(i)
   const sg = $('#seguinte'); if (sg) sg.onclick = () => iniciar(seguinte)

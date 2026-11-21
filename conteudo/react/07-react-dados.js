@@ -4,6 +4,20 @@ MODULOS.push({
   icone: '🌐',
   aprende: 'loading, erro e vazio, TanStack Query (useQuery, useMutation, invalidateQueries), atualização otimista e onde guardar cada estado',
   porque: 'O painel só é útil com dados reais, e é aqui que cache, carregamento e erro separam um app amador de um profissional.',
+  gancho: {
+    titulo: 'O filtro ignorado',
+    pergunta: 'A pessoa troca o filtro de "abertas" para "concluídas". O que a lista mostra?',
+    linguagem: 'tsx',
+    codigo: `const [status, setStatus] = useState('abertas')
+
+const { data } = useQuery({
+  queryKey: ['tarefas'],
+  queryFn: () => buscarTarefas(status),
+})`,
+    opcoes: ['As concluídas, buscadas de novo', 'Continua mostrando as abertas', 'Entra em loop de requisições'],
+    certa: 1,
+    revelacao: 'O TanStack Query identifica o dado pela <code>queryKey</code>; como ela não mudou, ele entrega o cache das abertas e não busca de novo. Nesta lição você vai ver como montar a key com todos os parâmetros e tratar carregando, erro, vazio e mutações.',
+  },
   resumo: [
     `Toda tela com dados tem <b>quatro estados</b>: carregando, erro, vazio e com dados; trate todos`,
     `Estado do <b>servidor</b> (tarefas da API) é cache de algo que mora em outro lugar; estado da <b>UI</b> (filtro, modal aberto) é seu`,

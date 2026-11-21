@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '☕',
   aprende: 'JVM, tipos, String, == vs equals, packages e static',
   porque: 'Todo código Spring que você vai ler na entrevista ou no trabalho assume que essas regras básicas do Java já são automáticas para você.',
+  gancho: {
+    titulo: 'O 127 e o 128',
+    pergunta: 'O que este código imprime?',
+    linguagem: 'java',
+    codigo: `Integer a = 127, b = 127;
+Integer c = 128, d = 128;
+System.out.println(a == b);
+System.out.println(c == d);`,
+    opcoes: ['true e true', 'true e false', 'false e false', 'Não compila'],
+    certa: 1,
+    revelacao: '<code>==</code> em <code>Integer</code> compara <b>referência</b>, e por padrão a JVM reaproveita os objetos de -128 a 127. Por isso 127 "funciona" e 128 não. Nesta lição você vai ver primitivos, wrappers e por que objeto se compara com <code>equals</code>.',
+  },
   resumo: [
     '<code>javac</code> compila para <b>bytecode</b> (<code>.class</code>); a <b>JVM</b> executa. Os tipos continuam existindo em tempo de execução',
     'Primitivos (<code>int</code>, <code>long</code>, <code>boolean</code>) não aceitam <code>null</code>; wrappers (<code>Integer</code>, <code>Long</code>) aceitam',

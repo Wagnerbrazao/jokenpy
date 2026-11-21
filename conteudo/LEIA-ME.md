@@ -84,3 +84,33 @@ Todo exercício tem `pergunta` (HTML), `dicas` (2 ou 3, da mais geral à quase-r
 - Cada exercício testa **uma** ideia, com distratores plausíveis (erros que alguém comete de verdade).
 - Mostre o erro comum e como reconhecê-lo (mensagem de exceção, sintoma).
 - Precisão acima de tudo: na dúvida sobre uma API, use a forma mais estável e conhecida.
+
+## Desafio relâmpago (`gancho`): obrigatório em todo módulo
+
+É a primeira tela do módulo, **antes** da explicação: um quebra-cabeça curto em que a pessoa dá um palpite.
+Errar faz parte e não tira ponto. Tentar responder antes de aprender (efeito do pré-teste) deixa a pessoa
+curiosa e faz o conteúdo grudar. Um bom gancho:
+
+- mostra algo **surpreendente ou contraintuitivo** que o módulo explica (um `==` que dá false, um join que duplica linhas,
+  um efeito que roda duas vezes, um N+1 escondido);
+- ou um **problema real de trabalho** que o módulo resolve ("o endpoint de assistidos ficou 40x mais lento depois de um campo novo. Por quê?");
+- dá para responder em 20 segundos no celular (código de no máximo ~8 linhas, opções curtas);
+- tem opções plausíveis: a "óbvia" costuma ser a errada;
+- na `revelacao`, explica a resposta em 1–2 frases e termina com a promessa do módulo ("Nesta lição você vai ver por que… e como evitar.").
+
+```js
+  gancho: {
+    titulo: 'O mistério do ==',                 // 2 a 5 palavras
+    pergunta: 'O que este código imprime?',     // HTML curto
+    linguagem: 'java',                          // obrigatório se houver código
+    codigo: `String a = new String("oi");
+String b = new String("oi");
+System.out.println(a == b);`,
+    opcoes: ['true', 'false', 'Não compila'],   // 2 a 4
+    certa: 1,
+    opcoesCodigo: true,                          // opcional
+    revelacao: '<code>==</code> compara se são o <b>mesmo objeto</b>, não o texto. Nesta lição você vai ver quando usar <code>equals</code> e por que isso derruba muita gente que vem do TypeScript.',
+  },
+```
+
+Todo módulo também precisa de `porque`: uma frase dizendo por que aquilo importa no trabalho real.

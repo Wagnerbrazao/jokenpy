@@ -4,6 +4,19 @@ MODULOS.push({
   icone: '🔐',
   aprende: 'SecurityFilterChain, JWT com Resource Server, @PreAuthorize, CSRF, CORS e BCrypt',
   porque: 'Sistema com dado de assistido exige autenticação e autorização corretas, e Spring Security é onde o iniciante mais copia código sem entender.',
+  gancho: {
+    titulo: 'Token válido, 403 em tudo',
+    pergunta: 'O login no Keycloak funciona, o token é válido e o usuário tem o papel <code>defensor</code> no realm. Mesmo assim, toda rota com <code>hasRole("DEFENSOR")</code>, até GET, devolve 403. Por quê?',
+    linguagem: 'json',
+    codigo: `{
+  "sub": "a1b2c3",
+  "scope": "openid email",
+  "realm_access": { "roles": ["defensor"] }
+}`,
+    opcoes: ['O token expirou', 'O Spring não lê realm_access sozinho', 'Faltou desligar o CSRF', 'hasRole exige minúsculas'],
+    certa: 1,
+    revelacao: 'Por padrão o resource server só transforma a claim <code>scope</code> em autoridades (<code>SCOPE_openid</code>...). Os papéis do Keycloak ficam invisíveis até você mapear com um <code>JwtAuthenticationConverter</code>. Nesta lição você vai ver a cadeia de filtros, JWT, 401 vs 403, CSRF e CORS.',
+  },
   resumo: [
     '<b>Autenticação</b> = quem é você (falhou: 401). <b>Autorização</b> = o que você pode (falhou: 403)',
     'Toda requisição passa por uma <b>cadeia de filtros</b> antes de chegar ao controller',

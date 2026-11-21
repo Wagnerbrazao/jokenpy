@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '🌐',
   aprende: '@RestController, mapeamentos, parâmetros, DTOs, ResponseEntity e Jackson',
   porque: 'O controller é a cara da sua API: status errado ou contrato mal definido quebra o front e o sistema do órgão parceiro que consome você.',
+  gancho: {
+    titulo: 'Criou, mas 201?',
+    pergunta: 'No NestJS, <code>@Post()</code> responde 201. Que status este endpoint devolve ao criar um atendimento?',
+    linguagem: 'java',
+    codigo: `@PostMapping("/atendimentos")
+public AtendimentoResponse criar(@RequestBody NovoAtendimento req) {
+    return service.criar(req);
+}`,
+    opcoes: ['201 Created', '200 OK', '204 No Content'],
+    certa: 1,
+    revelacao: 'No Spring, todo método com retorno responde <b>200</b> por padrão, inclusive o POST. Para 201 com <code>Location</code>, você devolve <code>ResponseEntity.created(uri)</code>. Nesta lição você vai ver mapeamentos, parâmetros, DTOs e os status certos.',
+  },
   resumo: [
     '<code>@RestController</code> = <code>@Controller</code> + <code>@ResponseBody</code>: o retorno vira JSON',
     '<code>@GetMapping("/{id}")</code> + <code>@PathVariable</code>; filtros com <code>@RequestParam</code>; JSON com <code>@RequestBody</code>',

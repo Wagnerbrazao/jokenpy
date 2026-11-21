@@ -4,6 +4,17 @@ MODULOS.push({
   icone: '🔎',
   aprende: 'QuerySets, filter/get, lookups, Q e F, annotate/aggregate e N+1',
   porque: 'Quase todo problema de desempenho em Django é uma consulta mal feita, e o ORM esconde o SQL até você aprender a enxergá-lo.',
+  gancho: {
+    titulo: 'A listagem que engasga',
+    pergunta: 'A tela lista 50 processos com o nome do assistido. Quantas consultas vão ao banco?',
+    linguagem: 'django',
+    codigo: `processos = Processo.objects.all()[:50]
+for p in processos:
+    print(p.numero, p.assistido.nome)`,
+    opcoes: ['1', '2', '50', '51'],
+    certa: 3,
+    revelacao: 'Uma consulta busca os processos e cada <code>p.assistido</code> dispara mais uma: é o N+1, o mesmo das relações lazy do TypeORM. Nesta lição você vai ver como enxergar o SQL e resolver com <code>select_related</code> numa linha.',
+  },
   resumo: [
     'QuerySet é <b>preguiçoso</b>: só vai ao banco quando você itera, usa <code>len()</code>, <code>list()</code>, <code>bool()</code> ou imprime',
     '<code>filter()</code> e <code>exclude()</code> devolvem QuerySet; <code>get()</code> devolve <b>um</b> objeto ou lança <code>DoesNotExist</code>',

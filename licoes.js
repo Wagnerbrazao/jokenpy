@@ -24,6 +24,16 @@ const RESULTADO = `def resultado(jogador, computador):
 const LICOES = [
   {
     id: 'print', titulo: 'Mostrar na tela', icone: '💬', aprende: 'print, strings, variáveis e f-string',
+    porque: 'Todo jogo precisa falar com quem joga, e o print é a primeira ferramenta de qualquer programador para mostrar resultados e caçar erros.',
+    gancho: {
+      titulo: 'Dois mais dois',
+      pergunta: 'O que aparece na tela?',
+      linguagem: 'texto',
+      codigo: `print("2" + "2")`,
+      opcoes: ['4', '22', '2 + 2', 'Erro'],
+      certa: 1,
+      revelacao: 'Entre aspas, <code>"2"</code> é <b>texto</b>, e <code>+</code> com texto cola um no outro. Nesta lição você vai ver a diferença entre texto e variável e como montar frases com f-string.',
+    },
     resumo: [
       `O programa roda <b>de cima para baixo</b>, uma linha por vez`,
       `<code>print(x)</code> mostra <code>x</code> na tela`,
@@ -146,6 +156,18 @@ print(f"Você jogou {jogada}")` },
 
   {
     id: 'input', titulo: 'Ler a jogada', icone: '🎤', aprende: 'input(), strip(), lower() e int()',
+    porque: 'Sem ler o que a pessoa digita não existe jogo, e todo programa real precisa limpar e converter a entrada antes de confiar nela.',
+    gancho: {
+      titulo: 'Cinco maior que dez',
+      pergunta: 'Você digita <code>5</code> e depois <code>10</code>. O que aparece?',
+      linguagem: 'texto',
+      codigo: `a = input("Primeiro número: ")
+b = input("Segundo número: ")
+print(a > b)`,
+      opcoes: ['True', 'False', 'Erro'],
+      certa: 0,
+      revelacao: '<code>input()</code> sempre devolve <b>texto</b>, e texto se compara letra a letra: <code>"5"</code> vem depois de <code>"1"</code>. Nesta lição você vai ver como limpar a jogada e quando usar <code>int()</code>.',
+    },
     resumo: [
       `<code>x = input("Pergunta: ")</code> espera a pessoa digitar e guarda o texto em <code>x</code>`,
       `<code>input()</code> <b>sempre</b> devolve string: vem <code>"20"</code>, não <code>20</code>`,
@@ -277,6 +299,17 @@ print(f"Com mais uma, serão {vitorias + 1}")` },
 
   {
     id: 'random', titulo: 'O computador joga', icone: '🎲', aprende: 'listas, índices, in e random.choice',
+    porque: 'O computador precisa de um adversário que sorteia a jogada, e listas são a estrutura que você mais vai usar para guardar coisas em qualquer programa.',
+    gancho: {
+      titulo: 'A terceira jogada',
+      pergunta: 'A lista tem 3 jogadas. O que aparece?',
+      linguagem: 'texto',
+      codigo: `jogadas = ["pedra", "papel", "tesoura"]
+print(jogadas[3])`,
+      opcoes: ['tesoura', 'pedra', 'IndexError'],
+      certa: 2,
+      revelacao: 'Os índices começam em <b>0</b>: a lista vai de <code>jogadas[0]</code> a <code>jogadas[2]</code>, e o 3 não existe. Nesta lição você vai ver índices, <code>in</code> e como o computador sorteia a jogada dele.',
+    },
     resumo: [
       `<code>opcoes = ["pedra", "papel", "tesoura"]</code> cria uma <b>lista</b>`,
       `Índices começam em 0: <code>opcoes[0]</code> é "pedra"; <code>opcoes[-1]</code> é o último`,
@@ -414,6 +447,20 @@ print(jogada in opcoes)` },
 
   {
     id: 'if', titulo: 'Quem ganhou?', icone: '⚖️', aprende: 'if, elif, else, ==, and e or',
+    porque: 'Decidir quem ganhou é o coração do jogo, e todo programa toma decisões com if o tempo todo.',
+    gancho: {
+      titulo: 'O or traiçoeiro',
+      pergunta: 'A jogada é <code>"papel"</code>. O que aparece?',
+      linguagem: 'texto',
+      codigo: `jogada = "papel"
+if jogada == "pedra" or "tesoura":
+    print("pedra ou tesoura!")
+else:
+    print("outra coisa")`,
+      opcoes: ['pedra ou tesoura!', 'outra coisa', 'Erro'],
+      certa: 0,
+      revelacao: 'O Python lê <code>(jogada == "pedra") or "tesoura"</code>, e um texto não vazio conta como verdadeiro. Nesta lição você vai ver como escrever cada comparação inteira com <code>==</code>, <code>and</code> e <code>or</code>.',
+    },
     resumo: [
       `<code>==</code> compara e dá True/False; <code>=</code> guarda; <code>!=</code> é "diferente"`,
       `<code>if condição:</code> + bloco indentado (4 espaços) roda só se for True`,
@@ -596,6 +643,17 @@ else:
 
   {
     id: 'dict', titulo: 'Regras do jogo', icone: '📖', aprende: 'dicionários: chave → valor',
+    porque: 'Um dicionário guarda as regras do jogo numa linha só, e é o mesmo jeito que programas reais guardam cadastros, configurações e respostas de API.',
+    gancho: {
+      titulo: 'A regra que sumiu',
+      pergunta: 'O que aparece na tela?',
+      linguagem: 'texto',
+      codigo: `vence = {"pedra": "tesoura", "tesoura": "papel", "papel": "pedra"}
+print(vence["Pedra"])`,
+      opcoes: ['tesoura', 'None', "KeyError: 'Pedra'"],
+      certa: 2,
+      revelacao: 'A chave tem que ser <b>idêntica</b>: <code>"Pedra"</code> com P maiúsculo não é <code>"pedra"</code>, e buscar chave inexistente dá erro. Nesta lição você vai ver como montar e consultar as regras do jogo num dicionário.',
+    },
     resumo: [
       `<code>{"chave": "valor", ...}</code> cria um <b>dicionário</b>`,
       `<code>vence["pedra"]</code> busca o valor da chave "pedra": "tesoura"`,
@@ -753,6 +811,20 @@ else:
 
   {
     id: 'funcao', titulo: 'Funções', icone: '🧩', aprende: 'def, parâmetros e return',
+    porque: 'Funções deixam a regra de quem ganhou num lugar só, e é assim que programas grandes ficam organizados e fáceis de testar.',
+    gancho: {
+      titulo: 'A resposta que não volta',
+      pergunta: 'O que aparece na tela?',
+      linguagem: 'texto',
+      codigo: `def quem_ganha(a, b):
+    print("vitoria")
+
+resultado = quem_ganha("pedra", "tesoura")
+print(resultado)`,
+      opcoes: ['vitoria', 'vitoria e depois None', 'vitoria duas vezes', 'Erro'],
+      certa: 1,
+      revelacao: '<code>print</code> só mostra na tela; quem devolve um valor é o <code>return</code>, e sem ele a função devolve <code>None</code>. Nesta lição você vai ver parâmetros, <code>return</code> e como guardar o resultado.',
+    },
     resumo: [
       `<code>def nome(parametro):</code> cria a função; o bloco indentado é o corpo`,
       `Definir não executa: chame com <code>nome(valor)</code>`,
@@ -916,6 +988,19 @@ ${RESULTADO}
 
   {
     id: 'while', titulo: 'Jogar várias vezes', icone: '🔁', aprende: 'while, break, continue e contadores',
+    porque: 'Ninguém joga uma rodada só, e repetir até uma condição mudar é o que faz menus, jogos e servidores continuarem rodando.',
+    gancho: {
+      titulo: 'O jogo sem fim',
+      pergunta: 'Quantas vezes aparece <code>Jogando...</code>?',
+      linguagem: 'texto',
+      codigo: `rodadas = 0
+while rodadas < 3:
+    print("Jogando...")
+rodadas = rodadas + 1`,
+      opcoes: ['3 vezes', '4 vezes', 'Nenhuma', 'Para sempre'],
+      certa: 3,
+      revelacao: 'A última linha está <b>fora</b> do laço (sem indentação), então <code>rodadas</code> nunca muda e o <code>while</code> não para. Nesta lição você vai ver como controlar o laço com contadores, <code>break</code> e <code>continue</code>.',
+    },
     resumo: [
       `<code>while condição:</code> repete o bloco enquanto a condição for True`,
       `<code>x += 1</code> é o mesmo que <code>x = x + 1</code>; <code>x -= 1</code> diminui`,
@@ -1093,6 +1178,21 @@ print(f"Você jogou {jogadas} vezes")` },
 
   {
     id: 'for', titulo: 'Histórico das jogadas', icone: '📜', aprende: 'for, append(), len() e contar itens',
+    porque: 'Guardar e percorrer o histórico das jogadas é o que permite contar vitórias, e percorrer listas é tarefa diária em qualquer programa.',
+    gancho: {
+      titulo: 'O contador esquecido',
+      pergunta: 'Quantas vezes saiu pedra, segundo este código?',
+      linguagem: 'texto',
+      codigo: `historico = ["pedra", "papel", "pedra"]
+for jogada in historico:
+    pedras = 0
+    if jogada == "pedra":
+        pedras = pedras + 1
+print(pedras)`,
+      opcoes: ['2', '1', '0', '3'],
+      certa: 1,
+      revelacao: '<code>pedras = 0</code> está <b>dentro</b> do <code>for</code> e zera a cada volta; só sobra a contagem da última jogada. Nesta lição você vai ver como percorrer o histórico com <code>for</code> e contar do jeito certo.',
+    },
     resumo: [
       `<code>for item in lista:</code> roda o bloco uma vez para cada item`,
       `<code>lista = []</code> cria uma lista vazia; <code>lista.append(x)</code> põe <code>x</code> no fim`,
@@ -1280,6 +1380,20 @@ print(f"Total: {len(historico)}")
 
   {
     id: 'final', titulo: 'Projeto final', icone: '🏆', final: true, aprende: 'juntar tudo num jogo completo',
+    porque: 'Juntar as partes num jogo que funciona de ponta a ponta é o que separa saber os comandos de saber programar.',
+    gancho: {
+      titulo: 'O computador teimoso',
+      pergunta: 'O jogo roda 3 rodadas. O que o computador mostra?',
+      linguagem: 'texto',
+      codigo: `computador = random.choice(["pedra", "papel", "tesoura"])
+rodada = 1
+while rodada <= 3:
+    print("Computador:", computador)
+    rodada = rodada + 1`,
+      opcoes: ['Uma jogada sorteada por rodada', 'A mesma jogada 3 vezes', 'Erro na segunda rodada'],
+      certa: 1,
+      revelacao: 'O sorteio acontece <b>uma vez só</b>, antes do laço; o <code>while</code> só repete o que está dentro dele. Nesta lição você vai ver em que ordem montar o jogo completo para cada parte ficar no lugar certo.',
+    },
     resumo: [
       `Ordem do arquivo: <code>import</code>, listas e dicionário, função, placar, laço, placar final`,
       `Dentro do laço: ler, sair?, válida?, sortear, resultado, somar ponto`,
@@ -1508,6 +1622,17 @@ print(f"Placar: Você {pontos_jogador} x {pontos_computador} Computador")
   },
   {
     id: 'desafios', titulo: 'Desafios bônus', icone: '🚀', bonus: true, aprende: 'listas dentro de dicionários e laços com condição',
+    porque: 'Regras mais ricas, como lagarto e Spock, pedem dados mais ricos, e listas dentro de dicionários são o formato de quase todo dado real.',
+    gancho: {
+      titulo: 'Pedra vence dois',
+      pergunta: 'Agora pedra vence tesoura <b>e</b> lagarto. O que aparece?',
+      linguagem: 'texto',
+      codigo: `vence = {"pedra": ["tesoura", "lagarto"]}
+print(vence["pedra"] == "tesoura")`,
+      opcoes: ['True', 'False', 'KeyError'],
+      certa: 1,
+      revelacao: 'O valor agora é uma <b>lista</b>, e uma lista nunca é igual a um texto; a pergunta certa é <code>"tesoura" in vence["pedra"]</code>. Nesta lição você vai ver como usar listas dentro de dicionários para criar suas próprias regras.',
+    },
     resumo: [
       `Dicionário traduz qualquer valor em outro: <code>emoji["papel"]</code> dá "✋"`,
       `O valor de um dicionário pode ser uma lista: <code>{"pedra": ["tesoura", "lagarto"]}</code>`,

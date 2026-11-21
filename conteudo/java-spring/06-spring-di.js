@@ -4,6 +4,22 @@ MODULOS.push({
   icone: '🔌',
   aprende: 'container IoC, estereótipos, injeção por construtor, @Bean e @Qualifier',
   porque: 'Injeção de dependência é a pergunta número um em entrevista de Spring, e é onde a sua experiência com providers do NestJS vira vantagem.',
+  gancho: {
+    titulo: 'O teste que deu NPE',
+    pergunta: 'Na aplicação o serviço funciona. O que acontece neste teste de unidade, sem Spring?',
+    linguagem: 'java',
+    codigo: `@Service
+public class PrazoService {
+    @Autowired private FeriadoRepository feriados;
+    public int feriadosNoMes(int mes) { return feriados.contarNoMes(mes); }
+}
+
+// no teste:
+new PrazoService().feriadosNoMes(12);`,
+    opcoes: ['Funciona: o @Autowired injeta', 'NullPointerException', 'Não compila', 'Lança NoSuchBeanDefinitionException'],
+    certa: 1,
+    revelacao: 'Quem preenche o campo é o <b>container</b> do Spring; com <code>new</code>, ninguém injeta e <code>feriados</code> fica <code>null</code>. Pior: não há como passar um mock. Nesta lição você vai ver beans, injeção pelo construtor e por que ela é a resposta certa na entrevista.',
+  },
   resumo: [
     'O <b>ApplicationContext</b> cria e liga os <b>beans</b>; você só declara dependências',
     '<code>@Component</code>, <code>@Service</code>, <code>@Repository</code>, <code>@RestController</code> marcam beans achados pelo scan',

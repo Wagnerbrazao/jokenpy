@@ -4,6 +4,18 @@ MODULOS.push({
   icone: '⚡',
   aprende: 'useEffect para sincronizar com sistemas externos, dependências, limpeza, StrictMode e fetch com AbortController',
   porque: 'useEffect mal usado é a fonte nº 1 de loops, requisições duplicadas e vazamentos em apps React.',
+  gancho: {
+    titulo: 'A requisição em dobro',
+    pergunta: 'App em dev com <code>&lt;StrictMode&gt;</code>. Quantas vezes o log aparece ao abrir a tela?',
+    linguagem: 'tsx',
+    codigo: `useEffect(() => {
+  console.log('buscando assistidos')
+  fetch('/api/assistidos')
+}, [])`,
+    opcoes: ['1: o array vazio garante', '2', 'Uma por render, sem parar'],
+    certa: 1,
+    revelacao: 'Em desenvolvimento, o StrictMode monta, desmonta e monta de novo o componente de propósito, para expor efeitos sem limpeza; em produção roda uma vez. Nesta lição você vai ver o que é um efeito de verdade, como escrever a limpeza (com <code>AbortController</code> no fetch) e quando você nem precisa de efeito.',
+  },
   resumo: [
     `<code>useEffect</code> roda <b>depois</b> que a tela é pintada, para <b>sincronizar</b> com algo fora do React`,
     `O array de dependências diz quando ressincronizar: <code>[]</code> só ao montar; <code>[id]</code> quando <code>id</code> muda; sem array, a cada render`,

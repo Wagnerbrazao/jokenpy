@@ -4,6 +4,22 @@ MODULOS.push({
   icone: '🧪',
   aprende: 'JUnit 5, AssertJ, Mockito, @WebMvcTest, @DataJpaTest e Testcontainers',
   porque: 'Em Spring, escolher a fatia certa de teste é o que separa uma suíte de 30 segundos de uma de 10 minutos.',
+  gancho: {
+    titulo: 'Falhou antes de testar',
+    pergunta: 'O controller recebe <code>AssistidoService</code> no construtor. Este teste falha ao carregar o contexto, antes de qualquer requisição. Por quê?',
+    linguagem: 'java',
+    codigo: `@WebMvcTest(AssistidoController.class)
+class AssistidoControllerTest {
+    @Autowired MockMvc mvc;
+
+    @Test void lista() throws Exception {
+        mvc.perform(get("/assistidos")).andExpect(status().isOk());
+    }
+}`,
+    opcoes: ['Falta o banco de teste', 'O @WebMvcTest não carrega o service', 'MockMvc precisa de servidor real', 'Falta @SpringBootTest junto'],
+    certa: 1,
+    revelacao: '<code>@WebMvcTest</code> sobe só a camada web (controllers, advices, conversores): <code>@Service</code> fica de fora e o construtor do controller não é satisfeito. A saída é um <code>@MockitoBean AssistidoService</code>. Nesta lição você vai ver cada fatia de teste e quando usar cada uma.',
+  },
   resumo: [
     'JUnit 5 (<code>org.junit.jupiter</code>): <code>@Test</code>, <code>@BeforeEach</code>, <code>assertThrows</code>',
     'AssertJ deixa a asserção legível: <code>assertThat(x).isEqualTo(y)</code>, <code>assertThatThrownBy(...)</code>',

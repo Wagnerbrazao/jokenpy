@@ -4,6 +4,20 @@ MODULOS.push({
   icone: '🛡️',
   aprende: 'Bean Validation, @Valid, @RestControllerAdvice e ProblemDetail',
   porque: 'Uma API pública vive de rejeitar entrada ruim com uma resposta clara e sempre no mesmo formato.',
+  gancho: {
+    titulo: 'O @NotBlank que não barrou',
+    pergunta: 'O starter de validação está no pom. O cliente manda <code>POST /assistidos</code> com corpo <code>{}</code>. O que acontece?',
+    linguagem: 'java',
+    codigo: `public record NovoAssistido(@NotBlank String nome) {}
+
+@PostMapping("/assistidos")
+public AssistidoResponse criar(@RequestBody NovoAssistido req) {
+    return service.criar(req);
+}`,
+    opcoes: ['400 Bad Request', 'Chega ao service com nome null', '422 Unprocessable Entity', 'Não compila'],
+    certa: 1,
+    revelacao: 'Sem <code>@Valid</code> no parâmetro, as anotações do DTO são só metadado: ninguém valida, e o erro aparece lá no banco como <i>not-null constraint</i>. Nesta lição você vai ver como ligar a validação e devolver erros num formato único com <code>ProblemDetail</code>.',
+  },
   resumo: [
     'Anotações como <code>@NotBlank</code>, <code>@Size</code> e <code>@Email</code> vêm do <b>Bean Validation</b> (<code>jakarta.validation</code>) e exigem o <code>spring-boot-starter-validation</code>',
     'Sem <code>@Valid</code> no parâmetro <code>@RequestBody</code>, as anotações do DTO são <b>ignoradas</b>',
