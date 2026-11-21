@@ -1,0 +1,59 @@
+{
+ "sql": {
+  "modulos": [
+   "sql-select",
+   "sql-filtros",
+   "sql-agregacao",
+   "sql-joins",
+   "sql-avancado",
+   "sql-modelagem"
+  ],
+  "exercicios": 49,
+  "versao": "0a2fcda9c1"
+ },
+ "react": {
+  "modulos": [
+   "react-jsx",
+   "react-props",
+   "react-estado",
+   "react-efeitos",
+   "react-formularios",
+   "react-hooks",
+   "react-dados"
+  ],
+  "exercicios": 57,
+  "versao": "df98ce3c42"
+ },
+ "django": {
+  "modulos": [
+   "django-projeto",
+   "django-models",
+   "django-orm",
+   "django-views",
+   "django-forms",
+   "django-drf",
+   "django-testes"
+  ],
+  "exercicios": 58,
+  "versao": "bcc97965b1"
+ },
+ "java-spring": {
+  "modulos": [
+   "java-base",
+   "java-oo",
+   "java-colecoes",
+   "java-erros",
+   "spring-projeto",
+   "spring-di",
+   "spring-rest",
+   "spring-validacao",
+   "spring-jpa",
+   "spring-jpa-avancado",
+   "spring-testes",
+   "spring-seguranca",
+   "spring-producao"
+  ],
+  "exercicios": 106,
+  "versao": "eb00276e1b"
+ }
+}

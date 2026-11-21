@@ -6,6 +6,8 @@ const $ = s => document.querySelector(s)
 const $$ = s => [...document.querySelectorAll(s)]
 const app = $('#app')
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
+// texto de opção: escapa tudo, mas deixa <code>, <b> e <i> funcionarem (o conteúdo usa nas alternativas)
+const escOpcao = s => esc(s).replace(/&lt;(\/?)(code|b|i|em)&gt;/g, '<$1$2>')
 const embaralhar = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
 const norm = s => s.replace(/'/g, '"').replace(/\s+/g, '')
 const textoDe = html => { const d = document.createElement('div'); d.innerHTML = html; return d.textContent }
@@ -53,10 +55,19 @@ const CURSO_PYTHON = {
     { titulo: 'O jogo completo', tipo: 'tesoura', ids: ['while', 'for', 'final', 'desafios'] },
   ],
 }
+// Catálogo: aparece no início mesmo antes de a trilha ser baixada. As públicas vêm de /cursos/<id>.js
+// (geradas de conteudo/<id>/); a lista de quais existem neste servidor está em /cursos/indice.json.
 const TRILHAS = [
-  { id: 'python', titulo: 'Python · Jokenpô', icone: '✊' },
-  { id: 'entrevista', titulo: 'Entrevista Radix', icone: '🔒', privada: true, arquivo: '/trilhas/entrevista.js' },
+  { id: 'python', titulo: 'Python', sub: 'Aprenda construindo um Jokenpô', icone: '🐍', cor: '#5B5BF0', nivel: 'Do zero', publica: true },
+  { id: 'java-spring', titulo: 'Java + Spring Boot', sub: 'APIs Java para quem já sabe NestJS', icone: '☕', cor: '#E8590C', nivel: 'Intermediário', arquivo: '/cursos/java-spring.js' },
+  { id: 'react', titulo: 'React', sub: 'Componentes, estado e dados de uma API', icone: '⚛️', cor: '#0891B2', nivel: 'Intermediário', arquivo: '/cursos/react.js' },
+  { id: 'django', titulo: 'Django', sub: 'Back-end e API em Python', icone: '🌿', cor: '#0E9F6E', nivel: 'Depois do Python', arquivo: '/cursos/django.js' },
+  { id: 'sql', titulo: 'SQL', sub: 'Consultas de verdade no PostgreSQL', icone: '🗄️', cor: '#C026D3', nivel: 'Todos os níveis', arquivo: '/cursos/sql.js' },
+  { id: 'entrevista', titulo: 'Entrevista Radix', sub: 'Trilha privada, com senha', icone: '🔒', cor: '#475569', nivel: 'Privada', privada: true, arquivo: '/trilhas/entrevista.js' },
 ]
+let INDICE = {}   // /cursos/indice.json: { id: { modulos: [...], exercicios } }
+const trilhaDe = id => TRILHAS.find(t => t.id === id)
+const disponivel = t => t.id === 'python' || t.privada || !!INDICE[t.id]
 globalThis.TRILHAS_CARREGADAS = globalThis.TRILHAS_CARREGADAS || {}
 let CURSO = CURSO_PYTHON
 let LISTA = LICOES
@@ -69,13 +80,13 @@ const prepararIds = lista => lista.forEach(l => l.exercicios.forEach((it, k) => 
 prepararIds(LISTA)
 
 // ---------- realce de sintaxe Python (só para mostrar) ----------
-const RE_PY = /(#[^\n]*|\/\/[^\n]*|--[^\n]*)|(f?"(?:[^"\\\n]|\\.)*"|f?'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(def|return|if|elif|else|while|for|in|of|not|and|or|import|from|export|default|break|continue|pass|True|False|None|true|false|null|undefined|const|let|var|function|async|await|class|interface|type|extends|implements|new|this|try|catch|except|finally|raise|throw|with|as|lambda|yield|public|private|readonly|enum|query|mutation|subscription|SELECT|FROM|WHERE|JOIN|LEFT|INNER|ON|GROUP|BY|ORDER|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|PRIMARY|KEY|REFERENCES|FOREIGN|AND|OR|NOT|NULL|LIMIT|BEGIN|COMMIT|ROLLBACK)\b|\b(\d+)\b|\b(print|input|int|str|len|range|useState|useEffect|useMemo|useCallback|useContext|fetch|console\.log)\b(?=\()/g
+const RE_PY = /(#[^\n]*|\/\/[^\n]*|--[^\n]*)|(f?"(?:[^"\\\n]|\\.)*"|f?'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|(@[A-Za-z][\w.]*)|\b(def|return|if|elif|else|while|for|in|of|not|and|or|import|from|export|default|break|continue|pass|True|False|None|true|false|null|undefined|const|let|var|function|async|await|class|interface|type|extends|implements|new|this|try|catch|except|finally|raise|throw|with|as|lambda|yield|public|private|protected|static|final|void|package|record|throws|super|switch|case|default|readonly|enum|query|mutation|subscription|SELECT|FROM|WHERE|JOIN|LEFT|INNER|ON|GROUP|BY|ORDER|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|PRIMARY|KEY|REFERENCES|FOREIGN|AND|OR|NOT|NULL|LIMIT|BEGIN|COMMIT|ROLLBACK)\b|\b(\d+)\b|\b(print|input|int|str|len|range|useState|useEffect|useMemo|useCallback|useContext|fetch|console\.log)\b(?=\()/g
 function realcar(txt) {
   let out = '', ultimo = 0, m
   RE_PY.lastIndex = 0
   while ((m = RE_PY.exec(txt))) {
     out += esc(txt.slice(ultimo, m.index))
-    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'k' : m[4] ? 'n' : 'f'
+    const cls = m[1] ? 'c' : m[2] ? 's' : m[3] ? 'a' : m[4] ? 'k' : m[5] ? 'n' : 'f'
     out += `<span class="t-${cls}">${esc(m[0])}</span>`
     ultimo = RE_PY.lastIndex
   }
@@ -116,11 +127,9 @@ const htmlEntender = erro => { const e = entenderErro(erro); return e ? `<div cl
 // Fica salvo no navegador (localStorage), um registro por trilha. A trilha de Python também guarda uma cópia no servidor local.
 // Assim você não perde nada se fechar a aba, trocar de navegador ou limpar os dados do site.
 let CHAVE = CURSO.chave
-const META_DIARIA = 20
 const novoProgresso = () => ({
   xp: 0, xpHoje: { dia: null, xp: 0 }, estrelas: {},
   feitas: {}, sequencia: 0, ultimoDia: null, som: true,
-  xpHoje: { dia: null, xp: 0 },
   emAndamento: null,   // lição aberta: onde parou e quantos erros
   rascunhos: {},       // código que você estava escrevendo, por exercício
   atualizado: 0,
@@ -128,6 +137,24 @@ const novoProgresso = () => ({
 let prog = carregarLocal()
 if (!prog.atualizado && (prog.xp || Object.keys(prog.feitas).length)) prog.atualizado = 1  // progresso antigo
 migrarProgresso()
+
+// ---------- hábito: ofensiva, meta do dia e protetor valem para todas as trilhas ----------
+// Meta pequena por padrão (1 lição): metas intensas fazem a pessoa perder a ofensiva mais vezes.
+// O protetor cobre um dia perdido: um pouco de folga motiva mais do que uma regra rígida.
+const CHAVE_HAB = 'jokenpy-habito'
+const METAS = [{ xp: 10, nome: 'Leve', desc: '1 lição · ~5 min' }, { xp: 20, nome: 'Firme', desc: '2 lições · ~10 min' }, { xp: 40, nome: 'Intensa', desc: '4 lições · ~20 min' }]
+function carregarHabito() {
+  let h = null
+  try { h = JSON.parse(localStorage.getItem(CHAVE_HAB)) } catch {}
+  if (h) return { protetores: 1, dias: {}, meta: 10, som: true, tema: 'auto', ...h }
+  // primeira vez com a versão nova: herda ofensiva e XP da trilha de Python
+  let py = {}
+  try { py = JSON.parse(localStorage.getItem('jokenpy-progresso')) || {} } catch {}
+  return { xp: py.xp || 0, sequencia: py.sequencia || 0, ultimoDia: py.ultimoDia || null, xpHoje: py.xpHoje || { dia: null, xp: 0 },
+    meta: 10, protetores: 1, protegidos: [], dias: {}, som: py.som !== false, tema: 'auto', lembrete: null }
+}
+let HAB = carregarHabito()
+function salvarHabito() { try { localStorage.setItem(CHAVE_HAB, JSON.stringify(HAB)) } catch {} avisarEstado() }
 
 // O conteúdo foi reescrito (versão 2): exercícios mudaram de posição, então a lição em andamento,
 // os rascunhos e a lista de erros antigos não valem mais. As lições concluídas continuam.
@@ -176,16 +203,37 @@ async function sincronizar() {
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && envioPendente) enviarProgresso() })
 
 const dia = d => { const x = new Date(); x.setDate(x.getDate() + d); return x.toLocaleDateString('sv') }
-const sequencia = () => prog.ultimoDia === dia(0) || prog.ultimoDia === dia(-1) ? prog.sequencia : 0
+const sequencia = () => HAB.ultimoDia === dia(0) || HAB.ultimoDia === dia(-1) ? HAB.sequencia || 0 : 0
+const estudouHoje = () => HAB.ultimoDia === dia(0)
 function marcarDia() {
-  if (prog.ultimoDia === dia(0)) return
-  prog.sequencia = prog.ultimoDia === dia(-1) ? prog.sequencia + 1 : 1
-  prog.ultimoDia = dia(0)
+  if (HAB.ultimoDia === dia(0)) return
+  HAB.sequencia = HAB.ultimoDia === dia(-1) ? (HAB.sequencia || 0) + 1 : 1
+  HAB.ultimoDia = dia(0)
+  // a cada 7 dias seguidos ganha um protetor (guarda no máximo 2)
+  if (HAB.sequencia % 7 === 0 && (HAB.protetores || 0) < 2) { HAB.protetores = (HAB.protetores || 0) + 1; HAB.ganhouProtetor = true }
 }
-const xpDeHoje = () => prog.xpHoje?.dia === dia(0) ? prog.xpHoje.xp : 0
+// Ao abrir o app: se faltou um dia (ou dois) e há protetor, ele cobre a falta e a ofensiva continua.
+function aplicarProtetor() {
+  if (!HAB.ultimoDia || !HAB.sequencia || HAB.ultimoDia >= dia(-1)) return null
+  const perdidos = Math.round((new Date(dia(-1)) - new Date(HAB.ultimoDia)) / 864e5)
+  if (perdidos < 1 || perdidos > (HAB.protetores || 0)) return null
+  HAB.protetores -= perdidos
+  for (let k = perdidos; k >= 1; k--) (HAB.protegidos ||= []).push(dia(-k))
+  HAB.protegidos = HAB.protegidos.slice(-20)
+  HAB.ultimoDia = dia(-1)
+  salvarHabito()
+  return perdidos
+}
+const xpDeHoje = () => HAB.xpHoje?.dia === dia(0) ? HAB.xpHoje.xp : 0
+const metaDiaria = () => HAB.meta || 10
 function ganharXP(n) {
-  if (prog.xpHoje?.dia !== dia(0)) prog.xpHoje = { dia: dia(0), xp: 0 }
-  prog.xpHoje.xp += n
+  if (HAB.xpHoje?.dia !== dia(0)) HAB.xpHoje = { dia: dia(0), xp: 0 }
+  HAB.xpHoje.xp += n
+  HAB.xp = (HAB.xp || 0) + n
+  HAB.dias = HAB.dias || {}
+  HAB.dias[dia(0)] = (HAB.dias[dia(0)] || 0) + n
+  const antigos = Object.keys(HAB.dias).sort().slice(0, -140)   // guarda ~20 semanas
+  antigos.forEach(d => delete HAB.dias[d])
   prog.xp = (prog.xp || 0) + n
 }
 // 3 estrelas sem erro, 2 com até 2 erros, 1 para quem concluiu
@@ -209,7 +257,7 @@ function marcarServidor(ok) {
 // ---------- sons e avisos ----------
 let audio
 function tocar(notas, dur = 0.11, tipo = 'sine') {
-  if (!prog.som) return
+  if (HAB.som === false) return
   try {
     audio = audio || new AudioContext()
     notas.forEach((f, i) => {
@@ -273,23 +321,72 @@ function personagem(tipo, humor = 'normal', tam = 64, classe = '') {
 }
 const trio = (humor = 'feliz', tam = 56) => TIPOS_P.map(t => personagem(t, humor, tam)).join('')
 
-// ---------- troca de trilha ----------
+// ---------- ícones (traço fino, herdam a cor do texto) ----------
+const svg = (d, extra = '') => `<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${extra}>${d}</svg>`
+const ICONE = {
+  casa: svg('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/>'),
+  mapa: svg('<path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/>'),
+  pessoa: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+  fogo: svg('<path d="M12 2.5c.8 3.6 4.8 5.6 4.8 10.6a4.8 4.8 0 0 1-9.6 0c0-2.2 1-3.8 2.2-4.9.3 2 1.3 3.1 2.6 3.3-.8-3-.4-6.1 0-9Z" fill="currentColor" stroke="none"/>'),
+  raio: svg('<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" fill="currentColor" stroke="none"/>'),
+  escudo: svg('<path d="M12 3 4.5 6v5.5c0 4.6 3.2 7.9 7.5 9.5 4.3-1.6 7.5-4.9 7.5-9.5V6z"/>'),
+  sino: svg('<path d="M6 9a6 6 0 0 1 12 0c0 6.5 2.5 8 2.5 8h-17S6 15.5 6 9"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'),
+  relogio: svg('<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>'),
+  seta: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+  voltar: svg('<path d="M19 12H5M11 6l-6 6 6 6"/>'),
+  check: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>', 'stroke-width="3"'),
+  revisar: svg('<path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M5.5 10A8 8 0 0 1 19 7.5M18.5 14A8 8 0 0 1 5 16.5"/>'),
+  baixar: svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),
+  celular: svg('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
+  alvo: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>'),
+}
+
+// ---------- trilhas: troca, download e progresso de cada uma ----------
 const DEFAULTS_TRILHA = { rotulo: 'Módulo', rotulos: 'módulos', painel: 'vaga' }
-function abrirTrilha(id) {
-  const t = TRILHAS.find(x => x.id === id)
+const chaveDe = id => id === 'python' ? CURSO_PYTHON.chave : `jokenpy-trilha-${id}`
+function lerProgresso(id) {
+  if (id === CURSO.id) return prog
+  try { return { ...novoProgresso(), ...JSON.parse(localStorage.getItem(chaveDe(id))) } } catch { return novoProgresso() }
+}
+// ids dos módulos na ordem, sem precisar baixar a trilha (o índice do servidor já diz)
+const modulosDe = id => id === 'python' ? LICOES.map(l => l.id)
+  : TRILHAS_CARREGADAS[id]?.LICOES.map(l => l.id) || INDICE[id]?.modulos || []
+function resumoTrilha(id) {
+  const ids = modulosDe(id), p = lerProgresso(id)
+  const feitos = ids.filter(m => p.feitas[m]).length
+  return { total: ids.length, feitos, pct: ids.length ? Math.round(100 * feitos / ids.length) : 0, mexeu: feitos > 0 || !!p.emAndamento }
+}
+function aplicarCor(t) { document.documentElement.style.setProperty('--acao', t?.cor || '#5B5BF0') }
+
+async function abrirTrilha(id, tela = 'trilha') {
+  const t = trilhaDe(id)
   if (!t) return
+  if (id !== 'python' && !TRILHAS_CARREGADAS[id]) {
+    if (t.privada) return pedirSenha(t, tela)
+    try { await carregarPublica(t) } catch (e) { toast(e.message); return }
+  }
+  ativarTrilha(id)
+  irPara(tela)
+}
+function ativarTrilha(id) {
   if (id === 'python') { CURSO = CURSO_PYTHON; LISTA = LICOES }
   else {
     const dados = TRILHAS_CARREGADAS[id]
-    if (!dados) return pedirSenha(t)
-    CURSO = { ...DEFAULTS_TRILHA, ...dados.CURSO, id, chave: `jokenpy-trilha-${id}` }
+    CURSO = { ...DEFAULTS_TRILHA, marca: CURSO_PYTHON.marca, ...dados.CURSO, id, chave: chaveDe(id) }
     LISTA = dados.LICOES
     if (!LISTA[0]?.exercicios[0]?.id) prepararIds(LISTA)
   }
   CHAVE = CURSO.chave
   prog = carregarLocal(); migrarProgresso()
+  aplicarCor(trilhaDe(id))
   try { localStorage.setItem('jokenpy-trilha', id) } catch {}
-  renderHome(); scrollTo(0, 0)
+}
+async function carregarPublica(t) {
+  let res
+  try { res = await fetch(`${t.arquivo}?v=${INDICE[t.id]?.versao || ''}`) } catch { res = null }
+  if (!res?.ok) throw new Error('Não consegui baixar esta trilha. Confira a internet e tente de novo.')
+  new Function(await res.text())()   // o arquivo registra a trilha em TRILHAS_CARREGADAS
+  if (!TRILHAS_CARREGADAS[t.id]) throw new Error('O arquivo da trilha veio incompleto.')
 }
 
 // trilha privada: o servidor só entrega o arquivo com a senha certa
@@ -297,11 +394,11 @@ async function carregarTrilha(t, senha) {
   const res = await fetch(t.arquivo, { headers: { Authorization: 'Basic ' + btoa('aluno:' + senha) }, cache: 'no-store' })
   if (res.status === 401) throw new Error('Senha incorreta.')
   if (!res.ok) throw new Error('Esta trilha não está disponível neste servidor.')
-  new Function(await res.text())()   // o arquivo registra a trilha em TRILHAS_CARREGADAS
+  new Function(await res.text())()
   if (!TRILHAS_CARREGADAS[t.id]) throw new Error('O arquivo da trilha veio incompleto.')
   try { localStorage.setItem(`jokenpy-senha-${t.id}`, senha) } catch {}
 }
-function pedirSenha(t) {
+function pedirSenha(t, tela = 'trilha') {
   if ($('.modal-fundo')) return
   const m = document.createElement('div'); m.className = 'modal-fundo'
   m.innerHTML = `<form class="modal senha" role="dialog" aria-modal="true" aria-label="Senha da trilha">
@@ -317,28 +414,481 @@ function pedirSenha(t) {
   m.querySelector('form').onsubmit = async e => {
     e.preventDefault()
     const b = $('#senha-ok'); b.disabled = true; b.textContent = 'Abrindo…'
-    try { await carregarTrilha(t, $('#senha-trilha').value); fechar(); abrirTrilha(t.id) }
+    try { await carregarTrilha(t, $('#senha-trilha').value); fechar(); abrirTrilha(t.id, tela) }
     catch (err) { const x = $('#senha-erro'); x.hidden = false; x.textContent = err.message; b.disabled = false; b.textContent = 'Abrir trilha' }
   }
   $('#senha-trilha').focus()
 }
-const htmlTrilhas = () => `<nav class="trilhas" aria-label="Trilhas">${TRILHAS.map(t => `<button class="trilha ${CURSO.id === t.id ? 'ativa' : ''}" data-trilha="${t.id}">
-  <span aria-hidden="true">${t.privada && TRILHAS_CARREGADAS[t.id] ? '🔓' : t.icone}</span>${esc(t.titulo)}</button>`).join('')}</nav>`
 
-// ---------- tela inicial ----------
+// ---------- casca do app: topo, abas e navegação ----------
+let TELA = 'hoje'
+function irPara(tela) { TELA = tela; renderHome(); scrollTo(0, 0) }
+function renderHome() {
+  L = null
+  fecharCartao()
+  aplicarCor(trilhaDe(CURSO.id))
+  if (TELA === 'trilhas') renderTrilhas()
+  else if (TELA === 'perfil') renderPerfil()
+  else if (TELA === 'trilha') renderTrilha()
+  else renderHoje()
+  ligarCasca()
+}
 function topo() {
   const seq = sequencia()
   return `<header class="topo"><div class="topo-in">
-    <div class="marca"><span class="marca-trio" aria-hidden="true">${trio('normal', 26)}</span><span class="marca-nome">${CURSO.marca}</span></div>
+    <button class="marca" data-ir="hoje" aria-label="Jokenpy: ir para Hoje"><span class="marca-trio" aria-hidden="true">${trio('normal', 24)}</span><span class="marca-nome">joken<b>py</b></span></button>
+    ${abas('topo')}
     <div class="stats">
-      <span class="stat fogo ${seq ? 'aceso' : ''}" title="Dias seguidos estudando">🔥 ${seq}</span>
-      <span class="stat raio" title="XP total">⚡ ${prog.xp || 0}</span>
-      <button class="som" id="som" title="Ligar ou desligar o som" aria-label="Som">${prog.som ? '🔊' : '🔇'}</button>
+      <span class="stat fogo ${estudouHoje() ? 'aceso' : seq ? 'risco' : ''}" title="${seq} ${seq === 1 ? 'dia seguido' : 'dias seguidos'}${seq && !estudouHoje() ? ': estude hoje para manter' : ''}">${ICONE.fogo}<b>${seq}</b></span>
+      <span class="stat raio" title="XP total">${ICONE.raio}<b>${HAB.xp || 0}</b></span>
     </div></div></header>`
 }
-function ligarSom() {
-  $('#som').onclick = () => { prog.som = !prog.som; salvarProgresso(); $('#som').textContent = prog.som ? '🔊' : '🔇' }
+const ABAS = [['hoje', 'Hoje', 'casa'], ['trilhas', 'Trilhas', 'mapa'], ['perfil', 'Você', 'pessoa']]
+function abas(onde) {
+  const atual = TELA === 'trilha' ? 'trilhas' : TELA
+  return `<nav class="abas abas-${onde}" aria-label="Navegação principal">${ABAS.map(([id, nome, ic]) =>
+    `<button class="aba ${atual === id ? 'ativa' : ''}" data-ir="${id}" ${atual === id ? 'aria-current="page"' : ''}>${ICONE[ic]}<span>${nome}</span></button>`).join('')}</nav>`
 }
+const casca = (classe, html) => `${topo()}<main class="tela ${classe}">${html}</main>${abas('baixo')}`
+function ligarCasca() {
+  $$('[data-ir]').forEach(b => b.onclick = () => { const t = b.dataset.ir; t === TELA ? scrollTo({ top: 0, behavior: 'smooth' }) : irPara(t) })
+  $$('[data-trilha]').forEach(b => b.onclick = () => abrirTrilha(b.dataset.trilha))
+}
+
+// a próxima lição da trilha atual: a que está em andamento ou a primeira não concluída
+function proximaLicao() {
+  const iAnd = indiceAndamento()
+  if (iAnd >= 0) return { i: iAnd, andamento: true }
+  let i = LISTA.findIndex(l => !prog.feitas[l.id] && !l.bonus)
+  if (i < 0) i = LISTA.findIndex(l => !prog.feitas[l.id])
+  return i >= 0 ? { i, andamento: false } : null
+}
+const minutos = l => Math.max(3, Math.round((l.ensino?.length || 0) * 1 + l.exercicios.length * 0.8))
+function saudacao() {
+  const h = new Date().getHours()
+  const data = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })
+  return `${h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'} · ${data}`
+}
+// dias da ofensiva atual, mesmo os de antes do registro diário existir
+function estudouNoDia(d) {
+  if ((HAB.dias?.[d] || 0) > 0) return true
+  const seq = sequencia()
+  if (!seq || !HAB.ultimoDia || d > HAB.ultimoDia || HAB.protegidos?.includes(d)) return false
+  const ini = new Date(HAB.ultimoDia); ini.setDate(ini.getDate() - (seq - 1))
+  return d >= ini.toLocaleDateString('sv')
+}
+function semana() {
+  const letras = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+  return `<ol class="semana" aria-label="Últimos 7 dias">${[-6, -5, -4, -3, -2, -1, 0].map(k => {
+    const x = new Date(); x.setDate(x.getDate() + k)
+    const d = x.toLocaleDateString('sv'), fez = estudouNoDia(d), prot = HAB.protegidos?.includes(d)
+    const nome = x.toLocaleDateString('pt-BR', { weekday: 'long' })
+    return `<li class="${fez ? 'fez' : prot ? 'prot' : ''} ${k === 0 ? 'hoje' : ''}" aria-label="${nome}: ${fez ? 'estudou' : prot ? 'protegido' : k === 0 ? 'ainda não' : 'não estudou'}">
+      <span>${letras[x.getDay()]}</span><i>${fez ? ICONE.check : prot ? ICONE.escudo : ''}</i></li>`
+  }).join('')}</ol>`
+}
+const contarFracos = () => LISTA.filter(l => prog.feitas[l.id]).flatMap(l => l.exercicios).filter(it => (prog.fracos || {})[it.id]).length
+
+// ---------- tela Hoje: o que fazer agora ----------
+function renderHoje() {
+  const t = trilhaDe(CURSO.id), alvo = proximaLicao()
+  const seq = sequencia(), hoje = xpDeHoje(), meta = metaDiaria(), pct = Math.min(100, Math.round(100 * hoje / meta)), bateu = hoje >= meta
+  const r = resumoTrilha(CURSO.id)
+  const feitas = LISTA.filter(l => prog.feitas[l.id]).length, fracos = contarFracos()
+  const outras = TRILHAS.filter(x => x.id !== CURSO.id && disponivel(x) && resumoTrilha(x.id).mexeu)
+  const java = trilhaDe('java-spring')
+  const sugerirJava = CURSO.id !== 'java-spring' && disponivel(java) && !resumoTrilha('java-spring').mexeu
+  const frase = bateu ? 'Meta de hoje batida. Amanhã tem mais.'
+    : estudouHoje() ? `Faltam ${meta - hoje} XP para a meta de hoje.`
+    : seq ? `Sua ofensiva de ${seq} ${seq === 1 ? 'dia' : 'dias'} continua se você estudar hoje.`
+    : 'Cinco minutos hoje já contam.'
+  app.innerHTML = casca('hoje', `
+    <section class="saudacao">
+      <span class="kicker">${saudacao()}</span>
+      <h1>${frase}</h1>
+    </section>
+    <section class="painel-dia ${bateu ? 'bateu' : ''}">
+      <div class="anel" style="--p:${pct}" role="img" aria-label="Meta do dia: ${Math.min(hoje, meta)} de ${meta} XP"><span><b>${Math.min(hoje, meta)}</b><small>/${meta} XP</small></span></div>
+      <div class="painel-dia-txt">
+        <div class="painel-linha"><b class="fogo-txt ${estudouHoje() ? 'aceso' : ''}">${ICONE.fogo}${seq} ${seq === 1 ? 'dia seguido' : 'dias seguidos'}</b>
+          <span class="protetor" title="Um protetor cobre um dia sem estudo. Você ganha um a cada 7 dias seguidos.">${ICONE.escudo}${HAB.protetores || 0}</span></div>
+        ${semana()}
+      </div>
+    </section>
+    ${alvo ? htmlHeroi(t, alvo, r) : `<section class="heroi" style="--cor-t:${t.cor}"><small>${esc(t.titulo)}</small><h2>Trilha concluída! 🏆</h2>
+      <p>Revise de vez em quando para não esquecer, ou comece outra trilha.</p>
+      <button class="btn grande largo" data-ir="trilhas">Escolher outra trilha ${ICONE.seta}</button></section>`}
+    <div class="grade-cartoes">
+      ${feitas ? `<button class="cartao-acao" id="revisar">
+        <span class="ca-ico azul">${ICONE.revisar}</span>
+        <span><b>Revisão rápida</b><small>${fracos ? `${Math.min(fracos, TAM_REVISAO)} do que você mais errou` : `${TAM_REVISAO} perguntas · ~2 min`}</small></span>${ICONE.seta}</button>` : ''}
+      ${htmlConviteLembrete()}
+      ${htmlConviteInstalar()}
+    </div>
+    ${sugerirJava ? `<button class="sugestao-trilha" data-trilha="java-spring" style="--cor-t:${java.cor}">
+      <span class="st-ico">${java.icone}</span><span><small>Nova trilha para você</small><b>${java.titulo}</b><span>${java.sub}. Cada conceito comparado com o NestJS.</span></span>${ICONE.seta}</button>` : ''}
+    ${outras.length ? `<section class="bloco"><h3>Suas outras trilhas</h3><div class="mini-trilhas">${outras.map(x => {
+      const rx = resumoTrilha(x.id)
+      return `<button class="mini-trilha" data-trilha="${x.id}" style="--cor-t:${x.cor}"><span>${x.icone}</span><b>${esc(x.titulo)}</b>
+        <span class="mt-barra"><i style="width:${rx.pct}%"></i></span><small>${rx.feitos}/${rx.total}</small></button>`
+    }).join('')}</div></section>` : ''}
+  `)
+  const sg = $('#seguir'); if (sg) sg.onclick = () => alvo.andamento ? retomar() : iniciar(alvo.i)
+  const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
+  ligarConvites()
+}
+
+function htmlHeroi(t, alvo, r) {
+  const l = LISTA[alvo.i], a = prog.emAndamento
+  const tipo = tipoDaLicao(alvo.i)
+  return `<section class="heroi" style="--cor-t:${t.cor}">
+    <div class="heroi-topo"><button class="heroi-trilha" data-ir="trilha">${t.icone} ${esc(t.titulo)}</button><span class="heroi-tempo">${ICONE.relogio}~${minutos(l)} min</span></div>
+    <small class="heroi-rotulo">${alvo.andamento ? `Você parou em ${a.feitos} de ${l.exercicios.length} exercícios` : 'Sua sessão de hoje'}</small>
+    <h2><span aria-hidden="true">${l.icone}</span> ${esc(l.titulo)}</h2>
+    <p>${esc(l.porque || `Você vai ver: ${l.aprende}.`)}</p>
+    <div class="heroi-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${CURSO.rotulo} ${alvo.i + 1} de ${LISTA.length} · ${r.pct}% da trilha</small></div>
+    <button class="btn grande largo branco-solido" id="seguir">${alvo.andamento ? 'Continuar' : 'Começar'} ${ICONE.seta}</button>
+    <div class="heroi-guia" aria-hidden="true">${personagem(tipo, 'feliz', 92, 'flutua')}</div>
+  </section>`
+}
+
+// ---------- tela Trilhas ----------
+function renderTrilhas() {
+  app.innerHTML = casca('trilhas-tela', `
+    <section class="saudacao">
+      <span class="kicker">Trilhas</span>
+      <h1>O que você quer dominar?</h1>
+      <p>Cada trilha guarda o próprio progresso. A ofensiva e a meta do dia valem para todas.</p>
+    </section>
+    <div class="grade-trilhas">${TRILHAS.filter(disponivel).map(t => {
+      const r = resumoTrilha(t.id), atual = t.id === CURSO.id
+      const qtd = r.total ? `${r.total} ${t.id === 'python' ? 'lições' : 'módulos'}` : ''
+      return `<button class="card-trilha ${atual ? 'atual' : ''}" data-trilha="${t.id}" style="--cor-t:${t.cor}">
+        <span class="ct-ico" aria-hidden="true">${t.privada && TRILHAS_CARREGADAS[t.id] ? '🔓' : t.icone}</span>
+        <span class="ct-txt"><small>${esc(t.nivel)}${qtd ? ` · ${qtd}` : ''}${atual ? ' · atual' : ''}</small><b>${esc(t.titulo)}</b><span>${esc(t.sub)}</span>
+          ${r.total ? `<span class="ct-prog"><span class="barra-fina"><i style="width:${r.pct}%"></i></span><small>${r.pct ? `${r.pct}%` : 'Não iniciada'}</small></span>` : ''}</span>
+      </button>`
+    }).join('')}</div>`)
+}
+
+// ---------- uma trilha: o mapa das lições ----------
+function renderTrilha() {
+  const t = trilhaDe(CURSO.id), alvoP = proximaLicao()
+  const andamento = alvoP?.andamento ? { ...prog.emAndamento, i: alvoP.i } : null
+  const alvo = alvoP ? alvoP.i : -1
+  const feitas = LISTA.filter(l => prog.feitas[l.id]).length
+  let n = 0
+  app.innerHTML = casca('trilha-tela', `<div class="home">
+    <div class="caminho-col">
+      <button class="voltar-trilhas" data-ir="trilhas">${ICONE.voltar} Trilhas</button>
+      <section class="boas-vindas">
+        <span class="kicker">${t.icone} ${esc(CURSO.kicker)}</span>
+        <h1>${CURSO.titulo}</h1>
+        <p>${CURSO.subtitulo}</p>
+      </section>
+      ${atosDoCurso().map((ato, m) => `<section class="mundo cor-${ato.tipo}">
+        <div class="mundo-banner">
+          <div><small>Parte ${m + 1} · ${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</small><h2>${esc(ato.titulo)}</h2></div>
+          ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 58)}
+        </div>
+        <ol class="caminho">
+          ${ato.licoes.map(i => {
+            const l = LISTA[i], feita = !!prog.feitas[l.id], atual = i === alvo, x = ZIGUE[n++ % ZIGUE.length]
+            return `<li class="item ${atual ? 'atual' : ''}" style="--x:${x}px">
+              ${atual ? `<div class="balao">${andamento ? 'Continuar' : 'Começar'}</div>` : ''}
+              <button class="no cor-${tipoDaLicao(i)} ${feita ? 'feito' : ''} ${atual ? 'sugerida' : ''} ${l.bonus ? 'bonus' : ''}" data-i="${i}" aria-label="${esc(l.titulo)}${feita ? ' (concluída)' : ''}">
+                <span class="hex"><span class="ico" aria-hidden="true">${feita && !atual ? '✓' : l.icone}</span></span>
+              </button>
+              <div class="rotulo-no"><b>${esc(l.titulo)}</b>${feita ? htmlEstrelas(prog.estrelas?.[l.id] || 1) : `<small>${CURSO.rotulo} ${i + 1}</small>`}</div>
+              ${atual ? `<div class="guia" aria-hidden="true">${personagem(ato.tipo, 'feliz', 64, 'flutua')}</div>` : ''}
+            </li>`
+          }).join('')}
+        </ol>
+      </section>`).join('')}
+      <button class="link" id="zerar">Apagar o progresso desta trilha</button>
+    </div>
+    <aside class="lateral">
+      ${alvo >= 0 ? `<section class="cartao-lado continuar cor-${tipoDaLicao(alvo)}">
+        <small>${andamento ? 'Você parou em' : feitas ? 'Próxima parada' : 'Comece por'}</small>
+        <b>${LISTA[alvo].icone} ${esc(LISTA[alvo].titulo)}</b>
+        <span>${andamento ? `${andamento.feitos} de ${LISTA[alvo].exercicios.length} exercícios` : `~${minutos(LISTA[alvo])} min · ${esc(LISTA[alvo].aprende)}`}</span>
+        <button class="btn largo" id="seguir">${andamento ? 'Continuar' : 'Começar'}</button>
+      </section>` : `<section class="cartao-lado continuar"><b>Tudo concluído! 🏆</b>
+        ${CURSO.painel === 'jogo' ? '<button class="btn largo" id="ver-fim">Ver o meu jogo</button>' : '<button class="btn largo" id="revisar-fim">Treinar de novo</button>'}</section>`}
+      ${feitas ? `<section class="cartao-lado revisao">${personagem('papel', 'pensando', 48)}<div><b>Revisão rápida</b>
+        <span>${TAM_REVISAO} perguntas do que você mais errou.</span></div>
+        <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
+      ${htmlArquivo()}
+      ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim">🏆 Ver o meu jogo</button>' : ''}
+    </aside>
+  </div>`)
+  $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
+  const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
+  const rv = $('#revisar'); if (rv) rv.onclick = iniciarRevisao
+  $('#zerar').onclick = () => {
+    if (!confirm(`Apagar o progresso da trilha ${t.titulo} (lições, estrelas, rascunhos e revisão)? A ofensiva e o XP total continuam.`)) return
+    prog = novoProgresso(); salvarProgresso(); renderHome()
+  }
+  const vf = $('#ver-fim'); if (vf) vf.onclick = renderFim
+  const rf = $('#revisar-fim'); if (rf) rf.onclick = iniciarRevisao
+  $('.item.atual')?.scrollIntoView({ block: 'center' })
+}
+
+// ---------- tela Você: constância, lembrete, meta e ajustes ----------
+function renderPerfil() {
+  const seq = sequencia(), recorde = Math.max(HAB.recorde || 0, seq)
+  const diasEstudo = Object.values(HAB.dias || {}).filter(x => x > 0).length
+  const concluidos = TRILHAS.filter(disponivel).reduce((s, t) => s + resumoTrilha(t.id).feitos, 0)
+  app.innerHTML = casca('perfil', `
+    <section class="saudacao"><span class="kicker">Você</span><h1>Constância é o que faz aprender.</h1></section>
+    <div class="numeros">
+      <div><b>${ICONE.fogo}${seq}</b><small>dias seguidos</small></div>
+      <div><b>${recorde}</b><small>maior ofensiva</small></div>
+      <div><b>${ICONE.raio}${HAB.xp || 0}</b><small>XP total</small></div>
+      <div><b>${concluidos}</b><small>lições concluídas</small></div>
+    </div>
+    <section class="bloco cartao-bloco">
+      <h3>Últimas 12 semanas</h3>
+      ${htmlConstancia()}
+      <p class="nota">${diasEstudo ? `${diasEstudo} ${diasEstudo === 1 ? 'dia' : 'dias'} com estudo registrados.` : 'Cada dia de estudo acende um quadradinho.'} ${ICONE.escudo} Você tem ${HAB.protetores || 0} ${HAB.protetores === 1 ? 'protetor' : 'protetores'}: cada um cobre um dia sem estudo. Ganhe outro a cada 7 dias seguidos (máximo 2).</p>
+    </section>
+    <section class="bloco cartao-bloco" id="bloco-lembrete">${htmlLembrete()}</section>
+    <section class="bloco cartao-bloco">
+      <h3>Meta diária</h3>
+      <div class="metas" role="radiogroup" aria-label="Meta diária">${METAS.map(m => `<button class="meta-op ${metaDiaria() === m.xp ? 'sel' : ''}" role="radio" aria-checked="${metaDiaria() === m.xp}" data-meta="${m.xp}">
+        <b>${m.nome}</b><span>${m.xp} XP</span><small>${m.desc}</small></button>`).join('')}</div>
+      <p class="nota">Metas pequenas são mais fáceis de manter todo dia. Dá para fazer mais sempre que quiser.</p>
+    </section>
+    <section class="bloco cartao-bloco">
+      <h3>Aparência e som</h3>
+      <div class="linha-ajuste"><span>Tema</span><div class="segmento" role="radiogroup" aria-label="Tema">${[['auto', 'Automático'], ['claro', 'Claro'], ['escuro', 'Escuro']].map(([v, n]) =>
+        `<button role="radio" aria-checked="${(HAB.tema || 'auto') === v}" class="${(HAB.tema || 'auto') === v ? 'sel' : ''}" data-tema="${v}">${n}</button>`).join('')}</div></div>
+      <div class="linha-ajuste"><span>Sons de acerto e erro</span><button class="chave ${HAB.som !== false ? 'ligada' : ''}" id="som" role="switch" aria-checked="${HAB.som !== false}" aria-label="Sons"><i></i></button></div>
+    </section>
+    <section class="bloco cartao-bloco">
+      <h3>App no celular</h3>
+      ${INSTALADO ? '<p class="nota">✅ Você está usando o app instalado.</p>' : `<p class="nota">Instale para abrir pelo ícone, em tela cheia e sem a barra do navegador. Os exercícios de escolha, lacuna e montagem funcionam até sem internet.</p>
+        <button class="btn largo" id="instalar">${ICONE.celular} Instalar o Jokenpy</button>`}
+      <h3 class="sub">Cópia de segurança</h3>
+      <p class="nota">Seu progresso fica neste aparelho. Baixe uma cópia para levar a outro celular ou não perder nada se limpar os dados do navegador.</p>
+      <div class="dupla"><button class="btn branco" id="backup">${ICONE.baixar} Baixar cópia</button>
+        <label class="btn branco arquivo-btn">Restaurar<input type="file" id="restaurar" accept="application/json,.json" hidden></label></div>
+    </section>
+  `)
+  ligarLembrete()
+  $$('[data-meta]').forEach(b => b.onclick = () => { HAB.meta = +b.dataset.meta; salvarHabito(); renderHome() })
+  $$('[data-tema]').forEach(b => b.onclick = () => { HAB.tema = b.dataset.tema; salvarHabito(); aplicarTema(); renderHome() })
+  $('#som').onclick = () => { HAB.som = HAB.som === false; salvarHabito(); renderHome() }
+  const ins = $('#instalar'); if (ins) ins.onclick = instalar
+  $('#backup').onclick = baixarBackup
+  $('#restaurar').onchange = e => restaurarBackup(e.target.files[0])
+}
+
+function htmlConstancia() {
+  const hoje = new Date(), semanas = 12
+  const fim = new Date(hoje); fim.setDate(fim.getDate() + (6 - hoje.getDay()))   // sábado desta semana
+  const max = Math.max(10, ...Object.values(HAB.dias || {}))
+  let html = ''
+  for (let s = semanas - 1; s >= 0; s--) {
+    html += '<div class="col">'
+    for (let d = 6; d >= 0; d--) {
+      const x = new Date(fim); x.setDate(fim.getDate() - s * 7 - d)
+      const k = x.toLocaleDateString('sv'), futuro = x > hoje
+      const xp = HAB.dias?.[k] || (estudouNoDia(k) ? 10 : 0), prot = HAB.protegidos?.includes(k)
+      const nivel = futuro ? 'fut' : xp ? `n${Math.min(4, Math.ceil(4 * xp / max))}` : prot ? 'prot' : ''
+      html += `<i class="${nivel}" title="${x.toLocaleDateString('pt-BR')}${xp ? `: ${xp} XP` : prot ? ': protegido' : ''}"></i>`
+    }
+    html += '</div>'
+  }
+  return `<div class="constancia" role="img" aria-label="Dias com estudo nas últimas 12 semanas">${html}</div>`
+}
+
+// ---------- tema ----------
+function aplicarTema() {
+  const t = HAB.tema || 'auto'
+  if (t === 'auto') delete document.documentElement.dataset.tema
+  else document.documentElement.dataset.tema = t
+  const escuro = t === 'escuro' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)
+  $('meta[name=theme-color]')?.setAttribute('content', escuro ? '#14121F' : '#FFFFFF')
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', aplicarTema)
+
+// ---------- instalar (PWA) ----------
+const IOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+const INSTALADO = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true
+let pedidoInstalar = null
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e })
+addEventListener('appinstalled', () => { pedidoInstalar = null; toast('Jokenpy instalado. Abra pelo ícone na tela inicial.') })
+async function instalar() {
+  if (pedidoInstalar) {
+    pedidoInstalar.prompt()
+    await pedidoInstalar.userChoice.catch(() => {})
+    pedidoInstalar = null
+    return
+  }
+  const m = document.createElement('div'); m.className = 'modal-fundo'
+  m.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Como instalar">
+    <button class="modal-fechar" aria-label="Fechar">✕</button>
+    <span class="kicker">Instalar no celular</span><h3>Jokenpy na tela inicial</h3>
+    ${IOS ? `<ol class="passos"><li>Abra este endereço no <b>Safari</b>.</li><li>Toque em <b>Compartilhar</b> (o quadrado com a seta para cima).</li>
+      <li>Escolha <b>Adicionar à Tela de Início</b> e confirme.</li><li>Abra o Jokenpy pelo ícone novo e ative os lembretes em <b>Você</b>.</li></ol>
+      <p class="nota">No iPhone, as notificações só funcionam com o app aberto pelo ícone da tela inicial.</p>`
+    : `<ol class="passos"><li>No Chrome, toque no menu <b>⋮</b> (canto de cima).</li><li>Escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li>
+      <li>Abra o Jokenpy pelo ícone novo.</li></ol>`}
+    <button class="btn largo" id="modal-ok">Entendi</button></div>`
+  document.body.append(m)
+  m.onclick = e => { if (e.target === m || e.target.closest('.modal-fechar, #modal-ok')) m.remove() }
+}
+function htmlConviteInstalar() {
+  if (INSTALADO || HAB.dispensouInstalar) return ''
+  return `<div class="cartao-acao" id="convite-instalar" role="group" aria-label="Instalar o app">
+    <span class="ca-ico verde">${ICONE.celular}</span>
+    <span><b>Instale no celular</b><small>Abre pelo ícone, em tela cheia, e funciona offline</small></span>
+    <span class="ca-botoes"><button class="btn mini" id="instalar-agora">Instalar</button><button class="dispensar" id="dispensar-instalar" aria-label="Agora não">✕</button></span></div>`
+}
+function ligarConvites() {
+  const i = $('#instalar-agora'); if (i) i.onclick = instalar
+  const d = $('#dispensar-instalar'); if (d) d.onclick = () => { HAB.dispensouInstalar = true; salvarHabito(); $('#convite-instalar').remove() }
+  const l = $('#convite-lembrete'); if (l) l.onclick = () => { irPara('perfil'); $('#bloco-lembrete')?.scrollIntoView({ block: 'center', behavior: 'smooth' }) }
+}
+
+// ---------- lembretes diários (Web Push) ----------
+// O servidor de avisos guarda a inscrição, o horário e um resumo do progresso (ofensiva, próxima lição)
+// para mandar uma mensagem personalizada só nos dias em que você ainda não estudou.
+const SUPORTA_PUSH = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+let AVISOS = null   // { chave } do servidor de avisos; null = indisponível
+async function carregarAvisos() {
+  try { const r = await fetch('/avisos/chave'); AVISOS = r.ok ? await r.json() : null } catch { AVISOS = null }
+}
+const b64ParaBytes = b64 => {
+  const s = atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/'))
+  return Uint8Array.from(s, c => c.charCodeAt(0))
+}
+function estadoAviso() {
+  const p = proximaLicao()
+  return { ultimoDia: HAB.ultimoDia, sequencia: sequencia(), xpHoje: xpDeHoje(), meta: metaDiaria(), protetores: HAB.protetores || 0,
+    trilha: trilhaDe(CURSO.id)?.titulo || '', proxima: p ? LISTA[p.i].titulo : '' }
+}
+let timerAviso
+function avisarEstado() {
+  if (!HAB.lembrete?.ativo) return
+  clearTimeout(timerAviso)
+  timerAviso = setTimeout(() => fetch('/avisos/estado', { method: 'POST', headers: HEADERS, keepalive: true,
+    body: JSON.stringify({ endpoint: HAB.lembrete.endpoint, hora: HAB.lembrete.hora, estado: estadoAviso() }) })
+    .then(r => { if (r.status === 404) { HAB.lembrete.ativo = false; try { localStorage.setItem(CHAVE_HAB, JSON.stringify(HAB)) } catch {} } }).catch(() => {}), 600)
+}
+async function ativarLembrete(hora) {
+  if (IOS && !INSTALADO) throw new Error('No iPhone, instale o app primeiro (Compartilhar → Adicionar à Tela de Início), abra pelo ícone e ative aqui.')
+  if (!SUPORTA_PUSH) throw new Error('Este navegador não aceita notificações. No Android, use o Chrome.')
+  if (!AVISOS?.chave) await carregarAvisos()
+  if (!AVISOS?.chave) throw new Error('O serviço de lembretes não está disponível neste servidor agora.')
+  const perm = await Notification.requestPermission()
+  if (perm !== 'granted') throw new Error('As notificações estão bloqueadas. Libere nas configurações do site (cadeado ao lado do endereço) e tente de novo.')
+  const reg = await navigator.serviceWorker.ready
+  let sub = await reg.pushManager.getSubscription()
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ParaBytes(AVISOS.chave) })
+  const fuso = Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Sao_Paulo'
+  const r = await fetch('/avisos/inscrever', { method: 'POST', headers: HEADERS, body: JSON.stringify({ assinatura: sub.toJSON(), hora, fuso, estado: estadoAviso() }) })
+  if (!r.ok) throw new Error('Não consegui registrar o lembrete no servidor. Tente de novo em instantes.')
+  HAB.lembrete = { ativo: true, hora, endpoint: sub.endpoint }
+  salvarHabito()
+}
+async function desativarLembrete() {
+  const endpoint = HAB.lembrete?.endpoint
+  HAB.lembrete = { ...HAB.lembrete, ativo: false }
+  salvarHabito()
+  try { const reg = await navigator.serviceWorker.ready; await (await reg.pushManager.getSubscription())?.unsubscribe() } catch {}
+  if (endpoint) fetch('/avisos/cancelar', { method: 'POST', headers: HEADERS, body: JSON.stringify({ endpoint }) }).catch(() => {})
+}
+function htmlConviteLembrete() {
+  if (HAB.lembrete?.ativo) return ''
+  return `<button class="cartao-acao" id="convite-lembrete">
+    <span class="ca-ico sol">${ICONE.sino}</span>
+    <span><b>Escolha a hora de estudar</b><small>Quem marca um horário fixo estuda mais. A gente lembra você.</small></span>${ICONE.seta}</button>`
+}
+function htmlLembrete() {
+  const l = HAB.lembrete, ativo = !!l?.ativo
+  return `<h3>${ICONE.sino} Lembrete diário</h3>
+    <p class="nota">Escolha <b>quando</b> você vai estudar, por exemplo no ônibus ou depois do almoço. Se você ainda não tiver estudado nesse horário, chega uma notificação com a sua ofensiva e a próxima lição. Se a ofensiva estiver em risco, vem mais um aviso às 21h.</p>
+    <div class="linha-ajuste"><label for="hora-lembrete">Horário</label><input type="time" id="hora-lembrete" value="${esc(l?.hora || '19:00')}" step="300"></div>
+    <p class="lembrete-msg" id="lembrete-msg" role="status" hidden></p>
+    <div class="dupla">${ativo
+      ? `<button class="btn" id="salvar-lembrete">Salvar horário</button><button class="btn branco" id="testar-lembrete">Testar agora</button>`
+      : `<button class="btn largo" id="ativar-lembrete">${ICONE.sino} Ativar lembretes</button>`}</div>
+    ${ativo ? '<button class="link" id="desativar-lembrete">Desligar lembretes</button>' : ''}`
+}
+function ligarLembrete() {
+  const msg = (t, erro) => { const m = $('#lembrete-msg'); if (!m) return; m.hidden = false; m.textContent = t; m.classList.toggle('erro', !!erro) }
+  const hora = () => $('#hora-lembrete').value || '19:00'
+  const bloco = () => { $('#bloco-lembrete').innerHTML = htmlLembrete(); ligarLembrete() }
+  const at = $('#ativar-lembrete'), sv = $('#salvar-lembrete'), ts = $('#testar-lembrete'), ds = $('#desativar-lembrete')
+  if (at) at.onclick = async () => {
+    at.disabled = true; at.textContent = 'Ativando…'
+    try { await ativarLembrete(hora()); bloco(); msg(`Pronto! Todo dia às ${hora()} você recebe um lembrete, se ainda não tiver estudado.`) }
+    catch (e) { at.disabled = false; at.innerHTML = `${ICONE.sino} Ativar lembretes`; msg(e.message, true) }
+  }
+  if (sv) sv.onclick = async () => {
+    try { await ativarLembrete(hora()); msg(`Horário salvo: ${hora()}.`) } catch (e) { msg(e.message, true) }
+  }
+  if (ts) ts.onclick = async () => {
+    try {
+      const r = await fetch('/avisos/testar', { method: 'POST', headers: HEADERS, body: JSON.stringify({ endpoint: HAB.lembrete.endpoint }) })
+      msg(r.ok ? 'Enviado. A notificação deve chegar em alguns segundos.' : r.status === 429 ? 'Espere um minuto para testar de novo.' : 'Não consegui enviar o teste. Ative de novo.', !r.ok)
+    } catch { msg('Sem conexão com o servidor.', true) }
+  }
+  if (ds) ds.onclick = async () => { await desativarLembrete(); bloco(); msg('Lembretes desligados.') }
+}
+
+// ---------- cópia de segurança do progresso ----------
+function baixarBackup() {
+  const dados = {}
+  for (let k = 0; k < localStorage.length; k++) {
+    const chave = localStorage.key(k)
+    if (chave.startsWith('jokenpy') && !chave.startsWith('jokenpy-senha')) dados[chave] = localStorage.getItem(chave)
+  }
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ jokenpy: 1, data: new Date().toISOString(), dados })], { type: 'application/json' }))
+  a.download = `jokenpy-progresso-${dia(0)}.json`; a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
+async function restaurarBackup(arquivo) {
+  if (!arquivo) return
+  try {
+    const b = JSON.parse(await arquivo.text())
+    if (b.jokenpy !== 1 || typeof b.dados !== 'object') throw new Error()
+    if (!confirm(`Restaurar a cópia de ${new Date(b.data).toLocaleDateString('pt-BR')}? O progresso atual deste aparelho será substituído.`)) return
+    for (const [k, v] of Object.entries(b.dados)) if (k.startsWith('jokenpy') && typeof v === 'string') localStorage.setItem(k, v)
+    location.reload()
+  } catch { toast('Este arquivo não é uma cópia do Jokenpy.') }
+}
+
+// detalhes que abrem ao clicar numa lição do mapa
+function fecharCartao() { $('.cartao-licao')?.remove(); $$('.item.aberta').forEach(n => n.classList.remove('aberta')) }
+function alternarCartao(i, item) {
+  const aberto = item.classList.contains('aberta')
+  fecharCartao()
+  if (aberto) return
+  const l = LISTA[i], feita = !!prog.feitas[l.id]
+  const and = indiceAndamento() === i ? prog.emAndamento : null
+  const c = document.createElement('div')
+  c.className = `cartao-licao cor-${tipoDaLicao(i)}`
+  c.innerHTML = `<h3>${esc(l.titulo)}</h3>${l.porque ? `<p class="porque">${esc(l.porque)}</p>` : ''}<p>${and ? `Você parou em ${and.feitos} de ${l.exercicios.length} exercícios.` : `~${minutos(l)} min · ${l.ensino.length} explicações curtas e ${l.exercicios.length} exercícios. Você vai ver: ${esc(l.aprende)}.`}</p>
+    <div class="acoes">
+      ${and ? '<button class="btn" data-acao="continuar">Continuar</button>' : ''}
+      <button class="btn ${and ? 'branco' : ''}" data-acao="comecar">${and ? 'Começar do início' : feita ? 'Fazer de novo' : 'Começar'}</button>
+      ${and ? '' : '<button class="btn branco" data-acao="exercicios">Ir direto aos exercícios</button>'}
+    </div>`
+  c.onclick = e => {
+    const acao = e.target.closest('[data-acao]')?.dataset.acao
+    if (acao === 'continuar') retomar()
+    else if (acao === 'comecar') iniciar(i)
+    else if (acao === 'exercicios') iniciar(i, null, true)
+  }
+  item.classList.add('aberta'); item.append(c)
+  c.querySelector('.btn')?.focus({ preventScroll: true })
+  c.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+}
+document.addEventListener('click', e => { if (!e.target.closest('.cartao-licao, .no')) fecharCartao() })
 
 // As lições agrupadas em mundos; cada mundo tem um personagem-guia e uma cor
 function atosDoCurso() {
@@ -430,108 +980,6 @@ function htmlVaga() {
 // deslocamento horizontal das casas, em zigue-zague
 const ZIGUE = [0, 54, 84, 54, 0, -54, -84, -54]
 
-function htmlMeta() {
-  const hoje = xpDeHoje(), pct = Math.min(100, Math.round(100 * hoje / META_DIARIA))
-  return `<section class="cartao-lado meta">
-    <div class="anel" style="--p:${pct}"><span>${pct}%</span></div>
-    <div><b>Meta do dia</b><span>${Math.min(hoje, META_DIARIA)} de ${META_DIARIA} XP${hoje >= META_DIARIA ? ' · batida! 🎉' : ''}</span></div>
-  </section>`
-}
-
-function renderHome() {
-  L = null
-  const iAnd = indiceAndamento()
-  const andamento = iAnd >= 0 ? { ...prog.emAndamento, i: iAnd } : null
-  const sugerida = LISTA.findIndex(l => !prog.feitas[l.id] && !l.bonus)
-  const alvo = andamento ? andamento.i : sugerida
-  const feitas = LISTA.filter(l => prog.feitas[l.id]).length
-  let n = 0
-  app.innerHTML = `${topo()}
-  <div class="home">
-    <main class="caminho-col">
-      ${htmlTrilhas()}
-      <section class="boas-vindas">
-        <span class="kicker">${esc(CURSO.kicker)}</span>
-        <h1>${CURSO.titulo}</h1>
-      </section>
-      ${atosDoCurso().map((ato, m) => `<section class="mundo cor-${ato.tipo}">
-        <div class="mundo-banner">
-          <div><small>Mundo ${m + 1} · ${ato.licoes.filter(i => prog.feitas[LISTA[i].id]).length}/${ato.licoes.length}</small><h2>${esc(ato.titulo)}</h2></div>
-          ${personagem(ato.tipo, ato.licoes.every(i => prog.feitas[LISTA[i].id]) ? 'feliz' : 'normal', 58)}
-        </div>
-        <ol class="caminho">
-          ${ato.licoes.map(i => {
-            const l = LISTA[i], feita = !!prog.feitas[l.id], atual = i === alvo, x = ZIGUE[n++ % ZIGUE.length]
-            return `<li class="item ${atual ? 'atual' : ''}" style="--x:${x}px">
-              ${atual ? `<div class="balao">${andamento ? 'Continuar' : 'Começar'}</div>` : ''}
-              <button class="no cor-${tipoDaLicao(i)} ${feita ? 'feito' : ''} ${atual ? 'sugerida' : ''} ${l.bonus ? 'bonus' : ''}" data-i="${i}" aria-label="${esc(l.titulo)}">
-                <span class="hex"><span class="ico" aria-hidden="true">${feita && !atual ? '✓' : l.icone}</span></span>
-              </button>
-              <div class="rotulo-no"><b>${esc(l.titulo)}</b>${feita ? htmlEstrelas(prog.estrelas?.[l.id] || 1) : `<small>${CURSO.rotulo} ${i + 1}</small>`}</div>
-              ${atual ? `<div class="guia" aria-hidden="true">${personagem(ato.tipo, 'feliz', 64, 'flutua')}</div>` : ''}
-            </li>`
-          }).join('')}
-        </ol>
-      </section>`).join('')}
-      <button class="link" id="zerar">Apagar meu progresso</button>
-    </main>
-    <aside class="lateral">
-      ${alvo >= 0 ? `<section class="cartao-lado continuar cor-${tipoDaLicao(alvo)}">
-        <small>${andamento ? 'Você parou em' : feitas ? 'Próxima parada' : 'Comece por'}</small>
-        <b>${LISTA[alvo].icone} ${esc(LISTA[alvo].titulo)}</b>
-        ${andamento ? `<span>${andamento.feitos} de ${LISTA[alvo].exercicios.length} exercícios</span>` : ''}
-        <button class="btn largo" id="seguir">${andamento ? 'Continuar' : 'Começar'}</button>
-      </section>` : `<section class="cartao-lado continuar"><b>Tudo concluído! 🏆</b>
-        ${CURSO.painel === 'jogo' ? '<button class="btn largo" id="ver-fim">Ver o meu jogo</button>' : '<button class="btn largo" id="revisar-fim">Treinar as perguntas</button>'}</section>`}
-      ${htmlMeta()}
-      ${feitas ? `<section class="cartao-lado revisao">${personagem('papel', 'pensando', 48)}<div><b>Revisão rápida</b>
-        <span>${TAM_REVISAO} perguntas do que você mais errou.</span></div>
-        <button class="btn azul" id="revisar">Revisar</button></section>` : ''}
-      ${htmlArquivo()}
-      ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim">🏆 Ver o meu jogo</button>' : ''}
-    </aside>
-  </div>`
-  ligarSom()
-  $$('.trilha').forEach(b => b.onclick = () => b.dataset.trilha !== CURSO.id && abrirTrilha(b.dataset.trilha))
-  $$('.no').forEach(b => b.onclick = () => alternarCartao(+b.dataset.i, b.parentElement))
-  const sg = $('#seguir'); if (sg) sg.onclick = () => andamento ? retomar() : iniciar(alvo)
-  for (const id of ['#revisar', '#revisar-topo']) { const b = $(id); if (b) b.onclick = iniciarRevisao }
-  $('#zerar').onclick = () => {
-    if (!confirm('Apagar todo o progresso (lições, XP, rascunhos e revisão)?')) return
-    const som = prog.som; prog = novoProgresso(); prog.som = som; salvarProgresso(); renderHome()
-  }
-  const vf = $('#ver-fim'); if (vf) vf.onclick = renderFim
-  const rf = $('#revisar-fim'); if (rf) rf.onclick = iniciarRevisao
-  $('.item.atual')?.scrollIntoView({ block: 'center' })
-}
-
-// detalhes que abrem ao clicar numa lição do sumário
-function fecharCartao() { $('.cartao-licao')?.remove(); $$('.item.aberta').forEach(n => n.classList.remove('aberta')) }
-function alternarCartao(i, item) {
-  const aberto = item.classList.contains('aberta')
-  fecharCartao()
-  if (aberto) return
-  const l = LISTA[i], feita = !!prog.feitas[l.id]
-  const and = indiceAndamento() === i ? prog.emAndamento : null
-  const c = document.createElement('div')
-  c.className = `cartao-licao cor-${tipoDaLicao(i)}`
-  c.innerHTML = `<h3>${esc(l.titulo)}</h3><p>${and ? `Você parou em ${and.feitos} de ${l.exercicios.length} exercícios.` : `${l.ensino.length} explicações curtas e ${l.exercicios.length} exercícios. Você vai ver: ${esc(l.aprende)}.`}</p>
-    <div class="acoes">
-      ${and ? '<button class="btn" data-acao="continuar">Continuar</button>' : ''}
-      <button class="btn ${and ? 'branco' : ''}" data-acao="comecar">${and ? 'Começar do início' : feita ? 'Fazer de novo' : 'Começar'}</button>
-      ${and ? '' : '<button class="btn branco" data-acao="exercicios">Ir direto aos exercícios</button>'}
-    </div>`
-  c.onclick = e => {
-    const acao = e.target.closest('[data-acao]')?.dataset.acao
-    if (acao === 'continuar') retomar()
-    else if (acao === 'comecar') iniciar(i)
-    else if (acao === 'exercicios') iniciar(i, null, true)
-  }
-  item.classList.add('aberta'); item.append(c)
-  c.querySelector('.btn')?.focus({ preventScroll: true })
-  c.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-}
-document.addEventListener('click', e => { if (!e.target.closest('.cartao-licao, .no')) fecharCartao() })
 
 // ---------- lição ----------
 // A lição tem duas fases: "ensino" (cartões de explicação, pode pular) e "exercicios".
@@ -645,9 +1093,9 @@ function irParaExercicios() {
   proximo()
 }
 
-// só Python roda no servidor; TypeScript, React, SQL, GraphQL e YAML aparecem como trecho de leitura
+// só Python roda no servidor; Java, TypeScript, React, SQL, Django e YAML aparecem como trecho de leitura
 const roda = c => !c.linguagem || c.linguagem === 'python'
-const NOME_LING = { ts: 'TypeScript', tsx: 'React (TSX)', js: 'JavaScript', jsx: 'React (JSX)', sql: 'SQL', graphql: 'GraphQL', yaml: 'YAML', bash: 'Terminal', json: 'JSON', css: 'CSS', html: 'HTML', python: 'Python', texto: 'Texto' }
+const NOME_LING = { ts: 'TypeScript', tsx: 'React (TSX)', js: 'JavaScript', jsx: 'React (JSX)', sql: 'SQL', graphql: 'GraphQL', yaml: 'YAML', bash: 'Terminal', json: 'JSON', css: 'CSS', html: 'HTML', python: 'Python', texto: 'Texto', java: 'Java', xml: 'XML', properties: 'Properties', django: 'Django (Python)', http: 'HTTP', kotlin: 'Kotlin' }
 const htmlTrecho = c => `<div class="rotulo">${esc(NOME_LING[c.linguagem] || c.linguagem)} · para ler</div><pre class="cod">${realcar(c.codigo)}</pre>`
 
 // exemplo do ensino: dá para editar e rodar quantas vezes quiser
@@ -741,7 +1189,7 @@ function htmlTeoria(l) {
 function htmlEscolha(it) {
   return `<h2>${it.pergunta}</h2>
   ${it.codigo ? `<pre class="cod">${realcar(it.codigo)}</pre>` : ''}
-  <div class="opcoes">${L.ordem.map((k, n) => `<button class="opcao" data-k="${k}"><span class="num">${n + 1}</span>${it.opcoesCodigo ? `<code>${esc(it.opcoes[k])}</code>` : esc(it.opcoes[k])}</button>`).join('')}</div>`
+  <div class="opcoes">${L.ordem.map((k, n) => `<button class="opcao" data-k="${k}"><span class="num">${n + 1}</span><span class="op-txt">${it.opcoesCodigo ? `<code>${esc(it.opcoes[k])}</code>` : escOpcao(it.opcoes[k])}</span></button>`).join('')}</div>`
 }
 
 function htmlCompletar(it) {
@@ -1027,7 +1475,7 @@ function verificar() {
   let certo, correta
   if (it.tipo === 'escolha') {
     certo = L.resp === it.certa
-    correta = it.opcoesCodigo ? `<code>${esc(it.opcoes[it.certa])}</code>` : esc(it.opcoes[it.certa])
+    correta = it.opcoesCodigo ? `<code>${esc(it.opcoes[it.certa])}</code>` : escOpcao(it.opcoes[it.certa])
     $$('.opcao').forEach(b => {
       const k = +b.dataset.k
       if (k === it.certa) b.classList.add('ok')
@@ -1266,10 +1714,15 @@ async function concluir() {
   const jaFeita = !!prog.feitas[l.id]
   const xp = l.revisao || jaFeita ? 5 : (l.final ? 30 : 10) + (L.erros === 0 ? 5 : 0)
   const estrelas = estrelasPor(L.erros)
+  const metaAntes = xpDeHoje() >= metaDiaria(), seqAntes = sequencia()
   ganharXP(xp); marcarDia()
+  HAB.recorde = Math.max(HAB.recorde || 0, HAB.sequencia || 0)
+  const bateuMeta = !metaAntes && xpDeHoje() >= metaDiaria(), novoDia = sequencia() > seqAntes
+  const ganhouProtetor = HAB.ganhouProtetor; delete HAB.ganhouProtetor
   if (!l.revisao) { prog.estrelas = prog.estrelas || {}; prog.estrelas[l.id] = Math.max(prog.estrelas[l.id] || 0, estrelas) }
   if (!l.revisao) { prog.feitas[l.id] = true; prog.emAndamento = null; limparRascunhos(l) }
-  salvarProgresso()
+  salvarProgresso(); salvarHabito()
+  navigator.clearAppBadge?.().catch(() => {})
   let arquivo = null
   if (L.codigoFinal) {
     try {
@@ -1298,10 +1751,15 @@ async function concluir() {
       <div class="cartao c-acerto"><small>De primeira</small><b>🎯 ${primeira}%</b></div>
       <div class="cartao c-tempo"><small>Tempo</small><b>⏱ ${tempo}</b></div>
     </div>
-    <p class="continuar-info" style="text-align:center">🎯 Meta do dia: ${Math.min(xpDeHoje(), META_DIARIA)}/${META_DIARIA} XP · 🔥 ${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}${L.dicas ? ` · 💡 ${L.dicas} ${L.dicas === 1 ? 'dica' : 'dicas'}` : ''}</p>
+    ${novoDia || bateuMeta || ganhouProtetor ? `<div class="conquistas">
+      ${novoDia ? `<div class="conquista fogo-c">${ICONE.fogo}<span><b>${sequencia()} ${sequencia() === 1 ? 'dia' : 'dias'} de ofensiva</b><small>${sequencia() === 1 ? 'O primeiro dia é o mais difícil. Volte amanhã.' : 'Mais um dia na conta. Volte amanhã.'}</small></span></div>` : ''}
+      ${bateuMeta ? `<div class="conquista meta-c">${ICONE.alvo}<span><b>Meta do dia batida</b><small>${metaDiaria()} XP hoje. O resto é bônus.</small></span></div>` : ''}
+      ${ganhouProtetor ? `<div class="conquista prot-c">${ICONE.escudo}<span><b>Você ganhou um protetor</b><small>Ele cobre um dia sem estudo, sem perder a ofensiva.</small></span></div>` : ''}
+    </div>` : ''}
+    <p class="continuar-info" style="text-align:center">Meta do dia: ${Math.min(xpDeHoje(), metaDiaria())}/${metaDiaria()} XP · ${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}${L.dicas ? ` · ${L.dicas} ${L.dicas === 1 ? 'dica usada' : 'dicas usadas'}` : ''}</p>
     ${revisao ? '' : htmlResumo(l)}
     ${l.final ? htmlJogar(arquivo) : ''}
-    ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no início.' : 'O painel da vaga no início foi atualizado.'}</p>` : ''}
+    ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no mapa da trilha.' : 'Suas competências no mapa da trilha foram atualizadas.'}</p>` : ''}
     <div class="resultado-acoes">
       ${seguinte >= 0 ? `<button class="btn largo" id="seguinte">Próxima: ${esc(LISTA[seguinte].titulo)} →</button>` : ''}
       <button class="btn ${seguinte >= 0 ? 'branco' : ''} largo" id="cont">Voltar ao início</button>
@@ -1363,7 +1821,7 @@ function renderFim() {
     </div>
     <button class="btn largo" id="voltar">Voltar ao início</button>
   </main>`
-  ligarSom()
+  ligarCasca()
   $('#voltar').onclick = renderHome
   const bx = $('#baixar'); if (bx) bx.onclick = baixarJogo
 }
@@ -1396,20 +1854,43 @@ document.addEventListener('keydown', e => {
 
 // ---------- início ----------
 async function iniciarApp() {
+  aplicarTema()
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {})
+  try { INDICE = await (await fetch('/cursos/indice.json', { cache: 'no-cache' })).json() } catch {}
   let ultima = 'python'
   try { ultima = localStorage.getItem('jokenpy-trilha') || 'python' } catch {}
-  const t = TRILHAS.find(x => x.id === ultima)
-  if (t?.privada) {
-    let senha = null
-    try { senha = localStorage.getItem(`jokenpy-senha-${t.id}`) } catch {}
-    if (senha) { try { await carregarTrilha(t, senha) } catch {} }
-  }
-  if (t && t.id !== 'python' && TRILHAS_CARREGADAS[t.id]) abrirTrilha(t.id)
-  else renderHome()
+  const t = trilhaDe(ultima)
+  try {
+    if (t?.privada) {
+      let senha = null
+      try { senha = localStorage.getItem(`jokenpy-senha-${t.id}`) } catch {}
+      if (senha) await carregarTrilha(t, senha)
+    } else if (t && t.id !== 'python' && disponivel(t)) await carregarPublica(t)
+  } catch {}
+  if (t && t.id !== 'python' && TRILHAS_CARREGADAS[t.id]) ativarTrilha(t.id)
+  const salvo = aplicarProtetor()
+  const ir = new URLSearchParams(location.search).get('ir')
+  if (ir) history.replaceState(null, '', '/')
+  renderHome()
+  if (salvo) toast(`🛡️ Seu protetor cobriu ${salvo === 1 ? 'o dia de ontem' : `${salvo} dias`}. A ofensiva continua!`)
+  if (ir === 'continuar') { const p = proximaLicao(); if (p) p.andamento ? retomar() : iniciar(p.i) }
+  else if (ir === 'revisao') iniciarRevisao()
+  navigator.clearAppBadge?.().catch(() => {})
   try {
     const d = await (await fetch('/ia/status')).json()
     IA_ATIVA = !!d.ativa; marcarServidor(true)
   } catch { marcarServidor(false) }
+  await carregarAvisos()
+  avisarEstado()
   if (await sincronizar() && !L) renderHome()
 }
+// voltou ao app num dia novo: atualiza a tela (ofensiva, meta, protetor)
+let diaAberto = dia(0)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || diaAberto === dia(0)) return
+  diaAberto = dia(0)
+  const salvo = aplicarProtetor()
+  if (!L && !$('.modal-fundo')) renderHome()
+  if (salvo) toast('🛡️ Seu protetor cobriu o dia de ontem. A ofensiva continua!')
+})
 iniciarApp()

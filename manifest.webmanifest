@@ -1,0 +1,24 @@
+{
+  "name": "Jokenpy · estude programação todo dia",
+  "short_name": "Jokenpy",
+  "description": "Trilhas curtas de Python, Java + Spring Boot, React, Django e SQL, com exercícios corrigidos na hora, ofensiva e lembretes.",
+  "id": "/",
+  "start_url": "/?origem=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "background_color": "#FFFFFF",
+  "theme_color": "#5B5BF0",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "/icones/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icones/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icones/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Continuar de onde parei", "short_name": "Continuar", "url": "/?ir=continuar", "icons": [{ "src": "/icones/icone-192.png", "sizes": "192x192" }] },
+    { "name": "Revisão de 2 minutos", "short_name": "Revisar", "url": "/?ir=revisao", "icons": [{ "src": "/icones/icone-192.png", "sizes": "192x192" }] }
+  ]
+}

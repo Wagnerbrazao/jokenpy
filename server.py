@@ -17,7 +17,9 @@ import urllib.request
 from pathlib import Path
 
 from fastapi import Body, FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import Request
+from starlette.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 PASTA = Path(__file__).parent
@@ -77,6 +79,75 @@ def licoes():
 @app.get("/app.js")
 def app_js():
     return FileResponse(PASTA / "app.js", media_type="text/javascript", headers={"Cache-Control": "no-cache"})
+
+
+# ---------- app instalável (PWA): manifesto, service worker e ícones ----------
+@app.get("/manifest.webmanifest")
+def manifesto():
+    return FileResponse(PASTA / "manifest.webmanifest", media_type="application/manifest+json", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/sw.js")
+def service_worker():
+    # sem cache: o navegador precisa ver a versão nova do service worker logo depois de uma atualização
+    return FileResponse(PASTA / "sw.js", media_type="text/javascript", headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"})
+
+
+@app.get("/icones/{nome}")
+def icone(nome: str):
+    if not re.fullmatch(r"[a-z0-9-]{1,40}\.(png|svg)", nome) or not (PASTA / "icones" / nome).is_file():
+        raise HTTPException(404, "Ícone não encontrado")
+    tipo = "image/svg+xml" if nome.endswith(".svg") else "image/png"
+    return FileResponse(PASTA / "icones" / nome, media_type=tipo, headers={"Cache-Control": "public, max-age=604800"})
+
+
+# ---------- trilhas públicas (geradas de conteudo/<id>/ por ferramentas/gerar_cursos.py) ----------
+@app.get("/cursos/indice.json")
+def indice_cursos():
+    arquivo = PASTA / "cursos" / "indice.json"
+    dados = json.loads(arquivo.read_text(encoding="utf-8")) if arquivo.is_file() else {}
+    # só anuncia as trilhas cujo arquivo existe neste servidor
+    dados = {k: v for k, v in dados.items() if (PASTA / "cursos" / f"{k}.js").is_file()}
+    return JSONResponse(dados, headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/cursos/{nome}.js")
+def curso(nome: str):
+    if not re.fullmatch(r"[a-z0-9-]{1,40}", nome) or not (PASTA / "cursos" / f"{nome}.js").is_file():
+        raise HTTPException(404, "Trilha não encontrada")
+    return FileResponse(PASTA / "cursos" / f"{nome}.js", media_type="text/javascript", headers={"Cache-Control": "no-cache"})
+
+
+# ---------- lembretes: repassa para o serviço de avisos (avisos/), que é quem tem internet ----------
+# Este container não tem saída para a internet (ele roda código de quem usa o curso); o serviço de avisos
+# não roda código de ninguém e só fala com os servidores de push dos navegadores.
+AVISOS_URL = os.environ.get("AVISOS_URL", "").rstrip("/")
+
+
+@app.api_route("/avisos/{acao}", methods=["GET", "POST"])
+async def avisos(acao: str, request: Request, x_jokenpy: str | None = Header(default=None)):
+    if acao not in {"chave", "inscrever", "estado", "cancelar", "testar"}:
+        raise HTTPException(404, "Ação desconhecida")
+    if not AVISOS_URL:
+        raise HTTPException(503, "Lembretes desligados neste servidor")
+    corpo = None
+    if request.method == "POST":
+        checar_origem(x_jokenpy)
+        corpo = await request.body()
+        if len(corpo) > 8000:
+            raise HTTPException(413, "Pedido grande demais")
+    pedido = urllib.request.Request(f"{AVISOS_URL}/{acao}", data=corpo, method=request.method,
+                                    headers={"Content-Type": "application/json"})
+
+    def repassar():   # urllib bloqueia: roda fora do laço de eventos
+        try:
+            with urllib.request.urlopen(pedido, timeout=10) as r:
+                return Response(r.read(), status_code=r.status, media_type="application/json")
+        except urllib.error.HTTPError as e:
+            return Response(e.read(), status_code=e.code, media_type="application/json")
+        except (urllib.error.URLError, TimeoutError):
+            raise HTTPException(503, "Serviço de lembretes fora do ar")
+    return await run_in_threadpool(repassar)
 
 
 # ---------- trilhas extras (ex.: trilhas/entrevista.js) ----------
