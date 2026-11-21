@@ -339,6 +339,8 @@ const ICONE = {
   revisar: svg('<path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M5.5 10A8 8 0 0 1 19 7.5M18.5 14A8 8 0 0 1 5 16.5"/>'),
   baixar: svg('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),
   celular: svg('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
+  lampada: svg('<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.2 2.3h5c0-.9.5-1.7 1.2-2.3A6 6 0 0 0 12 3Z"/>'),
+  livro: svg('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>'),
   sol: svg('<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>'),
   lua: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/>'),
   alvo: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>'),
@@ -1018,7 +1020,7 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LISTA[i]) {
           <div class="licao-nome"><small>${licao.revisao ? 'Revisão' : `${CURSO.rotulo} ${i + 1}`}</small><b>${esc(licao.titulo)}</b><span class="combo" id="combo" hidden title="Acertos seguidos"></span><span class="contador" id="contador"></span></div>
           <div class="barra" role="progressbar" aria-label="Progresso da lição"><div id="barra"></div></div>
         </div>
-        <button class="topo-btn" id="teoria" title="Resumo e explicações desta lição">📖 <span>Resumo</span></button>
+        <button class="topo-btn" id="teoria" title="Resumo e explicações desta lição" aria-label="Resumo">${ICONE.livro}</button>
       </div>
     </header>
     <section class="corpo" id="corpo"></section>
@@ -1078,6 +1080,13 @@ function salvarAndamento() {
 
 const casosDe = it => it.casos || [{ entrada: it.entrada || '', espera: it.espera, proibido: it.proibido }]
 function proximo() {
+  // o exercício atual sai para a esquerda (rápido) antes de o próximo entrar pela direita
+  const atual = $('.corpo-in')
+  if (atual && !MENOS_MOVIMENTO && !atual.classList.contains('sair')) {
+    const esta = L; atual.classList.add('sair')
+    setTimeout(() => { if (L === esta) proximo() }, 140)
+    return
+  }
   if (L.fase === 'gancho') return renderGancho()
   if (L.fase === 'ensino') return renderEnsino()
   L.fila.length ? renderItem() : concluir()
@@ -1209,8 +1218,7 @@ function renderItem() {
   const TIPOS = { escolha: 'Escolha a resposta', completar: 'Complete o código', montar: 'Monte a linha', codigo: 'Escreva o código', entrevista: 'Pergunta de entrevista' }
   $('#contador').textContent = `${L.feitos}/${L.total}`
   const corpo = $('#corpo')
-  corpo.innerHTML = `<div class="corpo-in entrar"><span class="kicker">${TIPOS[it.tipo]}</span>${html}
-    <div class="dicas" id="dicas" hidden></div></div>`
+  corpo.innerHTML = `<div class="corpo-in entrar"><span class="kicker">${TIPOS[it.tipo]}</span>${html}</div>`
   corpo.scrollTop = 0
   rodapeResponder(it)
   ligarItem(it)
@@ -1219,29 +1227,79 @@ function renderItem() {
 
 const htmlResumo = l => l.resumo?.length ? `<div class="resumo"><h3>Para guardar</h3><ul>${l.resumo.map(r => `<li>${r}</li>`).join('')}</ul></div>` : ''
 
-function rotularDica(vistas, total) {
-  const txt = vistas >= total ? ' Dicas' : ` Dica (${vistas}/${total})`
-  const b = $('#btn-dica'); if (b) b.textContent = '💡' + txt
-  const q = $('#btn-dica-q'); if (q) q.innerHTML = `💡<span class="rotulo-btn">${txt}</span>`
+// ---------- folha: painel que sobe de baixo (dicas e resumo) ----------
+// Entra desacelerando (chega rápido e assenta) e sai acelerando; arrastar para baixo, tocar fora ou Esc fecha.
+let folhaAtual = null
+function abrirFolha({ rotulo, html, classe = '', aoAbrir }) {
+  if (folhaAtual) fecharFolha(true)
+  const volta = document.activeElement
+  const fundo = document.createElement('div'); fundo.className = 'folha-fundo'
+  fundo.innerHTML = `<div class="folha ${classe}" role="dialog" aria-modal="true" aria-label="${esc(rotulo)}">
+    <div class="folha-alca" aria-hidden="true"></div><div class="folha-corpo">${html}</div></div>`
+  document.body.append(fundo)
+  requestAnimationFrame(() => requestAnimationFrame(() => fundo.classList.add('visivel')))
+  const folha = fundo.querySelector('.folha'), corpo = fundo.querySelector('.folha-corpo')
+  const teclas = e => { if (e.key === 'Escape') { e.preventDefault(); fecharFolha() } }
+  document.addEventListener('keydown', teclas)
+  fundo.addEventListener('click', e => { if (e.target === fundo || e.target.closest('[data-fechar]')) fecharFolha() })
+  let y0 = null, dy = 0
+  folha.addEventListener('touchstart', e => { if (corpo.scrollTop > 0) return; y0 = e.touches[0].clientY; dy = 0; folha.classList.add('arrastando') }, { passive: true })
+  folha.addEventListener('touchmove', e => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); folha.style.transform = `translateY(${dy}px)` }, { passive: true })
+  folha.addEventListener('touchend', () => {
+    if (y0 == null) return
+    folha.classList.remove('arrastando'); folha.style.transform = ''; y0 = null
+    if (dy > 90) fecharFolha()
+  })
+  folhaAtual = { fundo, volta, teclas }
+  aoAbrir?.(corpo)
+  corpo.querySelector('[data-fechar]')?.focus({ preventScroll: true })
+  return corpo
 }
-// dicas do exercício: cada clique revela a próxima, da mais geral à mais específica
+function fecharFolha(imediato = false) {
+  const f = folhaAtual; if (!f) return
+  folhaAtual = null
+  document.removeEventListener('keydown', f.teclas)
+  f.fundo.classList.remove('visivel'); f.fundo.classList.add('saindo')
+  setTimeout(() => f.fundo.remove(), imediato || MENOS_MOVIMENTO ? 0 : 220)
+  f.volta?.focus?.({ preventScroll: true })
+}
+
+// ---------- dicas em escada ----------
+// Cada nível só aparece se você pedir: primeiro relembra o conceito, depois aponta o lugar, por fim quase entrega.
+const nivelDica = (k, total) => k === 0 ? 'Lembrete' : k === total - 1 ? 'Quase a resposta' : 'Pista'
+function rotularDica(vistas, total) {
+  const pontos = `<span class="pontos-dica" aria-hidden="true">${Array.from({ length: total }, (_, k) => `<i class="${k < vistas ? 'on' : ''}"></i>`).join('')}</span>`
+  for (const id of ['#btn-dica', '#btn-dica-q']) { const b = $(id); if (b) b.innerHTML = `${ICONE.lampada}<span class="rotulo-btn">Dica</span>${total ? pontos : ''}` }
+}
 function mostrarDica(it) {
   const dicas = it.dicas || []
   if (!dicas.length) { if (IA_ATIVA && it.tipo === 'codigo') pedirDica(it); else abrirTeoria(); return }
-  if (L.dicasVistas < dicas.length) { L.dicasVistas++; L.dicas++; salvarAndamento() }
-  const box = $('#dicas'); box.hidden = false
-  const n = L.dicasVistas, acabou = n >= dicas.length
-  box.innerHTML = `<ol>${dicas.slice(0, n).map((d, k) => `<li class="${k === n - 1 ? 'nova' : ''}"><small>Dica ${k + 1} de ${dicas.length}</small>${d}</li>`).join('')}</ol>
-    <div class="dicas-acoes">
-      ${acabou ? '' : '<button class="btn branco mini" id="mais-dica">Mais uma dica</button>'}
-      ${acabou ? '<button class="btn branco mini" id="dica-resumo">📖 Rever a explicação</button>' : ''}
-      ${IA_ATIVA && it.tipo === 'codigo' ? '<button class="btn branco mini" id="dica-ia">Perguntar à IA sobre o meu código</button>' : ''}
+  if (L.dicasVistas < 1) { L.dicasVistas = 1; L.dicas++; salvarAndamento() }
+  rotularDica(L.dicasVistas, dicas.length)
+  abrirFolha({ rotulo: 'Dicas', classe: 'folha-dicas', html: htmlDicas(it), aoAbrir: corpo => ligarDicas(it, corpo) })
+}
+function htmlDicas(it) {
+  const d = it.dicas, n = L.dicasVistas, acabou = n >= d.length
+  return `<div class="dicas-cab"><span class="dicas-ico">${ICONE.lampada}</span>
+      <div class="dicas-tit"><b>${nivelDica(n - 1, d.length)}</b><small>Dica ${n} de ${d.length}</small></div>
+      <div class="degraus" aria-hidden="true">${d.map((_, k) => `<i class="${k < n ? 'on' : ''}"></i>`).join('')}</div></div>
+    <ol class="dicas-lista">${d.slice(0, n).map((x, k) => `<li class="${k === n - 1 ? 'atual' : 'vista'}">${k === n - 1 ? '' : `<small>${nivelDica(k, d.length)}</small>`}<div>${x}</div></li>`).reverse().join('')}</ol>
+    <div class="folha-acoes">
+      ${acabou ? '<button class="btn branco" id="dica-resumo">Rever a explicação</button>'
+        : `<button class="btn branco" id="mais-dica">${n === d.length - 1 ? 'Mostrar a última pista' : 'Preciso de outra pista'}</button>`}
+      ${IA_ATIVA && it.tipo === 'codigo' ? '<button class="btn branco" id="dica-ia">Perguntar à IA sobre o meu código</button>' : ''}
+      <button class="btn" data-fechar>Voltar ao exercício</button>
     </div>`
-  const md = $('#mais-dica'); if (md) md.onclick = () => mostrarDica(it)
-  const dr = $('#dica-resumo'); if (dr) dr.onclick = abrirTeoria
-  const di = $('#dica-ia'); if (di) di.onclick = () => pedirDica(it)
-  rotularDica(n, dicas.length)
-  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+}
+function ligarDicas(it, corpo) {
+  const md = corpo.querySelector('#mais-dica')
+  if (md) md.onclick = () => {
+    L.dicasVistas++; L.dicas++; salvarAndamento()
+    rotularDica(L.dicasVistas, it.dicas.length)
+    corpo.innerHTML = htmlDicas(it); ligarDicas(it, corpo); corpo.scrollTop = 0
+  }
+  const dr = corpo.querySelector('#dica-resumo'); if (dr) dr.onclick = () => { fecharFolha(true); abrirTeoria() }
+  const di = corpo.querySelector('#dica-ia'); if (di) di.onclick = () => { fecharFolha(); pedirDica(it) }
 }
 
 // a teoria inteira da lição (todos os cartões do ensino), para consultar durante os exercícios
@@ -1299,7 +1357,7 @@ function htmlCodigo(it) {
     <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Editor de código">${esc(codigo)}</textarea>
   </div>
   <div class="ferramentas">
-    <button class="ferr" id="btn-dica">💡 Dica</button>
+    <button class="ferr btn-dica" id="btn-dica">${ICONE.lampada}<span class="rotulo-btn">Dica</span></button>
     ${IA_ATIVA ? '<button class="ferr" id="btn-completar" title="Ou aperte Ctrl+Espaço no editor">✨ Completar</button>' : ''}
     <button class="ferr" id="btn-previa">👀 Ver resposta</button>
   </div>
@@ -1395,18 +1453,9 @@ function ligarEditor(ta, it = null) {
 
 // teoria da lição numa janela, a qualquer momento
 function abrirTeoria() {
-  if (!L || $('.modal-fundo')) return
-  const volta = document.activeElement
-  const m = document.createElement('div'); m.className = 'modal-fundo'
-  m.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-label="Teoria da lição">
-    <button class="modal-fechar" aria-label="Fechar">✕</button>${htmlTeoria(L.licao.revisao ? licaoDe(L.fila[0]) : L.licao)}
-    <button class="btn largo" id="modal-ok">Entendi</button></div>`
-  document.body.append(m)
-  const fechar = () => { m.remove(); document.removeEventListener('keydown', teclas); volta?.focus?.() }
-  const teclas = e => { if (e.key === 'Escape') { e.preventDefault(); fechar() } }
-  m.onclick = e => { if (e.target === m || e.target.closest('.modal-fechar, #modal-ok')) fechar() }
-  document.addEventListener('keydown', teclas)
-  $('#modal-ok').focus()
+  if (!L || folhaAtual) return
+  abrirFolha({ rotulo: 'Resumo da lição', classe: 'alta', html: `${htmlTeoria(L.licao.revisao ? licaoDe(L.fila[0]) : L.licao)}
+    <div class="folha-acoes"><button class="btn" data-fechar>Voltar</button></div>` })
 }
 
 // ---------- rodapé: verificar, feedback ----------
@@ -1482,28 +1531,28 @@ function mostrarModelo(it) {
 function rodapeResponder(it) {
   const r = $('#rodape'); r.className = 'rodape'; L.estado = 'responder'
   if (it.tipo === 'entrevista') {
-    r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="pular" title="Pular" aria-label="Pular">⏭<span class="rotulo-btn"> Pular</span></button><button class="btn branco" id="btn-dica-q" title="Dica" aria-label="Dica">💡<span class="rotulo-btn"> Dica</span></button></div>
+    r.innerHTML = rodapeIn(`<div class="rodape-esq"><button class="btn branco" id="pular">Pular</button><button class="btn branco btn-dica" id="btn-dica-q" aria-label="Dica">${ICONE.lampada}<span class="rotulo-btn">Dica</span></button></div>
       <div class="rodape-dir"><button class="btn" id="principal">Ver resposta</button></div>`, 'uma-linha')
     $('#principal').onclick = () => mostrarModelo(it)
     $('#pular').onclick = pularExercicio
     $('#btn-dica-q').onclick = () => mostrarDica(it)
     return
   }
-  const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição" aria-label="Pular">⏭<span class="rotulo-btn"> Pular</span></button>'
+  const pular = '<button class="btn branco" id="pular" title="Deixar para depois: o exercício volta no fim da lição">Pular</button>'
   if (it.tipo === 'codigo') r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="executar" title="Executar" aria-label="Executar">▶<span class="rotulo-btn"> Executar</span></button></div>
     <div class="rodape-dir"><button class="btn" id="principal">Verificar</button></div>`, 'uma-linha')
-  else r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco" id="btn-dica-q" title="Uma pista de cada vez, sem entregar a resposta" aria-label="Dica">💡<span class="rotulo-btn"> Dica</span></button></div>
+  else r.innerHTML = rodapeIn(`<div class="rodape-esq">${pular}<button class="btn branco btn-dica" id="btn-dica-q" title="Uma pista de cada vez, sem entregar a resposta" aria-label="Dica">${ICONE.lampada}<span class="rotulo-btn">Dica</span></button></div>
     <div class="rodape-dir"><button class="btn" id="principal" disabled>Verificar</button></div>`, 'uma-linha')
   $('#principal').onclick = verificar
   $('#pular').onclick = pularExercicio
   const ex = $('#executar'); if (ex) ex.onclick = () => executarLivre(it)
   const dq = $('#btn-dica-q'); if (dq) dq.onclick = () => (it.dicas?.length || !IA_ATIVA) ? mostrarDica(it) : dicaQuestao(it)
-  const n = it.dicas?.length; if (n && L.dicasVistas) rotularDica(L.dicasVistas, n)
+  const n = it.dicas?.length; if (n) rotularDica(L.dicasVistas, n)
 }
 
 // pular não custa vida: o exercício só vai para o fim da fila
 function pularExercicio() {
-  if (L.fila.length === 1) { toast('É o último exercício. Tente, ou abra uma 💡 dica.'); return }
+  if (L.fila.length === 1) { toast('É o último exercício. Tente, ou peça uma dica.'); return }
   L.fila.push(L.fila.shift())
   toast('Exercício pulado. Ele volta no fim da lição.')
   proximo()
@@ -1580,7 +1629,7 @@ function verificar() {
     somErro(); vibrar([18, 50, 18]); L.erros++; L.combo = 0; atualizarBarra()
     rodapeFeedback(false, 'Não foi dessa vez', `A resposta é ${correta}.` + (it.explica ? `<br>${it.explica}` : '') + '<br><small>Ele volta no fim da lição para você tentar de novo.</small>',
       (IA_ATIVA ? '<button class="btn branco" id="explicar">💬 Explicar</button>' : '') +
-      '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">↻ Refazer</button>')
+      '<button class="btn branco" id="refazer" title="Fazer este exercício de novo agora">Refazer</button>')
     const ex = $('#explicar'); if (ex) ex.onclick = () => explicarErro(it)
     $('#refazer').onclick = () => renderItem()   // mesmo exercício, peças/opções embaralhadas de novo
     $('#principal').onclick = () => { L.fila.push(L.fila.shift()); proximo() }
@@ -1658,9 +1707,9 @@ async function verificarCodigo(it) {
     $('#principal').onclick = () => { L.fila.shift(); proximo() }
   } else {
     somErro(); L.falhas++
-    const ajuda = L.falhas === 1 ? '<br>Corrija e verifique de novo: no código você pode tentar quantas vezes quiser.' : '<br>Travou? Abra uma 💡 dica ou use 👀 Ver resposta.'
+    const ajuda = L.falhas === 1 ? '<br>Corrija e verifique de novo: no código você pode tentar quantas vezes quiser.' : '<br>Travou? Peça uma dica ou use Ver resposta.'
     const explicado = entenderErro(falha)
-    rodapeFeedback(false, 'Ainda não passou', (explicado ? `${explicado}<br><small>O erro original está na Saída, acima.</small>` : esc(falha)) + ajuda, '<button class="btn branco" id="dica-falha">💡 Dica</button>', 'Tentar de novo')
+    rodapeFeedback(false, 'Ainda não passou', (explicado ? `${explicado}<br><small>O erro original está na Saída, acima.</small>` : esc(falha)) + ajuda, `<button class="btn branco" id="dica-falha">${ICONE.lampada} Dica</button>`, 'Tentar de novo')
     $('#saida').scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     $('#principal').onclick = () => { rodapeResponder(it); $('#editor').focus() }
     $('#dica-falha').onclick = () => { rodapeResponder(it); mostrarDica(it) }
@@ -1915,7 +1964,7 @@ function confete() {
 
 // ---------- teclado ----------
 document.addEventListener('keydown', e => {
-  if ($('.modal-fundo')) return
+  if ($('.modal-fundo') || folhaAtual) return
   if (!L) { if (e.key === 'Escape') fecharCartao(); return }
   const t = e.target, btn = $('#principal')
   if (e.key === 'Enter') {
