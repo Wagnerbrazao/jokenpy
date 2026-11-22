@@ -22,9 +22,6 @@ const { data } = useQuery({
     { id: 'Q-206WRzOHQ', titulo: 'React Query: Talvez você não precise de estados globais no React (HTTP State)', canal: 'Rocketseat',
       duracao: '14:02', idioma: 'pt',
       nota: 'A distinção entre estado do servidor e estado da UI, e como o cache do React Query substitui o estado global para dados da API.' },
-    { id: 'mPaCnwpFvZY', titulo: 'TanStack Query - How to become a React Query God', canal: 'Austin Davis',
-      duracao: '28:56', idioma: 'en',
-      nota: 'Tour pelo TanStack Query atual; preste atenção em como a queryKey identifica o cache (o bug do filtro ignorado) e em <code>useMutation</code> com <code>invalidateQueries</code>.' },
   ],
   resumo: [
     `Toda tela com dados tem <b>quatro estados</b>: carregando, erro, vazio e com dados; trate todos`,

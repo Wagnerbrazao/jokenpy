@@ -23,9 +23,6 @@ MODULOS.push({
     { id: 'cEXt8hDyKQw', titulo: 'Introdução a testes unitários com Python e Django', canal: 'pythonando',
       duracao: '12:25', idioma: 'pt',
       nota: 'Note que o <code>TestCase</code> cria um banco de teste separado e o descarta no fim, o motivo dos dados que somem no gancho.' },
-    { id: 'sRluxnmZ-H8', titulo: 'Testing APIs with Django REST Framework', canal: 'BugBytes',
-      duracao: '19:12', idioma: 'en',
-      nota: 'Acompanhe o <code>APIClient</code> fazendo requisições, autenticando e conferindo status e JSON da resposta.' },
   ],
   resumo: [
     '<code>django.test.TestCase</code> cria um banco de teste e desfaz cada teste com uma transação',

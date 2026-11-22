@@ -1317,7 +1317,7 @@ function ligarVideos(raiz = document) {
 function abrirVideos(l) {
   const vs = videosDe(l); if (!vs.length) return
   abrirFolha({ rotulo: 'Vídeos da lição', classe: 'alta', html: `<span class="kicker">Vídeos · ${esc(l.titulo)}</span>
-    <p class="nota">Escolhidos para esta lição. Assista antes ou depois dos exercícios.</p>
+    <p class="nota">Escolhido para esta lição. Assista antes ou depois dos exercícios.</p>
     <div class="videos">${vs.map(v => htmlVideo(v)).join('')}</div>
     <div class="folha-acoes"><button class="btn" data-fechar>Fechar</button></div>`, aoAbrir: corpo => ligarVideos(corpo) })
 }
@@ -1940,8 +1940,6 @@ async function concluir() {
     </div>` : ''}
     <p class="continuar-info" style="text-align:center">Meta do dia: ${Math.min(xpDeHoje(), metaDiaria())}/${metaDiaria()} XP · ${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}${L.dicas ? ` · ${L.dicas} ${L.dicas === 1 ? 'dica usada' : 'dicas usadas'}` : ''}</p>
     ${revisao ? '' : htmlResumo(l)}
-    ${!revisao && videosDe(l).some(v => !prog.videos?.[v.id]) ? `<section class="bloco-video fim">
-      <span class="kicker">Para fixar, assista</span>${htmlVideo(videosDe(l).find(v => !prog.videos?.[v.id]))}</section>` : ''}
     ${l.final ? htmlJogar(arquivo) : ''}
     ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no mapa da trilha.' : 'Suas competências no mapa da trilha foram atualizadas.'}</p>` : ''}
     <div class="resultado-acoes">

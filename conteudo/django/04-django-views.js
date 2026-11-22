@@ -17,9 +17,6 @@ MODULOS.push({
     revelacao: 'O Django testa as rotas <b>na ordem</b> e para na primeira que casa; <code>novo</code> é uma <code>str</code> válida. Nesta lição você vai ver como URL, view e template se ligam e como ordenar e nomear rotas sem surpresas.',
   },
   videos: [
-    { id: 'fGtx3MHxxIw', titulo: 'Class Based Views VS Function Based Views | Django', canal: 'pythonando',
-      duracao: '21:14', idioma: 'pt',
-      nota: 'Compare a mesma tela feita com view em função e com classe, e note como a rota em <code>urls.py</code> aponta para cada uma.' },
     { id: 'DDIP-icVpA8', titulo: 'Django - Generic & Class-Based Views! (an alternative to functions)', canal: 'BugBytes',
       duracao: '13:48', idioma: 'en',
       nota: 'Veja <code>ListView</code> e <code>DetailView</code> trocando dezenas de linhas por poucas e quais nomes de template e contexto elas esperam.' },

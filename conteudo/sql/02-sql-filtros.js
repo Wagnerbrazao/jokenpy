@@ -20,9 +20,6 @@ WHERE id NOT IN (
     { id: 'iD-FW8HrxGI', titulo: 'Como Trabalhar com Valores Nulos no SQL [IS NULL e IS NOT NULL]', canal: 'Hashtag Programação',
       duracao: '10:30', idioma: 'pt',
       nota: 'Por que <code>= NULL</code> não funciona e é preciso <code>IS NULL</code>; é a mesma lógica de "desconhecido" por trás da armadilha do NOT IN.' },
-    { id: 'OClgaVOtUQ0', titulo: 'Trabalhando com Estruturas Condicionais no SQL - CASE WHEN', canal: 'Hashtag Programação',
-      duracao: '11:05', idioma: 'pt',
-      nota: 'CASE WHEN para classificar linhas em faixas, como na seção de COALESCE e CASE.' },
   ],
   resumo: [
     '<code>AND</code> tem precedência sobre <code>OR</code>: use <b>parênteses</b> sempre que misturar',

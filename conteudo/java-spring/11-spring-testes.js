@@ -20,17 +20,6 @@ class AssistidoControllerTest {
     certa: 1,
     revelacao: '<code>@WebMvcTest</code> sobe só a camada web (controllers, advices, conversores): <code>@Service</code> fica de fora e o construtor do controller não é satisfeito. A saída é um <code>@MockitoBean AssistidoService</code>. Nesta lição você vai ver cada fatia de teste e quando usar cada uma.',
   },
-  videos: [
-    { id: 'N1UkkK4jIHM', titulo: 'Aulão: Introdução aos testes automatizados com Spring Boot', canal: 'Giuliana Bezerra',
-      duracao: '32:01', idioma: 'pt',
-      nota: 'Panorama das fatias de teste do Spring Boot; onde aparecer <code>@MockBean</code>, use <code>@MockitoBean</code> (Boot 3.4+).' },
-    { id: 'e6NeKpATWAU', titulo: 'Testes de Unidade com Spring Boot e Mockito - Ep. 05', canal: 'Giuliana Bezerra',
-      duracao: '23:51', idioma: 'pt',
-      nota: 'Foque em <code>@Mock</code> + <code>@InjectMocks</code>, <code>when(...).thenReturn(...)</code> e <code>verify</code> testando o service sem subir o Spring.' },
-    { id: 'erp-7MCK5BU', titulo: 'Spring Boot Testcontainers - Integration Testing made easy!', canal: 'Dan Vega',
-      duracao: '33:31', idioma: 'en',
-      nota: 'Veja o Postgres de verdade subindo num container para o <code>@SpringBootTest</code>, no lugar do H2.' },
-  ],
   resumo: [
     'JUnit 5 (<code>org.junit.jupiter</code>): <code>@Test</code>, <code>@BeforeEach</code>, <code>assertThrows</code>',
     'AssertJ deixa a asserção legível: <code>assertThat(x).isEqualTo(y)</code>, <code>assertThatThrownBy(...)</code>',

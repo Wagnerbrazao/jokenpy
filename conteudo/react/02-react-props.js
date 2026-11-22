@@ -23,9 +23,6 @@ MODULOS.push({
     { id: '00nfvN2UTZc', titulo: 'Simplificando o conceito de componentes e propriedades no React', canal: 'Rocketseat',
       duracao: '8:49', idioma: 'pt',
       nota: 'Props como argumentos só de leitura que o pai passa ao filho, a base do contrato entre componentes deste módulo.' },
-    { id: '919gHAelBfw', titulo: 'React 19 Tutorial - 13 - Index as Key Anti-Pattern', canal: 'Codevolution',
-      duracao: '8:25', idioma: 'en',
-      nota: 'Demonstra o estado trocando de linha quando a <code>key</code> é o índice e a lista é reordenada, exatamente o bug da seção sobre keys.' },
   ],
   resumo: [
     `Props são os <b>argumentos</b> do componente: um objeto só de leitura, passado de pai para filho`,

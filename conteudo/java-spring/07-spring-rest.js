@@ -17,12 +17,6 @@ public AtendimentoResponse criar(@RequestBody NovoAtendimento req) {
     revelacao: 'No Spring, todo método com retorno responde <b>200</b> por padrão, inclusive o POST. Para 201 com <code>Location</code>, você devolve <code>ResponseEntity.created(uri)</code>. Nesta lição você vai ver mapeamentos, parâmetros, DTOs e os status certos.',
   },
   videos: [
-    { id: 'wlYvA2b1BWI', titulo: 'Spring Boot 3 | Curso Completo 2023', canal: 'Michelli Brito',
-      duracao: '1:49:11', idioma: 'pt', inicio: 3152,
-      nota: 'Abre na criação do controller: acompanhe o DTO de entrada como <code>record</code>, o POST e os GETs, e compare o status que ela devolve com o que você viu no módulo.' },
-    { id: 'YY_hf0FOIcU', titulo: 'CURSO DE SPRING para INICIANTES | Tutorial Completo de Java Spring', canal: 'Fernanda Kipper',
-      duracao: '51:25', idioma: 'pt', inicio: 2531,
-      nota: 'Abre no mapeamento de requisições: a diferença prática entre <code>@PathVariable</code>, <code>@RequestParam</code> e <code>@RequestBody</code>.' },
     { id: 'B5Zrn1Tzyqw', titulo: 'Spring ResponseEntity -  How to customize the response in Spring Boot', canal: 'Dan Vega',
       duracao: '11:25', idioma: 'en',
       nota: 'Foque em como escolher status e cabeçalhos com <code>ResponseEntity</code>, o que separa o 200 padrão do 201 e do 404 corretos.' },

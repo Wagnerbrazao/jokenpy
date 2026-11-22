@@ -45,9 +45,6 @@ return (
     { id: '9iKNxnFJY_Q', titulo: 'Curso React: Entendendo o JSX - #03', canal: 'Matheus Battisti - Hora de Codar',
       duracao: '13:04', idioma: 'pt',
       nota: 'Mostra que o JSX vira JavaScript e como usar chaves para expressões; repare no <code>className</code> e no elemento raiz único.' },
-    { id: '7ewepbLCvHc', titulo: 'Curso React: Renderização condicional (if) - #12', canal: 'Matheus Battisti - Hora de Codar',
-      duracao: '11:56', idioma: 'pt',
-      nota: 'Ternário, <code>&amp;&amp;</code> e <code>return null</code> na prática; compare com a armadilha do <code>0 &amp;&amp; ...</code> do gancho.' },
   ],
   resumo: [
     `JSX é <b>açúcar sintático</b> para chamadas de função: vira <code>jsx('div', props)</code>, não HTML`,
@@ -236,9 +233,6 @@ MODULOS.push({
     { id: '00nfvN2UTZc', titulo: 'Simplificando o conceito de componentes e propriedades no React', canal: 'Rocketseat',
       duracao: '8:49', idioma: 'pt',
       nota: 'Props como argumentos só de leitura que o pai passa ao filho, a base do contrato entre componentes deste módulo.' },
-    { id: '919gHAelBfw', titulo: 'React 19 Tutorial - 13 - Index as Key Anti-Pattern', canal: 'Codevolution',
-      duracao: '8:25', idioma: 'en',
-      nota: 'Demonstra o estado trocando de linha quando a <code>key</code> é o índice e a lista é reordenada, exatamente o bug da seção sobre keys.' },
   ],
   resumo: [
     `Props são os <b>argumentos</b> do componente: um objeto só de leitura, passado de pai para filho`,
@@ -439,9 +433,6 @@ function registrarTres() {
     { id: 'mY9MLdifqe0', titulo: 'Explorando useState no React (conceito e importância)', canal: 'Rocketseat',
       duracao: '5:11', idioma: 'pt',
       nota: 'Por que uma variável comum não re-renderiza e o <code>useState</code> sim; base para entender o estado como retrato.' },
-    { id: '01Gj6i2wlS4', titulo: 'Curso React: State Lift - #14', canal: 'Matheus Battisti - Hora de Codar',
-      duracao: '11:15', idioma: 'pt',
-      nota: 'Levanta o estado para o pai e passa o setter por props, o mesmo padrão da última seção do módulo.' },
   ],
   resumo: [
     `<code>const [x, setX] = useState(inicial)</code>: chamar <code>setX</code> agenda uma <b>nova renderização</b>`,
@@ -637,14 +628,6 @@ MODULOS.push({
     certa: 1,
     revelacao: 'Em desenvolvimento, o StrictMode monta, desmonta e monta de novo o componente de propósito, para expor efeitos sem limpeza; em produção roda uma vez. Nesta lição você vai ver o que é um efeito de verdade, como escrever a limpeza (com <code>AbortController</code> no fetch) e quando você nem precisa de efeito.',
   },
-  videos: [
-    { id: 'ojzuilNld1s', titulo: 'APRENDA USEEFFECT - SIMPLIFICANDO OS HOOKS DO REACT', canal: 'Matheus Battisti - Hora de Codar',
-      duracao: '17:34', idioma: 'pt',
-      nota: 'Array de dependências e função de limpeza em exemplos curtos; observe quando o efeito roda de novo.' },
-    { id: 'V1f8MOQiHRw', titulo: 'You might not need useEffect() ...', canal: 'Academind',
-      duracao: '21:45', idioma: 'en',
-      nota: 'Casos em que o efeito some e vira cálculo no render ou handler de evento, o mesmo raciocínio de "você talvez não precise de um efeito".' },
-  ],
   resumo: [
     `<code>useEffect</code> roda <b>depois</b> que a tela é pintada, para <b>sincronizar</b> com algo fora do React`,
     `O array de dependências diz quando ressincronizar: <code>[]</code> só ao montar; <code>[id]</code> quando <code>id</code> muda; sem array, a cada render`,
@@ -844,9 +827,6 @@ MODULOS.push({
     { id: 'NtYO03Jq3EE', titulo: 'Como manipular dados de formulários no React JS', canal: 'Fabio Bergmann',
       duracao: '9:11', idioma: 'pt',
       nota: 'Inputs controlados com <code>value</code> + <code>onChange</code> e um estado por formulário; repare no <code>preventDefault</code> no submit.' },
-    { id: 'DA39qCGt6RE', titulo: 'A melhor forma de criar formulários no React (hook form + zod)', canal: 'Rocketseat',
-      duracao: '8:05', idioma: 'pt',
-      nota: 'Próximo passo depois do módulo: a mesma validação feita com React Hook Form e um schema Zod, parecido com DTO + class-validator no Nest.' },
   ],
   resumo: [
     `Input <b>controlado</b>: <code>value</code> vem do estado e <code>onChange</code> atualiza o estado`,
@@ -1049,14 +1029,6 @@ function Resumo() { const c = useContador()
     certa: 1,
     revelacao: 'Cada componente que chama um hook ganha o <b>seu próprio</b> estado: hook customizado compartilha lógica, não dados. Nesta lição você vai ver como extrair hooks, as regras que eles seguem e quando usar Context para compartilhar dados de verdade.',
   },
-  videos: [
-    { id: 'l6WGzSc7Lng', titulo: 'Como Estruturar Custom Hooks no React e Evitar Confusões', canal: 'Dev Junior Alves',
-      duracao: '16:43', idioma: 'pt',
-      nota: 'Como extrair lógica para um hook próprio e o que ele devolve; lembre que cada chamada tem estado próprio, como no gancho.' },
-    { id: 'OLtpJLQLOeM', titulo: 'Como usar o useContext para compartilhar dados - SIMPLIFICANDO OS HOOKS DO REACT', canal: 'Matheus Battisti - Hora de Codar',
-      duracao: '20:37', idioma: 'pt',
-      nota: 'Cria o Context, o Provider e consome com <code>useContext</code>, o mesmo fluxo do tema e usuário sem prop drilling.' },
-  ],
   resumo: [
     `Hook customizado é uma função <code>useAlgo</code> que chama outros hooks; compartilha <b>lógica</b>, não estado`,
     `Regras: chame hooks só no <b>topo</b> de componentes ou hooks, nunca dentro de if, laço ou callback`,
@@ -1274,9 +1246,6 @@ const { data } = useQuery({
     { id: 'Q-206WRzOHQ', titulo: 'React Query: Talvez você não precise de estados globais no React (HTTP State)', canal: 'Rocketseat',
       duracao: '14:02', idioma: 'pt',
       nota: 'A distinção entre estado do servidor e estado da UI, e como o cache do React Query substitui o estado global para dados da API.' },
-    { id: 'mPaCnwpFvZY', titulo: 'TanStack Query - How to become a React Query God', canal: 'Austin Davis',
-      duracao: '28:56', idioma: 'en',
-      nota: 'Tour pelo TanStack Query atual; preste atenção em como a queryKey identifica o cache (o bug do filtro ignorado) e em <code>useMutation</code> com <code>invalidateQueries</code>.' },
   ],
   resumo: [
     `Toda tela com dados tem <b>quatro estados</b>: carregando, erro, vazio e com dados; trate todos`,

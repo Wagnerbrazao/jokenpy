@@ -24,9 +24,6 @@ function registrarTres() {
     { id: 'mY9MLdifqe0', titulo: 'Explorando useState no React (conceito e importância)', canal: 'Rocketseat',
       duracao: '5:11', idioma: 'pt',
       nota: 'Por que uma variável comum não re-renderiza e o <code>useState</code> sim; base para entender o estado como retrato.' },
-    { id: '01Gj6i2wlS4', titulo: 'Curso React: State Lift - #14', canal: 'Matheus Battisti - Hora de Codar',
-      duracao: '11:15', idioma: 'pt',
-      nota: 'Levanta o estado para o pai e passa o setter por props, o mesmo padrão da última seção do módulo.' },
   ],
   resumo: [
     `<code>const [x, setX] = useState(inicial)</code>: chamar <code>setX</code> agenda uma <b>nova renderização</b>`,

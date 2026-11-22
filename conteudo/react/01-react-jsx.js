@@ -21,9 +21,6 @@ return (
     { id: '9iKNxnFJY_Q', titulo: 'Curso React: Entendendo o JSX - #03', canal: 'Matheus Battisti - Hora de Codar',
       duracao: '13:04', idioma: 'pt',
       nota: 'Mostra que o JSX vira JavaScript e como usar chaves para expressões; repare no <code>className</code> e no elemento raiz único.' },
-    { id: '7ewepbLCvHc', titulo: 'Curso React: Renderização condicional (if) - #12', canal: 'Matheus Battisti - Hora de Codar',
-      duracao: '11:56', idioma: 'pt',
-      nota: 'Ternário, <code>&amp;&amp;</code> e <code>return null</code> na prática; compare com a armadilha do <code>0 &amp;&amp; ...</code> do gancho.' },
   ],
   resumo: [
     `JSX é <b>açúcar sintático</b> para chamadas de função: vira <code>jsx('div', props)</code>, não HTML`,
