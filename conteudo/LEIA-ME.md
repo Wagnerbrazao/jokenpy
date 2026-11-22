@@ -114,3 +114,28 @@ System.out.println(a == b);`,
 ```
 
 Todo módulo também precisa de `porque`: uma frase dizendo por que aquilo importa no trabalho real.
+
+## Vídeos (`videos`): opcional, até 3 por módulo
+
+Vídeos do YouTube que reforçam o módulo. Aparecem na primeira explicação, no mapa da trilha e no resumo.
+Escolha com cuidado, porque um vídeo ruim faz a pessoa desistir:
+
+- **Português primeiro**, de canais com boa reputação; inglês só quando não houver equivalente bom em PT.
+- **Focado e curto**: de 5 a 25 minutos, sobre exatamente o assunto do módulo. Se o assunto está dentro de
+  um curso longo, use `inicio` (em segundos) para abrir no trecho certo.
+- **Atual**: para Spring, prefira Spring Boot 3+ e Java 17+ (evite `WebSecurityConfigurerAdapter`, `javax.*`).
+- **Incorporável**: confira com `python3 ferramentas/buscar_videos.py --conferir ID`. Só vale ✓.
+- Copie título, canal e duração **exatamente** como a busca mostra. Nunca invente um id.
+
+```js
+  videos: [
+    { id: 'CSsB53HCC3A', titulo: 'Aulão: Injeção de dependências - Do Java ao Spring!', canal: 'Giuliana Bezerra',
+      duracao: '19:49', idioma: 'pt', inicio: 0,
+      nota: 'Do <code>new</code> manual até o container do Spring. Repare como o construtor vira o ponto de injeção.' },
+  ],
+```
+
+`nota`: 1 frase dizendo o que observar no vídeo e como ele se liga ao módulo.
+
+Para buscar: `python3 ferramentas/buscar_videos.py "spring boot jpa relacionamentos"` (mostra id, duração,
+canal, visualizações, data e ✓/✗ de incorporação).

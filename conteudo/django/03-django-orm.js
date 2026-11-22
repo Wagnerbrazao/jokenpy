@@ -15,6 +15,14 @@ for p in processos:
     certa: 3,
     revelacao: 'Uma consulta busca os processos e cada <code>p.assistido</code> dispara mais uma: é o N+1, o mesmo das relações lazy do TypeORM. Nesta lição você vai ver como enxergar o SQL e resolver com <code>select_related</code> numa linha.',
   },
+  videos: [
+    { id: 'jrqd_zNMhFk', titulo: 'Criando Filtros poderosos no Django | Segredos do ORM | Queryset - Dica #25.1', canal: 'Regis do Python',
+      duracao: '14:31', idioma: 'pt',
+      nota: 'Repare nos lookups com <code>__</code> e na combinação de filtros com <code>Q</code>, o núcleo das consultas deste módulo.' },
+    { id: 'FNn_qwH1Yi0', titulo: 'Melhorar o desempenho de queries no Django com select_related e prefetch_related', canal: 'Samuel Gonçalves',
+      duracao: '23:15', idioma: 'pt',
+      nota: 'Conte as queries antes e depois: é o N+1 da listagem que engasga do gancho sendo resolvido com <code>select_related</code> e <code>prefetch_related</code>.' },
+  ],
   resumo: [
     'QuerySet é <b>preguiçoso</b>: só vai ao banco quando você itera, usa <code>len()</code>, <code>list()</code>, <code>bool()</code> ou imprime',
     '<code>filter()</code> e <code>exclude()</code> devolvem QuerySet; <code>get()</code> devolve <b>um</b> objeto ou lança <code>DoesNotExist</code>',

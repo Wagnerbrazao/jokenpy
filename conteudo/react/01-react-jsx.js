@@ -17,6 +17,14 @@ return (
     certa: 1,
     revelacao: '<code>0 &amp;&amp; x</code> devolve <code>0</code>, e o React desenha números (só ignora <code>false</code>, <code>null</code> e <code>undefined</code>). Nesta lição você vai ver que JSX é JavaScript puro, com as regras de expressão do JS, e como escrever condicionais sem esse susto.',
   },
+  videos: [
+    { id: '9iKNxnFJY_Q', titulo: 'Curso React: Entendendo o JSX - #03', canal: 'Matheus Battisti - Hora de Codar',
+      duracao: '13:04', idioma: 'pt',
+      nota: 'Mostra que o JSX vira JavaScript e como usar chaves para expressões; repare no <code>className</code> e no elemento raiz único.' },
+    { id: '7ewepbLCvHc', titulo: 'Curso React: Renderização condicional (if) - #12', canal: 'Matheus Battisti - Hora de Codar',
+      duracao: '11:56', idioma: 'pt',
+      nota: 'Ternário, <code>&amp;&amp;</code> e <code>return null</code> na prática; compare com a armadilha do <code>0 &amp;&amp; ...</code> do gancho.' },
+  ],
   resumo: [
     `JSX é <b>açúcar sintático</b> para chamadas de função: vira <code>jsx('div', props)</code>, não HTML`,
     `Componente é uma <b>função</b> que recebe props e devolve JSX; o nome começa com <b>maiúscula</b>`,

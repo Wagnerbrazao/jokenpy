@@ -16,6 +16,14 @@ MODULOS.push({
     certa: 1,
     revelacao: 'Com <code>value</code> vindo do estado, o React redesenha sempre o valor do estado, e sem <code>onChange</code> o estado nunca muda (o console só avisa). Nesta lição você vai ver inputs controlados, submit sem recarregar a página e erros de validação acessíveis.',
   },
+  videos: [
+    { id: 'NtYO03Jq3EE', titulo: 'Como manipular dados de formulários no React JS', canal: 'Fabio Bergmann',
+      duracao: '9:11', idioma: 'pt',
+      nota: 'Inputs controlados com <code>value</code> + <code>onChange</code> e um estado por formulário; repare no <code>preventDefault</code> no submit.' },
+    { id: 'DA39qCGt6RE', titulo: 'A melhor forma de criar formulários no React (hook form + zod)', canal: 'Rocketseat',
+      duracao: '8:05', idioma: 'pt',
+      nota: 'Próximo passo depois do módulo: a mesma validação feita com React Hook Form e um schema Zod, parecido com DTO + class-validator no Nest.' },
+  ],
   resumo: [
     `Input <b>controlado</b>: <code>value</code> vem do estado e <code>onChange</code> atualiza o estado`,
     `Checkbox usa <code>checked</code> e <code>e.target.checked</code>, não <code>value</code>`,

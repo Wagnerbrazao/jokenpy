@@ -20,6 +20,14 @@ function Resumo() { const c = useContador()
     certa: 1,
     revelacao: 'Cada componente que chama um hook ganha o <b>seu próprio</b> estado: hook customizado compartilha lógica, não dados. Nesta lição você vai ver como extrair hooks, as regras que eles seguem e quando usar Context para compartilhar dados de verdade.',
   },
+  videos: [
+    { id: 'l6WGzSc7Lng', titulo: 'Como Estruturar Custom Hooks no React e Evitar Confusões', canal: 'Dev Junior Alves',
+      duracao: '16:43', idioma: 'pt',
+      nota: 'Como extrair lógica para um hook próprio e o que ele devolve; lembre que cada chamada tem estado próprio, como no gancho.' },
+    { id: 'OLtpJLQLOeM', titulo: 'Como usar o useContext para compartilhar dados - SIMPLIFICANDO OS HOOKS DO REACT', canal: 'Matheus Battisti - Hora de Codar',
+      duracao: '20:37', idioma: 'pt',
+      nota: 'Cria o Context, o Provider e consome com <code>useContext</code>, o mesmo fluxo do tema e usuário sem prop drilling.' },
+  ],
   resumo: [
     `Hook customizado é uma função <code>useAlgo</code> que chama outros hooks; compartilha <b>lógica</b>, não estado`,
     `Regras: chame hooks só no <b>topo</b> de componentes ou hooks, nunca dentro de if, laço ou callback`,

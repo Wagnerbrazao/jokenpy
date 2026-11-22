@@ -16,6 +16,14 @@ WHERE id NOT IN (
     certa: 1,
     revelacao: '<code>NOT IN</code> vira uma cadeia de <code>&lt;&gt;</code> com <code>AND</code>, e <code>id &lt;&gt; NULL</code> nunca é verdadeiro: um único nulo zera o resultado, sem erro. Nesta lição você vai ver por que NULL é "desconhecido", como filtrar com <code>IS NULL</code> e as armadilhas de AND/OR e LIKE.',
   },
+  videos: [
+    { id: 'iD-FW8HrxGI', titulo: 'Como Trabalhar com Valores Nulos no SQL [IS NULL e IS NOT NULL]', canal: 'Hashtag Programação',
+      duracao: '10:30', idioma: 'pt',
+      nota: 'Por que <code>= NULL</code> não funciona e é preciso <code>IS NULL</code>; é a mesma lógica de "desconhecido" por trás da armadilha do NOT IN.' },
+    { id: 'OClgaVOtUQ0', titulo: 'Trabalhando com Estruturas Condicionais no SQL - CASE WHEN', canal: 'Hashtag Programação',
+      duracao: '11:05', idioma: 'pt',
+      nota: 'CASE WHEN para classificar linhas em faixas, como na seção de COALESCE e CASE.' },
+  ],
   resumo: [
     '<code>AND</code> tem precedência sobre <code>OR</code>: use <b>parênteses</b> sempre que misturar',
     '<code>BETWEEN a AND b</code> inclui as duas pontas',

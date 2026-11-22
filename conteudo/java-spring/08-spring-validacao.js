@@ -18,6 +18,17 @@ public AssistidoResponse criar(@RequestBody NovoAssistido req) {
     certa: 1,
     revelacao: 'Sem <code>@Valid</code> no parâmetro, as anotações do DTO são só metadado: ninguém valida, e o erro aparece lá no banco como <i>not-null constraint</i>. Nesta lição você vai ver como ligar a validação e devolver erros num formato único com <code>ProblemDetail</code>.',
   },
+  videos: [
+    { id: 'GmbK-O3v3Gg', titulo: 'COMO TRATAR EXCEÇÕES NO JAVA SPRING', canal: 'Fernanda Kipper',
+      duracao: '18:32', idioma: 'pt',
+      nota: 'Veja o handler global com <code>@ControllerAdvice</code> e <code>@ExceptionHandler</code> tirando o try/catch do controller, igual ao advice desta lição.' },
+    { id: 'xGrnt_MjwFo', titulo: 'Novidades do Spring 6: Problem Details', canal: 'Giuliana Bezerra',
+      duracao: '10:58', idioma: 'pt',
+      nota: 'Repare nos campos <code>type</code>, <code>title</code>, <code>status</code> e <code>detail</code> do <code>ProblemDetail</code>: é o formato único de erro que a lição adota.' },
+    { id: 'cP2x9zD9wDc', titulo: 'COMO VALIDAR SUA API REST COM JAVA E SPRING BOOT VALIDATION | PARTE 1', canal: 'Expertos Tech',
+      duracao: '9:41', idioma: 'pt',
+      nota: 'Foque em como <code>@Valid</code> no <code>@RequestBody</code> dispara as anotações do DTO; no Boot 3 o import é <code>jakarta.validation</code>, não <code>javax</code>.' },
+  ],
   resumo: [
     'Anotações como <code>@NotBlank</code>, <code>@Size</code> e <code>@Email</code> vêm do <b>Bean Validation</b> (<code>jakarta.validation</code>) e exigem o <code>spring-boot-starter-validation</code>',
     'Sem <code>@Valid</code> no parâmetro <code>@RequestBody</code>, as anotações do DTO são <b>ignoradas</b>',

@@ -17,6 +17,17 @@ MODULOS.push({
     certa: 1,
     revelacao: 'Por padrão o resource server só transforma a claim <code>scope</code> em autoridades (<code>SCOPE_openid</code>...). Os papéis do Keycloak ficam invisíveis até você mapear com um <code>JwtAuthenticationConverter</code>. Nesta lição você vai ver a cadeia de filtros, JWT, 401 vs 403, CSRF e CORS.',
   },
+  videos: [
+    { id: 'kEJ8a1w4a2Q', titulo: 'Aulão: Spring Security 6 + JWT!', canal: 'Giuliana Bezerra',
+      duracao: '32:54', idioma: 'pt',
+      nota: 'Repare no <code>@Bean SecurityFilterChain</code> com lambdas e no <code>oauth2ResourceServer</code> validando o JWT, sem <code>WebSecurityConfigurerAdapter</code>.' },
+    { id: 'h-9vhFeM3MY', titulo: 'Spring Security Architecture Explained', canal: 'Amigoscode',
+      duracao: '14:41', idioma: 'en',
+      nota: 'Mostra a cadeia de filtros por onde toda requisição passa antes do controller, a base para entender 401 vs 403.' },
+    { id: '68azMcqPpyo', titulo: 'O que você deveria saber sobre Oauth 2.0 e OpenID!', canal: 'Giuliana Bezerra',
+      duracao: '23:40', idioma: 'pt',
+      nota: 'Contexto do Keycloak: quem emite o token, o que são escopos e claims, e por que a API só valida (resource server).' },
+  ],
   resumo: [
     '<b>Autenticação</b> = quem é você (falhou: 401). <b>Autorização</b> = o que você pode (falhou: 403)',
     'Toda requisição passa por uma <b>cadeia de filtros</b> antes de chegar ao controller',

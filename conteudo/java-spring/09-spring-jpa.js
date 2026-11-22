@@ -17,6 +17,17 @@ MODULOS.push({
     certa: 2,
     revelacao: 'O Spring Data monta a consulta a partir do <b>nome do método</b> na subida e não acha o atributo <code>nomeAssistdo</code>: a aplicação falha com <code>PropertyReferenceException</code>. Nesta lição você vai ver entidades, repositórios, derived queries, <code>@Query</code> e paginação.',
   },
+  videos: [
+    { id: 'WbAvRdG3JlU', titulo: 'NÃO faça mais confusão | JDBC, JPA, Hibernate e Spring Data JPA', canal: 'Matheus do Java',
+      duracao: '12:48', idioma: 'pt',
+      nota: 'Situa cada camada: JPA é a especificação, Hibernate a implementação e Spring Data o <code>JpaRepository</code> que você não escreve.' },
+    { id: '2SV7QODVHAE', titulo: 'Spring Data JPA: Ultimate Guide to Custom Queries with @Query Annotation', canal: 'Thorben Janssen',
+      duracao: '15:09', idioma: 'en',
+      nota: 'Observe a diferença entre JPQL (nomes de classe e atributo) e <code>nativeQuery</code>, o ponto que mais confunde quem vem de SQL puro.' },
+    { id: 'Jrhb5YJK5II', titulo: 'Aprenda a criar consultas com paginação utilizando Spring Data!', canal: 'Giuliana Bezerra',
+      duracao: '13:43', idioma: 'pt',
+      nota: 'Veja o <code>Pageable</code> entrando no repositório e o <code>Page</code> saindo com total e número da página (que começa em 0).' },
+  ],
   resumo: [
     '<code>@Entity</code> mapeia uma classe para uma tabela; precisa de <code>@Id</code> e de um construtor sem argumentos',
     '<code>@GeneratedValue(strategy = GenerationType.IDENTITY)</code> usa a coluna identity/serial do Postgres',

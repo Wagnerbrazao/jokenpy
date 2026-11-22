@@ -17,6 +17,14 @@ WHERE ROW_NUMBER() OVER (
     certa: 2,
     revelacao: 'Window functions são calculadas na fase do <code>SELECT</code>, depois do <code>WHERE</code>; é preciso calcular numa CTE e filtrar por fora. Nesta lição você vai ver subconsultas, <code>EXISTS</code>, CTEs, ranking com window functions e como ler o <code>EXPLAIN</code>.',
   },
+  videos: [
+    { id: 'y1KCM8vbYe4', titulo: 'SQL Window Functions in 10 Minutes', canal: 'Colt Steele',
+      duracao: '10:13', idioma: 'en',
+      nota: 'OVER, PARTITION BY, ROW_NUMBER e RANK; repare que as linhas não colapsam como no GROUP BY, base do top-N por grupo.' },
+    { id: 'TOVoB2sC4sg', titulo: 'Usando CTE no MySQL para criar Consultas Mais Organizadas e Poderosas', canal: 'Hashtag Programação',
+      duracao: '16:58', idioma: 'pt',
+      nota: 'WITH dando nome a cada passo da consulta; a sintaxe é a mesma no PostgreSQL.' },
+  ],
   resumo: [
     'Subconsulta escalar devolve <b>um</b> valor; em <code>FROM</code>, vira uma tabela temporária',
     '<code>EXISTS</code> para no primeiro resultado e não sofre com NULL',

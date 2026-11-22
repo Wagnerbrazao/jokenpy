@@ -341,6 +341,7 @@ const ICONE = {
   celular: svg('<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
   lampada: svg('<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.2 2.3h5c0-.9.5-1.7 1.2-2.3A6 6 0 0 0 12 3Z"/>'),
   livro: svg('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>'),
+  play: svg('<path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/>'),
   sol: svg('<circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>'),
   lua: svg('<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/>'),
   alvo: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>'),
@@ -619,6 +620,7 @@ function renderTrilha() {
               </button>
               ${atual ? `<div class="etapa-foco">
                 <p>${esc(l.porque || `Você vai ver: ${l.aprende}.`)}</p>
+                ${videosDe(l).length ? `<button class="chip-video" data-videos="${i}">${ICONE.play}${videosDe(l).length} ${videosDe(l).length === 1 ? 'vídeo' : 'vídeos'} · ${minutosVideos(l)} min</button>` : ''}
                 <button class="btn largo" id="seguir">${andamento ? `Continuar (${andamento.feitos}/${l.exercicios.length})` : 'Começar'} ${ICONE.seta}</button>
               </div>` : ''}
             </li>`
@@ -637,6 +639,7 @@ function renderTrilha() {
       ${prog.feitas.final && alvo >= 0 ? '<button class="btn branco largo" id="ver-fim">🏆 Ver o meu jogo</button>' : ''}
     </aside>
   </div>`)
+  $$('[data-videos]').forEach(b => b.onclick = () => abrirVideos(LISTA[+b.dataset.videos]))
   $$('.etapa-btn').forEach(b => b.onclick = () => +b.dataset.i === alvo ? null : alternarCartao(+b.dataset.i, b.parentElement))
   const sg = $('#seguir'); if (sg) sg.onclick = () => comTransicao(() => andamento ? retomar() : iniciar(alvo))
   const rv = $('#revisar'); if (rv) rv.onclick = () => comTransicao(iniciarRevisao)
@@ -893,12 +896,14 @@ function alternarCartao(i, item) {
       ${and ? '<button class="btn" data-acao="continuar">Continuar</button>' : ''}
       <button class="btn ${and ? 'branco' : ''}" data-acao="comecar">${and ? 'Começar do início' : feita ? 'Fazer de novo' : 'Começar'}</button>
       ${and ? '' : '<button class="btn branco" data-acao="exercicios">Ir direto aos exercícios</button>'}
+      ${videosDe(l).length ? `<button class="btn branco" data-acao="videos">${ICONE.play} ${videosDe(l).length === 1 ? 'Ver o vídeo' : `Ver os ${videosDe(l).length} vídeos`}</button>` : ''}
     </div>`
   c.onclick = e => {
     const acao = e.target.closest('[data-acao]')?.dataset.acao
     if (acao === 'continuar') retomar()
     else if (acao === 'comecar') iniciar(i)
     else if (acao === 'exercicios') iniciar(i, null, true)
+    else if (acao === 'videos') abrirVideos(l)
   }
   item.classList.add('aberta'); item.append(c)
   c.querySelector('.btn')?.focus({ preventScroll: true })
@@ -1149,6 +1154,11 @@ function renderEnsino() {
       ${marcarAjustes(c.texto)}
       ${c.codigo ? (roda(c) ? htmlExemplo(c) : htmlTrecho(c)) : ''}
     </article>
+    ${n === 0 && videosDe(L.licao).length ? `<section class="bloco-video">
+      <div class="bloco-video-cab"><span class="kicker">Prefere ver em vídeo?</span>
+        ${videosDe(L.licao).length > 1 ? `<button class="link-mini" id="mais-videos">+${videosDe(L.licao).length - 1} ${videosDe(L.licao).length === 2 ? 'vídeo' : 'vídeos'}</button>` : ''}</div>
+      ${htmlVideo(videosDe(L.licao)[0])}
+    </section>` : ''}
   </div>`
   $('#corpo').scrollTop = 0
   const r = $('#rodape'); r.className = 'rodape'
@@ -1163,6 +1173,8 @@ function renderEnsino() {
   $('#pular-ensino').onclick = irParaExercicios
   const v = $('#voltar-ensino'); if (v) v.onclick = () => { L.passo--; proximo() }
   if (c.codigo && roda(c)) ligarExemplo(c)
+  ligarVideos($('#corpo'))
+  const mv = $('#mais-videos'); if (mv) mv.onclick = () => abrirVideos(L.licao)
   $('#principal').focus({ preventScroll: true })
   salvarAndamento()
 }
@@ -1265,6 +1277,49 @@ function fecharFolha(imediato = false) {
   f.fundo.classList.remove('visivel'); f.fundo.classList.add('saindo')
   setTimeout(() => f.fundo.remove(), imediato || MENOS_MOVIMENTO ? 0 : 220)
   f.volta?.focus?.({ preventScroll: true })
+}
+
+// ---------- vídeos ----------
+// Miniatura leve primeiro; o player do YouTube (domínio sem cookies) só carrega quando você toca.
+const videosDe = l => (l?.videos || []).filter(v => /^[\w-]{11}$/.test(v.id))
+const segundos = d => String(d).split(':').reduce((t, x) => t * 60 + (+x || 0), 0)
+const minutosVideos = l => Math.max(1, Math.round(videosDe(l).reduce((t, v) => t + segundos(v.duracao), 0) / 60))
+function htmlVideo(v, compacto = false) {
+  const visto = !!prog.videos?.[v.id]
+  return `<div class="video ${compacto ? 'compacto' : ''}" data-video="${esc(v.id)}" data-inicio="${+v.inicio || 0}">
+    <button class="video-capa" aria-label="Assistir: ${esc(v.titulo)}">
+      <img src="https://i.ytimg.com/vi/${esc(v.id)}/hqdefault.jpg" alt="" loading="lazy" decoding="async">
+      <span class="video-play">${ICONE.play}</span>
+      <span class="video-dur">${esc(v.duracao)}</span>
+    </button>
+    <div class="video-info">
+      <b>${esc(v.titulo)}</b>
+      <small>${esc(v.canal)}${v.idioma === 'en' ? ' · <span class="video-en">em inglês</span>' : ''}${visto ? ' · <span class="video-visto">assistido</span>' : ''}
+        · <a class="video-yt" href="https://www.youtube.com/watch?v=${esc(v.id)}${v.inicio ? `&t=${+v.inicio}s` : ''}" target="_blank" rel="noopener">abrir no YouTube</a></small>
+      ${compacto ? '' : `<p>${v.nota}</p>`}
+    </div>
+  </div>`
+}
+// troca a miniatura pelo player (e lembra que você assistiu)
+function ligarVideos(raiz = document) {
+  raiz.querySelectorAll('.video-capa').forEach(b => b.onclick = () => {
+    const box = b.closest('.video'), id = box.dataset.video, ini = +box.dataset.inicio || 0
+    if (!navigator.onLine) { toast('Os vídeos precisam de internet.'); return }
+    const f = document.createElement('iframe')
+    f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0&modestbranding=1${ini ? `&start=${ini}` : ''}`
+    f.title = box.querySelector('.video-info b').textContent
+    f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'
+    f.allowFullscreen = true; f.className = 'video-player'
+    b.replaceWith(f)
+    prog.videos = prog.videos || {}; prog.videos[id] = true; salvarProgresso()
+  })
+}
+function abrirVideos(l) {
+  const vs = videosDe(l); if (!vs.length) return
+  abrirFolha({ rotulo: 'Vídeos da lição', classe: 'alta', html: `<span class="kicker">Vídeos · ${esc(l.titulo)}</span>
+    <p class="nota">Escolhidos para esta lição. Assista antes ou depois dos exercícios.</p>
+    <div class="videos">${vs.map(v => htmlVideo(v)).join('')}</div>
+    <div class="folha-acoes"><button class="btn" data-fechar>Fechar</button></div>`, aoAbrir: corpo => ligarVideos(corpo) })
 }
 
 // ---------- dicas em escada ----------
@@ -1457,8 +1512,10 @@ function ligarEditor(ta, it = null) {
 // teoria da lição numa janela, a qualquer momento
 function abrirTeoria() {
   if (!L || folhaAtual) return
-  abrirFolha({ rotulo: 'Resumo da lição', classe: 'alta', html: `${htmlTeoria(L.licao.revisao ? licaoDe(L.fila[0]) : L.licao)}
-    <div class="folha-acoes"><button class="btn" data-fechar>Voltar</button></div>` })
+  const l = L.licao.revisao ? licaoDe(L.fila[0]) : L.licao
+  abrirFolha({ rotulo: 'Resumo da lição', classe: 'alta', html: `${htmlTeoria(l)}
+    ${videosDe(l).length ? `<h3 class="sub-folha">Vídeos</h3><div class="videos">${videosDe(l).map(v => htmlVideo(v, true)).join('')}</div>` : ''}
+    <div class="folha-acoes"><button class="btn" data-fechar>Voltar</button></div>`, aoAbrir: corpo => ligarVideos(corpo) })
 }
 
 // ---------- rodapé: verificar, feedback ----------
@@ -1883,6 +1940,8 @@ async function concluir() {
     </div>` : ''}
     <p class="continuar-info" style="text-align:center">Meta do dia: ${Math.min(xpDeHoje(), metaDiaria())}/${metaDiaria()} XP · ${sequencia()} ${sequencia() === 1 ? 'dia seguido' : 'dias seguidos'}${L.dicas ? ` · ${L.dicas} ${L.dicas === 1 ? 'dica usada' : 'dicas usadas'}` : ''}</p>
     ${revisao ? '' : htmlResumo(l)}
+    ${!revisao && videosDe(l).some(v => !prog.videos?.[v.id]) ? `<section class="bloco-video fim">
+      <span class="kicker">Para fixar, assista</span>${htmlVideo(videosDe(l).find(v => !prog.videos?.[v.id]))}</section>` : ''}
     ${l.final ? htmlJogar(arquivo) : ''}
     ${!revisao && !l.final && !jaFeita ? `<p class="continuar-info" style="text-align:center">${CURSO.painel === 'jogo' ? 'Mais uma parte do seu <code>jokenpo.py</code> foi liberada no mapa da trilha.' : 'Suas competências no mapa da trilha foram atualizadas.'}</p>` : ''}
     <div class="resultado-acoes">
@@ -1895,6 +1954,7 @@ async function concluir() {
   $$('.contar').forEach(el => { const n = +el.dataset.n, t0 = performance.now()
     const passo = t => { const k = Math.min(1, (t - t0) / 700); el.textContent = Math.round(n * (1 - (1 - k) ** 3)); if (k < 1) requestAnimationFrame(passo) }
     requestAnimationFrame(passo) })
+  ligarVideos(app)
   $('#cont').onclick = renderHome
   $('#denovo').onclick = () => revisao ? iniciarRevisao() : iniciar(i)
   const sg = $('#seguinte'); if (sg) sg.onclick = () => iniciar(seguinte)

@@ -20,6 +20,17 @@ public void gravar(List<Atendimento> lote) {
     certa: 1,
     revelacao: '<code>@Transactional</code> funciona por <b>proxy</b>, e a chamada interna (<code>this.gravar</code>) passa por fora dele. Sem transação, cada <code>save</code> confirma sozinho: os 2 primeiros ficam. Nesta lição você vai ver relações, N+1, <code>LazyInitializationException</code> e onde pôr a transação.',
   },
+  videos: [
+    { id: 'QAaTLLYdHJ0', titulo: 'JOIN FETCH with Hibernate - The end of n+1 select issues', canal: 'Thorben Janssen',
+      duracao: '6:32', idioma: 'en',
+      nota: 'Conte as consultas no log antes e depois do <code>join fetch</code>: é exatamente o N+1 que a lição pede para reconhecer e resolver.' },
+    { id: 'gDpmbUoEpPQ', titulo: '[QUESTION] Why doesn\'t @Transactional work when called within the same class?', canal: 'Laur Spilca',
+      duracao: '15:35', idioma: 'en',
+      nota: 'É o caso do gancho: a chamada interna passa por fora do proxy e o <code>@Transactional</code> simplesmente não age.' },
+    { id: 'LX5jaieOIAk', titulo: 'Criando Migrations com Flyway no seu projeto Java Spring & PostgreSQL', canal: 'Fernanda Kipper',
+      duracao: '12:09', idioma: 'pt',
+      nota: 'Repare no nome <code>V1__...sql</code> em <code>db/migration</code> e na tabela de histórico que o Flyway cria no Postgres.' },
+  ],
   resumo: [
     'O lado <code>@ManyToOne</code> é o <b>dono</b> da relação (tem a FK); o <code>@OneToMany(mappedBy = "...")</code> só espelha',
     '<code>@ManyToOne</code> é <b>EAGER</b> por padrão: declare <code>fetch = FetchType.LAZY</code>',

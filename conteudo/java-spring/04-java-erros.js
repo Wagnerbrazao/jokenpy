@@ -19,6 +19,17 @@ void lerPeticao() {
     certa: 1,
     revelacao: '<code>IOException</code> é <b>checked</b>: o compilador exige <code>try/catch</code> ou <code>throws IOException</code> na assinatura. <code>IllegalStateException</code> é unchecked e passa livre. Nesta lição você vai ver essa divisão, como criar exceção de domínio e onde o <code>Optional</code> entra.',
   },
+  videos: [
+    { id: 'vYbwbyg-B8A', titulo: 'Exceções, try, catch com Java', canal: 'DevSuperior',
+      duracao: '8:39', idioma: 'pt',
+      nota: 'O Nelio mostra a hierarquia de exceções e o fluxo do <code>try/catch</code>; observe onde a exceção é capturada e onde só é propagada.' },
+    { id: 'bCPClyGsVhc', titulo: 'Checked vs. Unchecked Exceptions in Java Tutorial - What\'s The Difference?', canal: 'Coding with John',
+      duracao: '10:14', idioma: 'en',
+      nota: 'Exatamente o gancho do módulo: por que o compilador obriga a tratar <code>IOException</code> e deixa passar <code>RuntimeException</code>.' },
+    { id: 'vKVzRbsMnTQ', titulo: 'Optionals In Java - Simple Tutorial', canal: 'Coding with John',
+      duracao: '15:53', idioma: 'en',
+      nota: 'Foque em <code>orElse</code>, <code>orElseThrow</code> e <code>map</code>, e no aviso de usar <code>Optional</code> só como retorno, como na última lição.' },
+  ],
   resumo: [
     '<b>Checked</b> (filhas de <code>Exception</code>) o compilador obriga a tratar ou declarar; <b>unchecked</b> (filhas de <code>RuntimeException</code>) não',
     '<code>finally</code> sempre roda; <b>try-with-resources</b> fecha o recurso sozinho',

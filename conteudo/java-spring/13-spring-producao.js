@@ -19,6 +19,17 @@ spring:
     certa: 1,
     revelacao: 'Variável de ambiente tem <b>precedência</b> sobre os arquivos <code>application*.yml</code>, inclusive os de perfil: <code>SPRING_DATASOURCE_URL</code> vira <code>spring.datasource.url</code>. Nesta lição você vai ver perfis, configuração externa, Actuator, logs, Docker e virtual threads.',
   },
+  videos: [
+    { id: 'FUHpVIeEIgQ', titulo: 'Spring Profiles na Prática: Dev, Homologação e Produção sem Dor', canal: 'TECH DEV BRAZIL',
+      duracao: '23:59', idioma: 'pt',
+      nota: 'Veja o <code>application.yml</code> base sobrescrito por <code>application-hml.yml</code> e <code>application-prod.yml</code> conforme o perfil ativo.' },
+    { id: 'rQV76dufxz4', titulo: 'Spring Boot Environment Variables Explained (Secure Your API Keys!)', canal: 'Dan Vega',
+      duracao: '16:31', idioma: 'en',
+      nota: 'É o gancho: variável de ambiente vence o arquivo de propriedades, e segredo fica fora do código.' },
+    { id: '4OVe0MWgZ4k', titulo: 'The #1 Spring Boot Starter you should include in every single application', canal: 'Dan Vega',
+      duracao: '19:18', idioma: 'en',
+      nota: 'Actuator na prática: o <code>/actuator/health</code> e como expor só o mínimo de endpoints.' },
+  ],
   resumo: [
     '<code>application-prod.yml</code> sobrescreve o <code>application.yml</code> quando o perfil <code>prod</code> está ativo (<code>SPRING_PROFILES_ACTIVE=prod</code>)',
     'Variável de ambiente sobrescreve propriedade: <code>SPRING_DATASOURCE_URL</code> vira <code>spring.datasource.url</code>',

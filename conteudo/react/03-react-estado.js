@@ -20,6 +20,14 @@ function registrarTres() {
     opcoesCodigo: true,
     revelacao: 'Naquela renderização <code>atendidos</code> vale 0 nas três linhas, então as três pedem "mude para 1". Nesta lição você vai ver por que o estado é um retrato de cada render, quando usar <code>setAtendidos(a =&gt; a + 1)</code> e por que nunca mutar o estado.',
   },
+  videos: [
+    { id: 'mY9MLdifqe0', titulo: 'Explorando useState no React (conceito e importância)', canal: 'Rocketseat',
+      duracao: '5:11', idioma: 'pt',
+      nota: 'Por que uma variável comum não re-renderiza e o <code>useState</code> sim; base para entender o estado como retrato.' },
+    { id: '01Gj6i2wlS4', titulo: 'Curso React: State Lift - #14', canal: 'Matheus Battisti - Hora de Codar',
+      duracao: '11:15', idioma: 'pt',
+      nota: 'Levanta o estado para o pai e passa o setter por props, o mesmo padrão da última seção do módulo.' },
+  ],
   resumo: [
     `<code>const [x, setX] = useState(inicial)</code>: chamar <code>setX</code> agenda uma <b>nova renderização</b>`,
     `O estado é um <b>retrato</b> daquela renderização: depois de <code>setX</code>, <code>x</code> ainda vale o valor antigo`,

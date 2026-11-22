@@ -16,6 +16,14 @@ MODULOS.push({
     certa: 1,
     revelacao: 'Em desenvolvimento, o StrictMode monta, desmonta e monta de novo o componente de propósito, para expor efeitos sem limpeza; em produção roda uma vez. Nesta lição você vai ver o que é um efeito de verdade, como escrever a limpeza (com <code>AbortController</code> no fetch) e quando você nem precisa de efeito.',
   },
+  videos: [
+    { id: 'ojzuilNld1s', titulo: 'APRENDA USEEFFECT - SIMPLIFICANDO OS HOOKS DO REACT', canal: 'Matheus Battisti - Hora de Codar',
+      duracao: '17:34', idioma: 'pt',
+      nota: 'Array de dependências e função de limpeza em exemplos curtos; observe quando o efeito roda de novo.' },
+    { id: 'V1f8MOQiHRw', titulo: 'You might not need useEffect() ...', canal: 'Academind',
+      duracao: '21:45', idioma: 'en',
+      nota: 'Casos em que o efeito some e vira cálculo no render ou handler de evento, o mesmo raciocínio de "você talvez não precise de um efeito".' },
+  ],
   resumo: [
     `<code>useEffect</code> roda <b>depois</b> que a tela é pintada, para <b>sincronizar</b> com algo fora do React`,
     `O array de dependências diz quando ressincronizar: <code>[]</code> só ao montar; <code>[id]</code> quando <code>id</code> muda; sem array, a cada render`,

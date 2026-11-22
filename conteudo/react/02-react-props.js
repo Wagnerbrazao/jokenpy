@@ -19,6 +19,14 @@ MODULOS.push({
     certa: 1,
     revelacao: 'Com <code>key={i}</code>, a nova primeira tarefa herda a key <code>0</code>, e o React reaproveita o <code>&lt;li&gt;</code> e o input que já existiam ali, com o texto digitado. Nesta lição você vai ver como props e keys identificam cada item e por que o índice quebra listas que mudam.',
   },
+  videos: [
+    { id: '00nfvN2UTZc', titulo: 'Simplificando o conceito de componentes e propriedades no React', canal: 'Rocketseat',
+      duracao: '8:49', idioma: 'pt',
+      nota: 'Props como argumentos só de leitura que o pai passa ao filho, a base do contrato entre componentes deste módulo.' },
+    { id: '919gHAelBfw', titulo: 'React 19 Tutorial - 13 - Index as Key Anti-Pattern', canal: 'Codevolution',
+      duracao: '8:25', idioma: 'en',
+      nota: 'Demonstra o estado trocando de linha quando a <code>key</code> é o índice e a lista é reordenada, exatamente o bug da seção sobre keys.' },
+  ],
   resumo: [
     `Props são os <b>argumentos</b> do componente: um objeto só de leitura, passado de pai para filho`,
     `Desestruture na assinatura: <code>function Cartao({ titulo, prioridade = 'media' })</code>`,

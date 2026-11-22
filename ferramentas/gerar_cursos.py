@@ -114,6 +114,21 @@ def validar(tid: str, dados: dict) -> list[str]:
             for campo in ('pergunta', 'revelacao'):
                 if tags_ruins(g.get(campo)):
                     p.append(f'{lid} gancho: {campo} com tags não permitidas {tags_ruins(g.get(campo))}')
+        vids = l.get('videos', [])
+        if not isinstance(vids, list) or len(vids) > 3:
+            p.append(f'{lid}: videos deve ser uma lista com até 3 vídeos')
+        for k, v in enumerate(vids if isinstance(vids, list) else []):
+            if not re.fullmatch(r'[A-Za-z0-9_-]{11}', str(v.get('id', ''))):
+                p.append(f'{lid} vídeo {k}: id do YouTube inválido')
+            for campo in ('titulo', 'canal', 'duracao', 'nota'):
+                if not v.get(campo):
+                    p.append(f'{lid} vídeo {k}: sem {campo}')
+            if v.get('idioma') not in ('pt', 'en'):
+                p.append(f'{lid} vídeo {k}: idioma deve ser pt ou en')
+            if 'inicio' in v and not (isinstance(v['inicio'], int) and v['inicio'] >= 0):
+                p.append(f'{lid} vídeo {k}: inicio é um número de segundos')
+            if tags_ruins(v.get('nota')):
+                p.append(f'{lid} vídeo {k}: nota com tags não permitidas')
         if not l.get('porque'):
             p.append(f'{lid}: sem porque')
         exs = l.get('exercicios', [])

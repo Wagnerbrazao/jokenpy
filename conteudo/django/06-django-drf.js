@@ -18,6 +18,14 @@ class UsuarioSerializer(serializers.ModelSerializer):
     certa: 2,
     revelacao: '<code>"__all__"</code> é literal: vão <code>password</code> (o hash), <code>is_superuser</code> e o resto, sem nenhum <code>@Exclude()</code> automático como no class-transformer. Nesta lição você vai ver como declarar campos, <code>write_only</code> e permissões para a API expor só o que deve.',
   },
+  videos: [
+    { id: 'BMym71Dwox0', titulo: 'Django REST Framework - Serializers & Response objects | Browsable API', canal: 'BugBytes',
+      duracao: '24:54', idioma: 'en',
+      nota: 'Observe o <code>ModelSerializer</code> escolhendo os campos expostos, que é o que evita o JSON que falou demais do gancho.' },
+    { id: '4MrB4IvW6Ow', titulo: 'Viewsets & Routers in Django REST Framework', canal: 'BugBytes',
+      duracao: '14:44', idioma: 'en',
+      nota: 'Repare como um <code>ModelViewSet</code> com router gera todas as rotas do CRUD e onde entram as permissões.' },
+  ],
   resumo: [
     'O <b>serializer</b> converte model em JSON e valida o JSON que chega: é DTO e validação ao mesmo tempo',
     '<code>validate_&lt;campo&gt;(self, value)</code> valida um campo; <code>validate(self, attrs)</code> valida o conjunto',
