@@ -1006,7 +1006,10 @@ function iniciar(i, salvo = null, pularEnsino = false, licao = LISTA[i]) {
   const passo = salvo ? salvo.passo ?? null : pularEnsino ? null : 0
   L = {
     i, licao, fila, total: licao.exercicios.length,
-    fase: passo == null ? 'exercicios' : !salvo && licao.gancho ? 'gancho' : 'ensino', passo: passo ?? 0,
+    // o desafio aparece ao começar e também ao continuar, se você saiu antes de responder e ainda está no início
+    fase: passo == null ? 'exercicios'
+      : licao.gancho && (!salvo || (passo === 0 && prog.palpites?.[licao.id] === undefined)) ? 'gancho' : 'ensino',
+    passo: passo ?? 0,
     combo: 0, primeiras: new Set(),
     feitos: salvo?.feitos || 0, erros: salvo?.erros || 0, dicas: salvo?.dicas || 0,
     inicio: Date.now() - (salvo?.decorrido || 0), codigoFinal: salvo?.codigoFinal || null, estado: 'responder',

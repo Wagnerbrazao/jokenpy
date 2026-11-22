@@ -1,6 +1,6 @@
 // Service worker do Jokenpy: deixa o app abrir sem internet e recebe os lembretes (Web Push).
 // Rodar código e a IA continuam precisando do servidor; escolha, lacuna e montagem funcionam offline.
-const VERSAO = 'jokenpy-v4'
+const VERSAO = 'jokenpy-v5'
 const ESSENCIAL = ['/', '/manifest.webmanifest', '/cursos/indice.json', '/icones/icone-192.png']
 
 self.addEventListener('install', e => {
